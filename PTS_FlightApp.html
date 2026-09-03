@@ -2818,27 +2818,27 @@ function renderPaxLoadTable() {
         var isMobile = id.includes('-m');
         var sepMargin = isMobile ? '4px' : '10px';
         var sep = '<span style="width:1px;height:28px;background:rgba(255,255,255,0.3);display:inline-block;margin:0 ' + sepMargin + ';vertical-align:middle;flex-shrink:0;font-size:0;"></span>';
-        if (!btTargetMs) { bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🎫 --:--:--</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate ' + gateNum + '</span>'; bl.style.color = '#fff'; return; }
+        if (!btTargetMs) { bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🎫 --:--:--</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>'; bl.style.color = '#fff'; return; }
         var dBoardSec = Math.round((btTargetMs - nowMs)/1000);
         var dGateSec = gctTargetMs ? Math.round((gctTargetMs - nowMs)/1000) : null;
 
         // Check if within 5 minutes before gate close
         if (dGateSec !== null && dGateSec > 0 && dGateSec <= 300) {
-          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🚪 Gate Closing</span><span style="font-size:0.75em;opacity:0.85;color:#fff;"> -' + fmtFromSec(dGateSec) + '</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate ' + gateNum + '</span>';
+          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🚪 Gate Closing</span><span style="font-size:0.75em;opacity:0.85;color:#fff;"> -' + fmtFromSec(dGateSec) + '</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>';
           bl.style.color = '#fff';
           return;
         }
         
         if (dGateSec !== null && dGateSec <= 0) {
-          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🎫 Boarding Closed</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate ' + gateNum + '</span>'; bl.style.color = '#FCA5A5'; return;
+          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🎫 Boarding Closed</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>'; bl.style.color = '#FCA5A5'; return;
         }
         if (dBoardSec <= 0) {
           var gateStr = dGateSec !== null ? ', closes -' + fmtFromSec(Math.abs(dGateSec)) : '';
-          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🎫 Boarding</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate ' + gateNum + gateStr + '</span>';
+          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🎫 Boarding</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + gateStr + '</span>';
           bl.style.color = '#fff';
           return;
         }
-        bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🚪 -' + fmtFromSec(dBoardSec) + '</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate ' + gateNum + '</span>';
+        bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🚪 -' + fmtFromSec(dBoardSec) + '</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>';
         bl.style.color = dBoardSec < 1200 ? '#fff' : '#fff';
       });
     }
