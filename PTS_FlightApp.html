@@ -847,7 +847,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div data-id="18" class="etd-divider"></div>
           <div data-id="19" id="etd-countdown" class="tabular-nums leading-none" style="font-size:22px;">ETD --:--:--</div>
           <div data-id="20" class="etd-divider"></div>
-          <div data-id="21" id="boarding-countdown" class="tabular-nums leading-none" style="font-size:22px;">🎫 --:--:--</div>
+          <div data-id="21" id="boarding-countdown" class="tabular-nums leading-none" style="font-size:22px;">--:--:--</div>
         </div>
         <div data-id="22" class="flex items-center gap-2 flex-shrink-0">
           <button data-id="23" id="btn-import-q7r8" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/40 text-white text-xs font-semibold hover:bg-white/10 transition-colors" style="background:#F59E0B;color:#1a1a1a;">
@@ -888,7 +888,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div data-id="46" class="flex items-center justify-center gap-2 px-3 pb-1">
           <div data-id="47" id="etd-countdown-m" class="tabular-nums leading-none" style="font-size:20px;">ETD --:--:--</div>
           <div data-id="48" class="etd-divider"></div>
-          <div data-id="49" id="boarding-countdown-m" class="tabular-nums leading-none" style="font-size:20px;">🎫 --:--:--</div>
+          <div data-id="49" id="boarding-countdown-m" class="tabular-nums leading-none" style="font-size:20px;">--:--:--</div>
         </div>
         <div data-id="50" class="flex items-center justify-around px-2 pb-2 gap-1">
           <button data-id="51" id="btn-import-mob" class="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg border border-white/40 text-white text-xs font-semibold min-h-[36px] hover:bg-white/10 transition-colors" style="background:#F59E0B;color:#1a1a1a;">
@@ -2818,27 +2818,27 @@ function renderPaxLoadTable() {
         var isMobile = id.includes('-m');
         var sepMargin = isMobile ? '4px' : '10px';
         var sep = '<span style="width:1px;height:28px;background:rgba(255,255,255,0.3);display:inline-block;margin:0 ' + sepMargin + ';vertical-align:middle;flex-shrink:0;font-size:0;"></span>';
-        if (!btTargetMs) { bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🎫 --:--:--</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>'; bl.style.color = '#fff'; return; }
+        if (!btTargetMs) { bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">--:--:--</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>'; bl.style.color = '#fff'; return; }
         var dBoardSec = Math.round((btTargetMs - nowMs)/1000);
         var dGateSec = gctTargetMs ? Math.round((gctTargetMs - nowMs)/1000) : null;
 
         // Check if within 5 minutes before gate close
         if (dGateSec !== null && dGateSec > 0 && dGateSec <= 300) {
-          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🚪 Gate Closing</span><span style="font-size:0.75em;opacity:0.85;color:#fff;"> -' + fmtFromSec(dGateSec) + '</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>';
+          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;"> Gate Closing</span><span style="font-size:0.75em;opacity:0.85;color:#fff;"> -' + fmtFromSec(dGateSec) + '</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>';
           bl.style.color = '#fff';
           return;
         }
         
         if (dGateSec !== null && dGateSec <= 0) {
-          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🎫 Boarding Closed</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>'; bl.style.color = '#FCA5A5'; return;
+          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;"> Boarding Closed</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>'; bl.style.color = '#FCA5A5'; return;
         }
         if (dBoardSec <= 0) {
           var gateStr = dGateSec !== null ? ', closes -' + fmtFromSec(Math.abs(dGateSec)) : '';
-          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🎫 Boarding</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + gateStr + '</span>';
+          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;"> Boarding</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + gateStr + '</span>';
           bl.style.color = '#fff';
           return;
         }
-        bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🚪 -' + fmtFromSec(dBoardSec) + '</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>';
+        bl.innerHTML = '<span style="color:#fff;vertical-align:middle;"> -' + fmtFromSec(dBoardSec) + '</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>';
         bl.style.color = dBoardSec < 1200 ? '#fff' : '#fff';
       });
     }
