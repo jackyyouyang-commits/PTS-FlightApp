@@ -2072,22 +2072,21 @@ function renderPaxLoadTable() {
         '</div>' +
         '<div class="card">' +
           '<div class="section-hdr" style="margin-top:0;">Arrival</div>' +
-          '<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">' +
-            '<div><div class="sum-label">CN</div><div class="sum-value">' + v('arr_cn') + '</div></div>' +
-            '<div><div class="sum-label">ISM</div><div class="sum-value">' + v('arr_ism') + '</div></div>' +
-            '<div><div class="sum-label">PAX Total</div><div class="sum-value text-xl">' + (arrTotal||'-') + '</div></div>' +
-            '<div><div class="sum-label">Loading</div><div class="sum-value">J:' + (state.arr_pax_j||0) + ' W:' + (state.arr_pax_w||0) + ' Y:' + (state.arr_pax_y||0) + ' INF:' + (state.arr_pax_inf||0) + '</div></div>' +
+          '<div class="grid grid-cols-5 gap-3 text-center">' +
+            '<div><div class="sum-label">CN</div><div class="sum-value text-lg">' + v('arr_cn') + '</div></div>' +
+            '<div><div class="sum-label">ISM</div><div class="sum-value text-lg">' + v('arr_ism') + '</div></div>' +
+            '<div><div class="sum-label">J</div><div class="sum-value text-lg">' + (state.arr_pax_j||'-') + '</div></div>' +
+            '<div><div class="sum-label">W</div><div class="sum-value text-lg">' + (state.arr_pax_w||'-') + '</div></div>' +
+            '<div><div class="sum-label">PAX Total</div><div class="sum-value text-lg font-extrabold text-cx-teal">' + (arrTotal||'-') + '</div></div>' +
           '</div>' +
-          '<div class="mt-3 flex flex-wrap gap-2 text-xs">' +
-            ['WCHR/S:'+(state.arr_wchr_s||0),'WCHC:'+(state.arr_wchc||0),'MAAS:'+(state.arr_maas||0),'MEDA:'+(state.arr_meda||0),'UMNR:'+(state.arr_umnr||0),'SVIP:'+(state.arr_svip||0),'DEAF:'+(state.arr_deaf||0),'BLND:'+(state.arr_blnd||0)].map(function(s) {
-              var val = parseInt(s.split(':')[1]); var bg = val ? 'bg-cx-teal text-white' : 'bg-gray-100 text-gray-500';
-              return '<span class="px-2.5 py-1.5 rounded-full '+bg+' font-semibold">'+s+'</span>';
-            }).join('') +
-          '</div>' +
-          '<div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">' +
-            '<div><span class="sum-label">INTL CNX:</span> <span class="font-semibold">' + v('intl_cnx') + '</span></div>' +
-            '<div><span class="sum-label">US CNX:</span> <span class="font-semibold">' + v('us_cnx') + '</span></div>' +
-            '<div><span class="sum-label">WS CNX / ITD Bags:</span> <span class="font-semibold">' + v('ws_cnx') + '</span></div>' +
+          '<div class="mt-4">' +
+            '<div style="font-size:13px;font-weight:700;color:#004545;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.04em;">Special Handling</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+              ['WCHR/S:'+(state.arr_wchr_s||0),'WCHC:'+(state.arr_wchc||0),'MAAS:'+(state.arr_maas||0),'MEDA:'+(state.arr_meda||0),'UMNR:'+(state.arr_umnr||0),'SVIP:'+(state.arr_svip||0),'DEAF:'+(state.arr_deaf||0),'BLND:'+(state.arr_blnd||0)].map(function(s) {
+                var val = parseInt(s.split(':')[1]); var bg = val ? 'bg-cx-teal text-white' : 'bg-gray-100 text-gray-500';
+                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:'+ (val ? 'white' : '#111827')+';">'+s.split(':')[1]+'</div><div style="font-size:10px;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;">'+s.split(':')[0]+'</div></div>';
+              }).join('') +
+            '</div>' +
           '</div>' +
         '</div>' +
         '<div class="card">' +
