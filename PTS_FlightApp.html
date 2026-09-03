@@ -2145,8 +2145,8 @@ function renderPaxLoadTable() {
             '<div class="p-2 bg-cx-bg rounded-lg"><div class="font-bold" style="font-size:13px;font-weight:600;">' + v('dep_cis') + '</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">CIS</div></div>' +
           '</div>' +
         '</div>' +
-        '<div class="card"><div class="section-hdr amber" style="margin-top:0;">Defects</div><div class="p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg text-sm font-medium text-yellow-900 whitespace-pre-wrap">'+(state.defects||'—')+'</div></div>' +
-        '<div class="card"><div class="section-hdr" style="margin-top:0;">Remarks</div><div class="p-3 bg-blue-50 border-l-4 border-blue-400 rounded-lg text-sm font-medium text-blue-900 whitespace-pre-wrap">'+(state.remarks||'—')+'</div></div>';
+        '<div class="card"><div class="section-hdr" style="margin-top:0;">Defects</div><div style="padding:12px;font-size:14px;line-height:1.6;color:#111827;whitespace-pre-wrap;">'+(state.defects||'—')+'</div></div>' +
+        '<div class="card"><div class="section-hdr" style="margin-top:0;">Remarks</div><div style="padding:12px;font-size:14px;line-height:1.6;color:#111827;whitespace-pre-wrap;">'+(state.remarks||'—')+'</div></div>';
 
       refreshSummarySpans();
       refreshFinalLoading();
