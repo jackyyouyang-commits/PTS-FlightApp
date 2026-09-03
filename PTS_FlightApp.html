@@ -1734,7 +1734,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       if (rowHasData(rev2Keys)) return Object.assign(pick(rev2Keys), {label:'Final Rev 2'});
       if (rowHasData(rev1Keys)) return Object.assign(pick(rev1Keys), {label:'Final Rev 1'});
-      return Object.assign(pick(finalKeys), {label:'Final'});
+      return Object.assign(pick(rev1Keys), {label:'Final Rev 1'});
     }
 
     function refreshFinalLoading() {
