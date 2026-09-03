@@ -307,6 +307,8 @@ document.addEventListener('DOMContentLoaded', function() {
         -webkit-appearance: none; background: #fff;
       }
       .pax-table input:focus { border-color: var(--cx-teal); box-shadow: 0 0 0 2px rgba(0,92,92,0.1); }
+      .pax-no-indicator { font-size: 15px !important; }
+      .pax-no-indicator::after { content: none !important; display: none !important; }
       .pax-table .total-cell { font-weight: 800; color: var(--cx-teal); font-size: 15px; text-align: center; min-height: 38px; display: flex; align-items: center; justify-content: center; }
 
       .sum-label { font-size: 0.7rem; font-weight: 600; color: #6B7280; text-transform: uppercase; }
@@ -2014,13 +2016,15 @@ function renderPaxLoadTable() {
       for (var r = 0; r < paxLoadRows.length; r++) {
         var row = paxLoadRows[r];
         var isFinal = row.label === 'FINAL' || row.label === 'FINAL REV 1' || row.label === 'FINAL REV 2';
+        var isRev = row.label === 'FINAL REV 1' || row.label === 'FINAL REV 2';
         var cls = isFinal ? 'font-extrabold text-cx-teal' : '';
+        var inputCls = isRev ? 'pax-tbl-input pax-no-indicator' : 'pax-tbl-input';
         var cells = '';
-        cells += '<td><input class="pax-tbl-input" data-key="' + row.keys[0] + '" value="' + (state[row.keys[0]]||'') + '" inputmode="numeric" placeholder=""></td>';
-        cells += '<td><input class="pax-tbl-input" data-key="' + row.keys[1] + '" value="' + (state[row.keys[1]]||'') + '" inputmode="numeric" placeholder=""></td>';
-        cells += '<td><input class="pax-tbl-input" data-key="' + row.keys[2] + '" value="' + (state[row.keys[2]]||'') + '" inputmode="numeric" placeholder=""></td>';
+        cells += '<td><input class="' + inputCls + '" data-key="' + row.keys[0] + '" value="' + (state[row.keys[0]]||'') + '" inputmode="numeric" placeholder=""></td>';
+        cells += '<td><input class="' + inputCls + '" data-key="' + row.keys[1] + '" value="' + (state[row.keys[1]]||'') + '" inputmode="numeric" placeholder=""></td>';
+        cells += '<td><input class="' + inputCls + '" data-key="' + row.keys[2] + '" value="' + (state[row.keys[2]]||'') + '" inputmode="numeric" placeholder=""></td>';
         if (row.hasInf) {
-          cells += '<td><input class="pax-tbl-input" data-key="' + row.keys[3] + '" value="' + (state[row.keys[3]]||'') + '" inputmode="numeric" placeholder=""></td>';
+          cells += '<td><input class="' + inputCls + '" data-key="' + row.keys[3] + '" value="' + (state[row.keys[3]]||'') + '" inputmode="numeric" placeholder=""></td>';
         } else {
           cells += '<td><div class="total-cell text-cx-grey">\u2014</div></td>';
         }
@@ -2033,7 +2037,7 @@ function renderPaxLoadTable() {
       tbody.querySelectorAll('.pax-tbl-input').forEach(function(inp) {
         inp.addEventListener('input', function() {
           var k = inp.dataset.key;
-          if (k in state) state[k] = inp.value;
+          state[k] = inp.value;
           var tr = inp.closest('tr');
           if (tr) {
             var rowLabel = tr.cells[0] ? tr.cells[0].textContent.trim() : '';
@@ -2073,18 +2077,18 @@ function renderPaxLoadTable() {
         '<div class="card">' +
           '<div class="section-hdr" style="margin-top:0;">Arrival</div>' +
           '<div class="grid grid-cols-5 gap-3 text-center">' +
-            '<div><div class="sum-label">CN</div><div class="sum-value text-lg">' + v('arr_cn') + '</div></div>' +
-            '<div><div class="sum-label">ISM</div><div class="sum-value text-lg">' + v('arr_ism') + '</div></div>' +
-            '<div><div class="sum-label">J</div><div class="sum-value text-lg">' + (state.arr_pax_j||'-') + '</div></div>' +
-            '<div><div class="sum-label">W</div><div class="sum-value text-lg">' + (state.arr_pax_w||'-') + '</div></div>' +
-            '<div><div class="sum-label">PAX Total</div><div class="sum-value text-lg font-extrabold text-cx-teal">' + (arrTotal||'-') + '</div></div>' +
+            '<div><div class="sum-label">CN</div><div class="sum-value">' + v('arr_cn') + '</div></div>' +
+            '<div><div class="sum-label">ISM</div><div class="sum-value">' + v('arr_ism') + '</div></div>' +
+            '<div><div class="sum-label">J</div><div class="sum-value">' + (state.arr_pax_j||'-') + '</div></div>' +
+            '<div><div class="sum-label">W</div><div class="sum-value">' + (state.arr_pax_w||'-') + '</div></div>' +
+            '<div><div class="sum-label">PAX Total</div><div class="sum-value font-extrabold text-cx-teal">' + (arrTotal||'-') + '</div></div>' +
           '</div>' +
           '<div class="mt-4">' +
-            '<div style="font-size:13px;font-weight:700;color:#004545;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.04em;">Special Handling</div>' +
+            '<div class="sum-label" style="display:block;margin-bottom:8px;">Special Handling</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
               ['WCHR/S:'+(state.arr_wchr_s||0),'WCHC:'+(state.arr_wchc||0),'MAAS:'+(state.arr_maas||0),'MEDA:'+(state.arr_meda||0),'UMNR:'+(state.arr_umnr||0),'SVIP:'+(state.arr_svip||0),'DEAF:'+(state.arr_deaf||0),'BLND:'+(state.arr_blnd||0)].map(function(s) {
                 var val = parseInt(s.split(':')[1]); var bg = val ? 'bg-cx-teal text-white' : 'bg-gray-100 text-gray-500'; var display = val ? val : '-';
-                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:'+ (val ? 'white' : '#111827')+';">'+display+'</div><div style="font-size:10px;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;">'+s.split(':')[0]+'</div></div>';
+                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:'+ (val ? 'white' : '#111827')+';">'+display+'</div><div style="font-size:0.7rem;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+s.split(':')[0]+'</div></div>';
               }).join('') +
             '</div>' +
           '</div>' +
@@ -2114,39 +2118,39 @@ function renderPaxLoadTable() {
         '<div class="card">' +
           '<div class="section-hdr" style="margin-top:0;">Final Loading <span id="final-loading-source-label" style="font-size:11px;color:rgba(255,255,255,0.8);margin-left:6px;text-transform:none;letter-spacing:0;">(Final)</span></div>' +
           '<div class="grid grid-cols-5 gap-3 text-center">' +
-            '<div><div class="sum-label">J</div><div class="sum-value text-lg" id="final-loading-j">-</div></div>' +
-            '<div><div class="sum-label">W</div><div class="sum-value text-lg" id="final-loading-w">-</div></div>' +
-            '<div><div class="sum-label">Y</div><div class="sum-value text-lg" id="final-loading-y">-</div></div>' +
-            '<div><div class="sum-label">INF</div><div class="sum-value text-lg" id="final-loading-inf">-</div></div>' +
-            '<div><div class="sum-label">Total</div><div class="sum-value text-lg font-extrabold text-cx-teal" id="final-loading-total">-</div></div>' +
+            '<div><div class="sum-label">J</div><div class="sum-value" id="final-loading-j">-</div></div>' +
+            '<div><div class="sum-label">W</div><div class="sum-value" id="final-loading-w">-</div></div>' +
+            '<div><div class="sum-label">Y</div><div class="sum-value" id="final-loading-y">-</div></div>' +
+            '<div><div class="sum-label">INF</div><div class="sum-value" id="final-loading-inf">-</div></div>' +
+            '<div><div class="sum-label">Total</div><div class="sum-value font-extrabold text-cx-teal" id="final-loading-total">-</div></div>' +
           '</div>' +
           '<div class="mt-4">' +
-            '<div style="font-size:13px;font-weight:700;color:#004545;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.04em;">Special Handling</div>' +
+            '<div class="sum-label" style="display:block;margin-bottom:8px;">Special Handling</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:#111827;"><span data-summary="dep_inf_occ">-</span></div><div style="font-size:10px;color:#6B7280;margin-top:2px;">INF OCC</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:#111827;"><span data-summary="dep_wchr_s">-</span></div><div style="font-size:10px;color:#6B7280;margin-top:2px;">WCHR/S</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:#111827;"><span data-summary="dep_wchc">-</span></div><div style="font-size:10px;color:#6B7280;margin-top:2px;">WCHC</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:#111827;"><span data-summary="dep_maas">-</span></div><div style="font-size:10px;color:#6B7280;margin-top:2px;">MAAS</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:#111827;"><span data-summary="dep_umnr">-</span></div><div style="font-size:10px;color:#6B7280;margin-top:2px;">UMNR</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:#111827;"><span data-summary="dep_svip">-</span></div><div style="font-size:10px;color:#6B7280;margin-top:2px;">SVIP</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:#111827;"><span data-summary="dep_meda">-</span></div><div style="font-size:10px;color:#6B7280;margin-top:2px;">MEDA</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:#111827;"><span data-summary="dep_deaf">-</span></div><div style="font-size:10px;color:#6B7280;margin-top:2px;">DEAF</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:#111827;"><span data-summary="dep_blnd">-</span></div><div style="font-size:10px;color:#6B7280;margin-top:2px;">BLND</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:#111827;"><span data-summary="dep_chd">-</span></div><div style="font-size:10px;color:#6B7280;margin-top:2px;">CHD</div></div>' +
+              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_inf_occ">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">INF OCC</div></div>' +
+              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_wchr_s">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">WCHR/S</div></div>' +
+              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_wchc">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">WCHC</div></div>' +
+              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_maas">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">MAAS</div></div>' +
+              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_umnr">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">UMNR</div></div>' +
+              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_svip">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">SVIP</div></div>' +
+              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_meda">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">MEDA</div></div>' +
+              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_deaf">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">DEAF</div></div>' +
+              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_blnd">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">BLND</div></div>' +
+              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_chd">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">CHD</div></div>' +
             '</div>' +
           '</div>' +
           '<div class="mt-3 grid grid-cols-4 sm:grid-cols-8 gap-2 text-center">' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="font-bold" style="font-size:13px;font-weight:600;">' + v('dep_dm_e') + '</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">DM/Emer</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="font-bold" style="font-size:13px;font-weight:600;">' + v('dep_go_s') + '</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">GO/Saph</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="font-bold" style="font-size:13px;font-weight:600;">' + v('dep_sl_r') + '</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">SL/Ruby</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="font-bold" style="font-size:13px;font-weight:600;">' + v('dep_ic') + '</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">IC</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="font-bold" style="font-size:13px;font-weight:600;">' + v('dep_oc') + '</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">OC</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="font-bold" style="font-size:13px;font-weight:600;">' + v('dep_hkg') + '</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">HKG</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="font-bold" style="font-size:13px;font-weight:600;">' + v('dep_cis') + '</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">CIS</div></div>' +
+            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_dm_e') + '</div><div class="sum-label" style="margin-top:2px;">DM/Emer</div></div>' +
+            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_go_s') + '</div><div class="sum-label" style="margin-top:2px;">GO/Saph</div></div>' +
+            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_sl_r') + '</div><div class="sum-label" style="margin-top:2px;">SL/Ruby</div></div>' +
+            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_ic') + '</div><div class="sum-label" style="margin-top:2px;">IC</div></div>' +
+            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_oc') + '</div><div class="sum-label" style="margin-top:2px;">OC</div></div>' +
+            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_hkg') + '</div><div class="sum-label" style="margin-top:2px;">HKG</div></div>' +
+            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_cis') + '</div><div class="sum-label" style="margin-top:2px;">CIS</div></div>' +
           '</div>' +
         '</div>' +
-        '<div class="card"><div class="section-hdr" style="margin-top:0;">Defects</div><div style="padding:12px;font-size:14px;line-height:1.6;color:#111827;whitespace-pre-wrap;">'+(state.defects||'—')+'</div></div>' +
-        '<div class="card"><div class="section-hdr" style="margin-top:0;">Remarks</div><div style="padding:12px;font-size:14px;line-height:1.6;color:#111827;whitespace-pre-wrap;">'+(state.remarks||'—')+'</div></div>';
+        '<div class="card"><div class="section-hdr" style="margin-top:0;">Defects</div><div style="padding:12px;font-size:0.95rem;line-height:1.6;color:#111827;whitespace-pre-wrap;">'+(state.defects||'—')+'</div></div>' +
+        '<div class="card"><div class="section-hdr" style="margin-top:0;">Remarks</div><div style="padding:12px;font-size:0.95rem;line-height:1.6;color:#111827;whitespace-pre-wrap;">'+(state.remarks||'—')+'</div></div>';
 
       refreshSummarySpans();
       refreshFinalLoading();
@@ -3539,10 +3543,6 @@ function renderPaxLoadTable() {
         updateArrPaxTotal(); renderSummary(); updateHeaderFlightNum(); updateETDCountdown();
         refreshSummarySpans();
         refreshFinalLoading();
-        document.querySelectorAll('input[data-key], textarea[data-key]').forEach(function(el) {
-          var k = el.dataset.key;
-          if (k in state && (!el.value || el.value.trim() === '')) { el.value = '*'; state[k] = '*'; }
-        });
         // Do NOT highlight fields (remove field-imported class). Instead only lock fields that were provided by the import.
         if (typeof lastParsedResult !== 'undefined' && lastParsedResult) {
           lockImportedFields(lastParsedResult);
