@@ -2083,8 +2083,8 @@ function renderPaxLoadTable() {
             '<div style="font-size:13px;font-weight:700;color:#004545;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.04em;">Special Handling</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
               ['WCHR/S:'+(state.arr_wchr_s||0),'WCHC:'+(state.arr_wchc||0),'MAAS:'+(state.arr_maas||0),'MEDA:'+(state.arr_meda||0),'UMNR:'+(state.arr_umnr||0),'SVIP:'+(state.arr_svip||0),'DEAF:'+(state.arr_deaf||0),'BLND:'+(state.arr_blnd||0)].map(function(s) {
-                var val = parseInt(s.split(':')[1]); var bg = val ? 'bg-cx-teal text-white' : 'bg-gray-100 text-gray-500';
-                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:'+ (val ? 'white' : '#111827')+';">'+s.split(':')[1]+'</div><div style="font-size:10px;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;">'+s.split(':')[0]+'</div></div>';
+                var val = parseInt(s.split(':')[1]); var bg = val ? 'bg-cx-teal text-white' : 'bg-gray-100 text-gray-500'; var display = val ? val : '-';
+                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;min-width:60px;text-align:center;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:'+ (val ? 'white' : '#111827')+';">'+display+'</div><div style="font-size:10px;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;">'+s.split(':')[0]+'</div></div>';
               }).join('') +
             '</div>' +
           '</div>' +
