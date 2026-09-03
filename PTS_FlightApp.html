@@ -1027,40 +1027,6 @@ document.addEventListener('DOMContentLoaded', function() {
           <span id="hdr-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#fff;background:rgba(255,255,255,0.2);border-radius:99px;padding:4px 10px;white-space:nowrap;flex-shrink:0;"></span>
         </div>
 
-        <!-- Bottom Tab Navigation moved under buttons -->
-        <nav data-id="565" id="bottom-nav-k1">
-          <div data-id="566" style="display:flex;flex-direction:row;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
-            <button data-id="567" class="bottom-tab active" data-tab="pts">
-              <i data-id="568" data-lucide="plane" class="w-5 h-5"></i>
-              <span data-id="569" class="text-[11px] font-semibold">PTS</span>
-            </button>
-            <button data-id="570" class="bottom-tab" data-tab="staff-acceptance">
-              <i data-id="571" data-lucide="check-circle" class="w-5 h-5"></i>
-              <span data-id="572" class="text-[11px] font-semibold">Staff Acceptance</span>
-            </button>
-            <button data-id="573" class="bottom-tab" data-tab="arr-ptm">
-              <i data-id="574" data-lucide="plane-landing" class="w-5 h-5"></i>
-              <span data-id="575" class="text-[11px] font-semibold">Arrival PTM</span>
-            </button>
-            <button data-id="576" class="bottom-tab" data-tab="summary">
-              <i data-id="577" data-lucide="clipboard-list" class="w-5 h-5"></i>
-              <span data-id="578" class="text-[11px] font-semibold">Summary</span>
-            </button>
-            <button data-id="579" class="bottom-tab" data-tab="arr-oir">
-              <i data-id="580" data-lucide="clipboard-check" class="w-5 h-5"></i>
-              <span data-id="581" class="text-[11px] font-semibold">ARR OIR</span>
-            </button>
-            <button data-id="582" class="bottom-tab" data-tab="dep-lir">
-              <i data-id="583" data-lucide="file-text" class="w-5 h-5"></i>
-              <span data-id="584" class="text-[11px] font-semibold">DEP LIR</span>
-            </button>
-            <button data-id="585" class="bottom-tab" data-tab="arr-crew">
-              <i data-id="586" data-lucide="users" class="w-5 h-5"></i>
-              <span data-id="587" class="text-[11px] font-semibold">Crew List</span>
-            </button>
-          </div>
-        </nav>
-
         <div data-id="134" class="section-hdr">Flight Information</div>
         <div data-id="135" class="card">
           <div data-id="136" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -1428,6 +1394,40 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
 
     </main>
+
+    <!-- Bottom Tab Navigation - outside of main to stay visible across all tabs -->
+    <nav data-id="565" id="bottom-nav-k1">
+      <div data-id="566" style="display:flex;flex-direction:row;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+        <button data-id="567" class="bottom-tab active" data-tab="pts">
+          <i data-id="568" data-lucide="plane" class="w-5 h-5"></i>
+          <span data-id="569" class="text-[11px] font-semibold">PTS</span>
+        </button>
+        <button data-id="570" class="bottom-tab" data-tab="staff-acceptance">
+          <i data-id="571" data-lucide="check-circle" class="w-5 h-5"></i>
+          <span data-id="572" class="text-[11px] font-semibold">Staff Acceptance</span>
+        </button>
+        <button data-id="573" class="bottom-tab" data-tab="arr-ptm">
+          <i data-id="574" data-lucide="plane-landing" class="w-5 h-5"></i>
+          <span data-id="575" class="text-[11px] font-semibold">Arrival PTM</span>
+        </button>
+        <button data-id="576" class="bottom-tab" data-tab="summary">
+          <i data-id="577" data-lucide="clipboard-list" class="w-5 h-5"></i>
+          <span data-id="578" class="text-[11px] font-semibold">Summary</span>
+        </button>
+        <button data-id="579" class="bottom-tab" data-tab="arr-oir">
+          <i data-id="580" data-lucide="clipboard-check" class="w-5 h-5"></i>
+          <span data-id="581" class="text-[11px] font-semibold">ARR OIR</span>
+        </button>
+        <button data-id="582" class="bottom-tab" data-tab="dep-lir">
+          <i data-id="583" data-lucide="file-text" class="w-5 h-5"></i>
+          <span data-id="584" class="text-[11px] font-semibold">DEP LIR</span>
+        </button>
+        <button data-id="585" class="bottom-tab" data-tab="arr-crew">
+          <i data-id="586" data-lucide="users" class="w-5 h-5"></i>
+          <span data-id="587" class="text-[11px] font-semibold">Crew List</span>
+        </button>
+      </div>
+    </nav>
 
     <!-- footer removed -->
 
