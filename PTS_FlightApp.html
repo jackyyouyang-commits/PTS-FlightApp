@@ -1011,17 +1011,25 @@ document.addEventListener('DOMContentLoaded', function() {
           <i data-id="577" data-lucide="clipboard-list" class="w-5 h-5"></i>
           <span data-id="578" class="text-[11px] font-semibold">Summary</span>
         </button>
-        <button data-id="579" class="bottom-tab" data-tab="arr-oir">
+        <button data-id="579" class="bottom-tab" data-tab="arr-offload">
           <i data-id="580" data-lucide="clipboard-list" class="w-5 h-5"></i>
-          <span data-id="581" class="text-[11px] font-semibold">ARR OIR</span>
+          <span data-id="581" class="text-[11px] font-semibold">Arrival Offload</span>
         </button>
-        <button data-id="582" class="bottom-tab" data-tab="dep-lir">
+        <button data-id="582" class="bottom-tab" data-tab="dep-onload">
           <i data-id="583" data-lucide="clipboard-list" class="w-5 h-5"></i>
-          <span data-id="584" class="text-[11px] font-semibold">DEP LIR</span>
+          <span data-id="584" class="text-[11px] font-semibold">Departure Onload</span>
         </button>
         <button data-id="585" class="bottom-tab" data-tab="arr-crew">
           <i data-id="586" data-lucide="users" class="w-5 h-5"></i>
-          <span data-id="587" class="text-[11px] font-semibold">Crew List</span>
+          <span data-id="587" class="text-[11px] font-semibold">Arrival Crew List</span>
+        </button>
+        <button data-id="588" class="bottom-tab" data-tab="dep-gen-dec">
+          <i data-id="589" data-lucide="file-text" class="w-5 h-5"></i>
+          <span data-id="590" class="text-[11px] font-semibold">Departure Gen Dec</span>
+        </button>
+        <button data-id="591" class="bottom-tab" data-tab="agent-positions">
+          <i data-id="592" data-lucide="map-pin" class="w-5 h-5"></i>
+          <span data-id="593" class="text-[11px] font-semibold">Agent Positions</span>
         </button>
       </div>
     </nav>
@@ -1363,14 +1371,14 @@ document.addEventListener('DOMContentLoaded', function() {
         <div data-id="525" id="summary-content-g7" class="space-y-3"></div>
       </div>
 
-      <!-- ========== TAB 3: ARRIVAL OIR ========== -->
-      <div data-id="526" id="tab-arr-oir" class="tab-content tab-flex-panel">
+      <!-- ========== TAB 3: ARRIVAL OFFLOAD ========== -->
+      <div data-id="526" id="tab-arr-offload" class="tab-content tab-flex-panel">
         <div data-id="527" class="textarea-panel-wrapper">
           <div data-id="528" class="panel-header">
-            <h2 data-id="529" style="font-size:18px;font-weight:700;margin:0;">Arrival OIR</h2>
+            <h2 data-id="529" style="font-size:18px;font-weight:700;margin:0;">Arrival Offload</h2>
             <span data-id="530" id="oir-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
           </div>
-          <textarea data-id="531" id="oir-textarea" placeholder="Paste Arrival OIR content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
+          <textarea data-id="531" id="oir-textarea" placeholder="Paste Arrival Offload content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="532" class="panel-footer">
             <button data-id="533" id="oir-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">💾 Save &amp; Lock</button>
             <button data-id="534" id="oir-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
@@ -1378,14 +1386,14 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <!-- ========== TAB: DEP LIR ========== -->
-      <div data-id="535" id="tab-dep-lir" class="tab-content tab-flex-panel">
+      <!-- ========== TAB: DEPARTURE ONLOAD ========== -->
+      <div data-id="535" id="tab-dep-onload" class="tab-content tab-flex-panel">
         <div data-id="536" class="textarea-panel-wrapper">
           <div data-id="537" class="panel-header">
-            <h2 data-id="538" style="font-size:18px;font-weight:700;margin:0;">DEP LIR</h2>
+            <h2 data-id="538" style="font-size:18px;font-weight:700;margin:0;">Departure Onload</h2>
             <span data-id="539" id="dep-lir-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
           </div>
-          <textarea data-id="540" id="dep-lir-textarea" placeholder="Paste DEP LIR content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
+          <textarea data-id="540" id="dep-lir-textarea" placeholder="Paste Departure Onload content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="541" class="panel-footer">
             <button data-id="542" id="dep-lir-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">💾 Save &amp; Lock</button>
             <button data-id="543" id="dep-lir-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
@@ -1426,7 +1434,35 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-    </main>
+      <!-- ========== TAB: DEPARTURE GEN DEC ========== -->
+      <div data-id="594" id="tab-dep-gen-dec" class="tab-content tab-flex-panel">
+        <div data-id="595" class="textarea-panel-wrapper">
+          <div data-id="596" class="panel-header">
+            <h2 data-id="597" style="font-size:18px;font-weight:700;margin:0;">Departure Gen Dec</h2>
+            <span data-id="598" id="dep-gen-dec-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
+          </div>
+          <textarea data-id="599" id="dep-gen-dec-textarea" placeholder="Paste Departure Gen Dec content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
+          <div data-id="600" class="panel-footer">
+            <button data-id="601" id="dep-gen-dec-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">💾 Save &amp; Lock</button>
+            <button data-id="602" id="dep-gen-dec-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== TAB: AGENT POSITIONS ========== -->
+      <div data-id="603" id="tab-agent-positions" class="tab-content tab-flex-panel">
+        <div data-id="604" class="textarea-panel-wrapper">
+          <div data-id="605" class="panel-header">
+            <h2 data-id="606" style="font-size:18px;font-weight:700;margin:0;">Agent Positions</h2>
+            <span data-id="607" id="agent-pos-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
+          </div>
+          <textarea data-id="608" id="agent-pos-textarea" placeholder="Paste Agent Positions content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
+          <div data-id="609" class="panel-footer">
+            <button data-id="610" id="agent-pos-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">💾 Save &amp; Lock</button>
+            <button data-id="611" id="agent-pos-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
+          </div>
+        </div>
+      </div>
 
     <!-- footer removed -->
 
