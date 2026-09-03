@@ -2815,7 +2815,9 @@ function renderPaxLoadTable() {
       ['boarding-countdown','boarding-countdown-m'].forEach(function(id) {
         var bl = document.getElementById(id); if (!bl) return;
         var gateNum = state.gate && String(state.gate).trim() !== '' ? state.gate : '--';
-        var sep = '<span style="width:1px;height:28px;background:rgba(255,255,255,0.3);display:inline-block;margin:0 10px;vertical-align:middle;"></span>';
+        var isMobile = id.includes('-m');
+        var sepMargin = isMobile ? '4px' : '10px';
+        var sep = '<span style="width:1px;height:28px;background:rgba(255,255,255,0.3);display:inline-block;margin:0 ' + sepMargin + ';vertical-align:middle;flex-shrink:0;"></span>';
         if (!btTargetMs) { bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">🎫 --:--:--</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate ' + gateNum + '</span>'; bl.style.color = '#fff'; return; }
         var dBoardSec = Math.round((btTargetMs - nowMs)/1000);
         var dGateSec = gctTargetMs ? Math.round((gctTargetMs - nowMs)/1000) : null;
