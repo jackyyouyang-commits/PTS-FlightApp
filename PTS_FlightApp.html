@@ -793,6 +793,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
       /* Grid adjustments for small screens */
       @media (max-width: 480px) {
+        .grid-cols-2 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+        .grid-cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
         .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
         .grid-cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
         .gap-4 { gap: 6px !important; }
@@ -802,6 +804,34 @@ document.addEventListener('DOMContentLoaded', function() {
         .field-input { min-height: 36px !important; padding: 6px 8px !important; font-size: 14px !important; }
         .sum-label { font-size: 0.65rem !important; }
         .sum-value { font-size: 0.85rem !important; margin-top: 1px !important; }
+        .ms-table td { padding: 6px 8px !important; font-size: 12px !important; }
+        .pax-table input { min-height: 32px !important; padding: 6px 8px !important; font-size: 12px !important; }
+        .section-hdr { font-size: 0.6rem !important; }
+        /* Ensure content doesn't overflow */
+        .tab-content > div { overflow-x: hidden !important; }
+        input, textarea, select { max-width: 100% !important; }
+      }
+
+      /* Extra small screens (< 380px) */
+      @media (max-width: 379px) {
+        .grid-cols-2 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+        .grid-cols-3 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+        .grid-cols-4 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+        .grid-cols-5 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+        .gap-4 { gap: 3px !important; }
+        .gap-3 { gap: 2px !important; }
+        .gap-2 { gap: 2px !important; }
+        .card { padding: 8px !important; margin-bottom: 4px !important; }
+        .field-label { font-size: 0.6rem !important; margin-bottom: 2px !important; }
+        .field-input { min-height: 32px !important; padding: 5px 6px !important; font-size: 13px !important; }
+        .field-input.sm { min-height: 32px !important; padding: 5px 6px !important; font-size: 13px !important; }
+        .section-hdr { font-size: 0.55rem !important; padding: 4px 8px !important; }
+        .ms-table th { font-size: 0.6rem !important; padding: 6px 4px !important; }
+        .ms-table td { padding: 4px 4px !important; font-size: 11px !important; }
+        .pax-table th, .pax-table td:first-child { font-size: 0.6rem !important; }
+        .pax-table input { min-height: 30px !important; padding: 4px 6px !important; font-size: 11px !important; }
+        .pax-table .total-cell { min-height: 30px !important; font-size: 12px !important; }
+        .log-btn, .logged-time { min-width: 60px !important; padding: 4px 8px !important; font-size: 11px !important; min-height: 28px !important; }
       }
 
       /* S25 portrait - even more compact */
