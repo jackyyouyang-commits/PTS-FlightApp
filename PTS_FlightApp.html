@@ -3360,26 +3360,32 @@ function renderPaxLoadTable() {
         return '<tr><td class="lbl">'+label+'</td><td class="val">J:'+j+' W:'+w+' Y:'+y+' INF:'+inf+' Total:'+tot+'</td></tr>';
       }
 
-      // Arrival PTS — Fix 7: show target + actual
+      // Arrival PTS — Fix 7: show target + actual + variance
       var arrPtsHtml = '';
       (function(){
         var bm = (function(str){if(!str)return null;var p=str.split(':');return p.length>=2?parseInt(p[0])*60+parseInt(p[1]):null;})(s.eta);
         function fmt(m){var hh=((Math.floor(m/60)%24)+24)%24;var mm=((m%60)+60)%60;return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;}
+        function parseTime(str){if(!str||str==='—')return null;var p=str.split(':');return p.length>=2?parseInt(p[0])*60+parseInt(p[1]):null;}
+        function fmtVariance(tgtMin, actMin){if(tgtMin===null||actMin===null)return '—';var diffMin=actMin-tgtMin;var sign=diffMin>=0?'+':'-';var absMin=Math.abs(diffMin);var h=Math.floor(absMin/60);var m=absMin%60;return sign+(h<10?'0':'')+h+':'+(m<10?'0':'')+m;}
         arrActivities.forEach(function(a,i){
           var tgt=(a.offset!==null&&bm!==null)?fmt(bm+a.offset):'—';
           var act=(typeof arrActual!=='undefined'&&arrActual[i])?arrActual[i]:'—';
-          arrPtsHtml+='<tr><td class="lbl">'+a.name+'</td><td class="val">Target: '+tgt+' | Actual: '+act+'</td></tr>';
+          var variance=fmtVariance(parseTime(tgt), parseTime(act));
+          arrPtsHtml+='<tr><td class="lbl">'+a.name+'</td><td class="val">Target: '+tgt+' | Actual: '+act+' | Variance: '+variance+'</td></tr>';
         });
       })();
-      // Departure PTS — Fix 7: show target + actual
+      // Departure PTS — Fix 7: show target + actual + variance
       var depPtsHtml = '';
       (function(){
         var bm = (function(str){if(!str)return null;var p=str.split(':');return p.length>=2?parseInt(p[0])*60+parseInt(p[1]):null;})(s.dep_std);
         function fmt(m){var hh=((Math.floor(m/60)%24)+24)%24;var mm=((m%60)+60)%60;return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;}
+        function parseTime(str){if(!str||str==='—')return null;var p=str.split(':');return p.length>=2?parseInt(p[0])*60+parseInt(p[1]):null;}
+        function fmtVariance(tgtMin, actMin){if(tgtMin===null||actMin===null)return '—';var diffMin=actMin-tgtMin;var sign=diffMin>=0?'+':'-';var absMin=Math.abs(diffMin);var h=Math.floor(absMin/60);var m=absMin%60;return sign+(h<10?'0':'')+h+':'+(m<10?'0':'')+m;}
         depActivities.forEach(function(a,i){
           var tgt=(a.offset!==null&&bm!==null)?fmt(bm+a.offset):'—';
           var act=(typeof depActual!=='undefined'&&depActual[i])?depActual[i]:'—';
-          depPtsHtml+='<tr><td class="lbl">'+a.name+'</td><td class="val">Target: '+tgt+' | Actual: '+act+'</td></tr>';
+          var variance=fmtVariance(parseTime(tgt), parseTime(act));
+          depPtsHtml+='<tr><td class="lbl">'+a.name+'</td><td class="val">Target: '+tgt+' | Actual: '+act+' | Variance: '+variance+'</td></tr>';
         });
       })();
 
