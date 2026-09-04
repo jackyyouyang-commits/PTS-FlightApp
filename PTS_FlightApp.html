@@ -3405,19 +3405,20 @@ function renderPaxLoadTable() {
               
               // Highlight the matching row
               var rowId = 'itd-tag-card-row-' + rowIndex;
-              var matchRow = preview.getElementById(rowId);
+              var matchRow = preview.querySelector('#' + rowId);
               if (matchRow) {
                 matchRow.style.backgroundColor = '#FFFF00';
                 matchRow.style.transition = 'background-color 0.3s ease';
                 
-                // Scroll the preview container to show the row
+                // Scroll the row into view with a slight delay to ensure rendering
                 setTimeout(function() {
-                  var rowTop = matchRow.offsetTop;
-                  var rowHeight = matchRow.offsetHeight;
-                  var containerHeight = preview.clientHeight;
-                  var scrollPos = rowTop - (containerHeight / 2) + (rowHeight / 2);
-                  preview.scrollTop = Math.max(0, scrollPos);
-                }, 10);
+                  try {
+                    matchRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    console.log('Scrolled to row', rowId);
+                  } catch(e) {
+                    console.log('Error scrolling:', e);
+                  }
+                }, 50);
               }
             }
             return;
