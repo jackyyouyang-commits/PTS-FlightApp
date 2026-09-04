@@ -2570,9 +2570,30 @@ function renderPaxLoadTable() {
     }
 
     function buildReportHTML() {
-      var html = '<div style="font-family:sans-serif;line-height:1.6;color:#333;">';
+      var html = '<div style="font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:900px;">';
+      
+      // Header
+      html += '<h1 style="text-align:center;border-bottom:3px solid #333;padding-bottom:12px;margin:0 0 20px 0;font-size:20px;">FLIGHT DETAILS & PTS REPORT</h1>';
+      
+      // Flight Information
+      html += '<div style="margin-bottom:20px;"><h2 style="font-size:14px;background:#f0f0f0;padding:8px;border-left:4px solid #333;margin:0 0 12px 0;">FLIGHT INFORMATION</h2>';
+      var flightInfo = [];
+      if(state.flight) flightInfo.push('<strong>Flight:</strong> '+state.flight);
+      if(state.date) flightInfo.push('<strong>Date:</strong> '+state.date);
+      if(state.regn) flightInfo.push('<strong>REGN:</strong> '+state.regn);
+      if(state.config) flightInfo.push('<strong>Config:</strong> '+state.config);
+      if(state.sta) flightInfo.push('<strong>STA:</strong> '+state.sta);
+      if(state.eta) flightInfo.push('<strong>ETA:</strong> '+state.eta);
+      if(state.gate) flightInfo.push('<strong>Gate:</strong> '+state.gate);
+      if(state.carousel) flightInfo.push('<strong>Carousel:</strong> '+state.carousel);
+      if(state.weather) flightInfo.push('<strong>Weather:</strong> '+state.weather);
+      if(state.delayCode) flightInfo.push('<strong>Delay Code:</strong> '+state.delayCode);
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+flightInfo.map(function(f){return '<div>'+f+'</div>';}).join('')+'</div></div>';
+      
+      // ITD Tag Card
       var itdTagCardVal = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
       if(itdTagCardVal.trim()) {
+        html += '<div style="margin-bottom:20px;"><h2 style="font-size:14px;background:#f0f0f0;padding:8px;border-left:4px solid #333;margin:0 0 12px 0;">ITD TAG CARD</h2>';
         var lines = itdTagCardVal.split('\n').filter(function(line) { return line.trim(); });
         var allCells = lines.map(function(line) { return line.split('\t'); });
         var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
@@ -2584,24 +2605,38 @@ function renderPaxLoadTable() {
           });
         });
         
-        var tableHTML = '<table style="width:auto;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;border:1px solid #ccc;margin:16px 0;">';
+        var tableHTML = '<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:12px;border:1px solid #ccc;margin:12px 0;">';
         allCells.forEach(function(row, rowIdx) {
           tableHTML += '<tr style="border-bottom:1px solid #ccc;">';
           row.forEach(function(cell, idx) {
             var cellContent = cell.trim() || '&nbsp;';
-            var bgColor = rowIdx === 0 ? '#f0f0f0' : '#fff';
+            var bgColor = rowIdx === 0 ? '#e0e0e0' : '#fff';
             var fontWeight = rowIdx === 0 ? 'font-weight:bold;' : '';
-            tableHTML += '<td style="border-right:1px solid #ccc;padding:8px;white-space:nowrap;min-width:' + colWidths[idx] + 'px;text-align:left;background:' + bgColor + ';' + fontWeight + '">' + cellContent + '</td>';
+            var textAlign = rowIdx === 0 ? 'text-align:center;' : 'text-align:left;';
+            tableHTML += '<td style="border-right:1px solid #ccc;padding:8px;' + fontWeight + textAlign + 'background:' + bgColor + ';">' + cellContent + '</td>';
           });
           tableHTML += '</tr>';
         });
         tableHTML += '</table>';
         
-        html += '<div style="margin-bottom:20px;">';
-        html += '<h3 style="border-bottom:2px solid #333;padding-bottom:8px;margin:16px 0 8px 0;">ITD TAG CARD</h3>';
-        html += '<div style="overflow-x:auto;">' + tableHTML + '</div>';
-        html += '</div>';
+        html += tableHTML + '</div>';
       }
+      
+      // Staff Acceptance
+      var staffAccVal = (document.getElementById('staff-acc-textarea')||{}).value||'';
+      if(staffAccVal.trim()) {
+        html += '<div style="margin-bottom:20px;"><h2 style="font-size:14px;background:#f0f0f0;padding:8px;border-left:4px solid #333;margin:0 0 12px 0;">STAFF ACCEPTANCE</h2>';
+        html += '<pre style="background:#fafafa;padding:12px;border:1px solid #ddd;border-radius:6px;overflow-x:auto;white-space:pre-wrap;word-wrap:break-word;">'+staffAccVal.trim()+'</pre></div>';
+      }
+      
+      // Remarks
+      if(state.remarks && state.remarks.trim()) {
+        html += '<div style="margin-bottom:20px;"><h2 style="font-size:14px;background:#f0f0f0;padding:8px;border-left:4px solid #333;margin:0 0 12px 0;">REMARKS</h2>';
+        html += '<div style="background:#fafafa;padding:12px;border:1px solid #ddd;border-radius:6px;">'+state.remarks+'</div></div>';
+      }
+      
+      // Footer
+      html += '<div style="margin-top:30px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:#666;text-align:right;">Generated: '+new Date().toLocaleString()+'</div>';
       html += '</div>';
       return html;
     }
