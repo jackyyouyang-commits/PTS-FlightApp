@@ -753,9 +753,14 @@ document.addEventListener('DOMContentLoaded', function() {
       /* Grid adjustments for small screens */
       @media (max-width: 480px) {
         .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-        .grid-cols-5 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
-        .gap-4 { gap: 8px !important; }
-        .gap-3 { gap: 6px !important; }
+        .grid-cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        .gap-4 { gap: 6px !important; }
+        .gap-3 { gap: 4px !important; }
+        .card { padding: 10px !important; margin-bottom: 8px !important; }
+        .field-label { font-size: 0.65rem !important; margin-bottom: 3px !important; }
+        .field-input { min-height: 36px !important; padding: 6px 8px !important; font-size: 14px !important; }
+        .sum-label { font-size: 0.65rem !important; }
+        .sum-value { font-size: 0.85rem !important; margin-top: 1px !important; }
       }
 
       /* iPad & large device optimization */
