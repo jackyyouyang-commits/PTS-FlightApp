@@ -2175,11 +2175,13 @@ function renderPaxLoadTable() {
         '</div>' +
         '<div class="card">' +
           '<div class="section-hdr" style="margin-top:0;">Weight and Baggage Details</div>' +
-          '<div class="grid grid-cols-3 gap-4">' +
+          '<div class="grid grid-cols-4 gap-4">' +
             '<div><div class="sum-label">MZFW (KG)</div><div class="sum-value">' + v('dep_mzfw') + '</div></div>' +
             '<div><div class="sum-label">EZFW (KG)</div><div class="sum-value">' + v('dep_ezfw') + '</div></div>' +
             '<div><div class="sum-label">AZFW (KG)</div><div class="sum-value">' + v('dep_azfw') + '</div></div>' +
             '<div><div class="sum-label">Underload (KG)</div><div class="sum-value">' + v('Q31') + '</div></div>' +
+          '</div>' +
+          '<div class="grid grid-cols-5 gap-4 mt-3">' +
             '<div><div class="sum-label">Total Bags</div><div class="sum-value">' + v('dep_total_bags') + '</div></div>' +
             '<div><div class="sum-label">Crew Bags</div><div class="sum-value">' + v('dep_crew_bags') + '</div></div>' +
             '<div><div class="sum-label">STRL</div><div class="sum-value">' + v('dep_strl') + '</div></div>' +
