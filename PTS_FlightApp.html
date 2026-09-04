@@ -3146,7 +3146,7 @@ function renderPaxLoadTable() {
         if (dBoardSec <= 0) {
           bl.innerHTML = '<span style="color:#fff;vertical-align:middle;"> Boarding</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>';
           if (dGateSec !== null) {
-            bl.innerHTML += '<span style="width:1px;height:28px;background:rgba(255,255,255,0.3);display:inline-block;margin:0 ' + sepMargin + ';vertical-align:middle;flex-shrink:0;font-size:0;"></span><span style="color:#fff;vertical-align:middle;">Gate Close -' + fmtFromSec(Math.abs(dGateSec)) + '</span>';
+            bl.innerHTML += '<br><span style="color:#fff;vertical-align:middle;">Gate Close -' + fmtFromSec(Math.abs(dGateSec)) + '</span>';
           }
           bl.style.color = '#fff';
           return;
