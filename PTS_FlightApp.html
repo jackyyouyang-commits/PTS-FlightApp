@@ -4197,6 +4197,16 @@ function renderPaxLoadTable() {
           if (itdSearchInput) {
             itdSearchInput.value = '';
             searchITDTagCard('');
+            
+            // Scroll preview back to top
+            var textarea = document.getElementById('itd-tag-card-textarea');
+            if (textarea) {
+              var previewId = textarea.id + '-preview';
+              var preview = document.getElementById(previewId);
+              if (preview) {
+                preview.scrollTop = 0;
+              }
+            }
           }
         });
       }
