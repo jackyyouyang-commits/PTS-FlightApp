@@ -3273,23 +3273,27 @@ function renderPaxLoadTable() {
       
       var allCells = lines.map(function(line) { return line.split('\t'); });
       var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
-      var colWidths = new Array(numCols).fill(0);
+      var colWidths = new Array(numCols).fill(80); // Minimum 80px per column
       
-      // Calculate max width for each column
+      // Calculate max width for each column (monospace ~8px per char + 16px padding)
       allCells.forEach(function(row) {
         row.forEach(function(cell, idx) {
-          var width = (cell.trim() || '&nbsp;').length * 8 + 16; // ~8px per char + padding
+          var trimmed = cell.trim() || '&nbsp;';
+          var width = Math.max(80, trimmed.length * 9 + 16); // 9px per char + padding, min 80px
           colWidths[idx] = Math.max(colWidths[idx], width);
         });
       });
       
-      var tableHTML = '<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
+      console.log('Column widths:', colWidths);
+      
+      var tableHTML = '<table style="width:auto;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
       
       allCells.forEach(function(row) {
         tableHTML += '<tr>';
         row.forEach(function(cell, idx) {
-          tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;width:' + colWidths[idx] + 'px;">' + 
-            (cell.trim() || '&nbsp;') + '</td>';
+          var cellContent = cell.trim() || '&nbsp;';
+          tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;min-width:' + colWidths[idx] + 'px;text-align:left;">' + 
+            cellContent + '</td>';
         });
         tableHTML += '</tr>';
       });
