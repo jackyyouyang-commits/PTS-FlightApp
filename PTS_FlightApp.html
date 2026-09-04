@@ -3038,8 +3038,8 @@ function renderPaxLoadTable() {
 
         if (diffSec < 0) {
           // Past ETD - check all three disruption scenarios
-          // Only show "Departed" if ATD (index 27) is logged, not any other activity
-          var atdLogged = depActual && depActual[27]; // ATD is at index 27 in depActivities
+          // Only show "Departed" if ATD (index 25) is logged, not any other activity
+          var atdLogged = depActual && depActual[25]; // ATD is at index 25 in depActivities
           var hasDepActual = atdLogged;
           var maxActualMin = null;
           
