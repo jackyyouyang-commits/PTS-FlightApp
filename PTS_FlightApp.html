@@ -3170,19 +3170,28 @@ function renderPaxLoadTable() {
     // PASTE FROM EXCEL HANDLER
     // ===========================
     function pasteFromExcel(textareaId) {
+      console.log('pasteFromExcel called with:', textareaId);
       var textarea = document.getElementById(textareaId);
-      if (!textarea) return;
+      console.log('textarea element:', textarea);
+      if (!textarea) {
+        console.error('Textarea not found:', textareaId);
+        return;
+      }
       
       // Use modern Clipboard API to read from clipboard
       if (navigator.clipboard && navigator.clipboard.readText) {
+        console.log('Clipboard API available, attempting to read...');
         navigator.clipboard.readText().then(function(data) {
+          console.log('Clipboard data received:', data.substring(0, 100));
           if (data) {
             // Store the raw data in textarea (keep for saving/export)
             textarea.value = data;
             textarea.focus();
+            console.log('Data set to textarea, length:', data.length);
             
             // Parse and create HTML table display
             var lines = data.split('\n').filter(function(line) { return line.trim(); });
+            console.log('Lines parsed:', lines.length);
             var tableHTML = '<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
             
             lines.forEach(function(line) {
@@ -3196,6 +3205,7 @@ function renderPaxLoadTable() {
             });
             
             tableHTML += '</table>';
+            console.log('Table HTML generated');
             
             // Find or create preview container
             var previewId = textareaId + '-preview';
@@ -3205,6 +3215,7 @@ function renderPaxLoadTable() {
               preview.id = previewId;
               preview.style.cssText = 'margin-top:10px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#f9fafb;max-height:400px;overflow:auto;';
               textarea.parentNode.insertBefore(preview, textarea);
+              console.log('Preview container created');
             }
             preview.innerHTML = tableHTML;
             preview.style.display = 'block';
@@ -3218,10 +3229,11 @@ function renderPaxLoadTable() {
             showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
           }
         }).catch(function(err) {
-          showToast('Unable to read clipboard. Please ensure you have copied data and granted clipboard permissions.', 'red');
           console.error('Clipboard read failed:', err);
+          showToast('Unable to read clipboard. Please ensure you have copied data and granted clipboard permissions.', 'red');
         });
       } else {
+        console.error('Clipboard API not available');
         showToast('Clipboard access not supported in this browser.', 'red');
       }
     }
