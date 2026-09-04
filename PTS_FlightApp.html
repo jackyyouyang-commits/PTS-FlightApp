@@ -1017,27 +1017,6 @@ document.addEventListener('DOMContentLoaded', function() {
           <div data-id="20" class="etd-divider"></div>
           <div data-id="21" id="boarding-countdown" class="tabular-nums leading-none" style="font-size:22px;">--:--:--</div>
         </div>
-        <div data-id="22" class="flex items-center gap-2 flex-shrink-0">
-          <button data-id="23" id="btn-import-q7r8" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/40 text-white text-xs font-semibold hover:bg-white/10 transition-colors" style="background:#F59E0B;color:#1a1a1a;">
-            <i data-id="24" data-lucide="upload" class="w-3.5 h-3.5"></i> Import
-          </button>
-          <button data-id="25" id="btn-save-pts" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/40 text-white text-xs font-semibold hover:bg-white/10 transition-colors" style="background:#10B981;color:#ffffff;">
-            <i data-id="26" data-lucide="save" class="w-3.5 h-3.5"></i> Save
-          </button>
-          <button data-id="27" id="btn-share-pts" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/40 text-white text-xs font-semibold hover:bg-white/10 transition-colors" style="background:#3B82F6;color:#ffffff;">
-            <i data-id="28" data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
-          </button>
-          <button data-id="29" id="btn-email-i9j0" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-cx-teal text-xs font-semibold hover:bg-gray-100 transition-colors" style="background:#ffffff;color:#005c5c;">
-            <i data-id="30" data-lucide="mail" class="w-3.5 h-3.5"></i> Send
-          </button>
-          <button data-id="33" id="btn-clear-all" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-400/60 text-red-200 text-xs font-semibold hover:bg-red-500/20 transition-colors" style="background:#EF4444;color:#ffffff;">
-            <i data-id="34" data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear
-          </button>
-          <button data-id="35-edit" id="btn-edit-mode" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/40 text-white hover:bg-white/10 transition-colors" style="background:rgba(255,255,255,0.2);">
-            ✏️ <span id="edit-mode-text">Edit Off</span>
-          </button>
-          <span data-id="35" id="hdr-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#fff;background:rgba(255,255,255,0.2);border-radius:99px;padding:4px 10px;white-space:nowrap;"></span>
-        </div>
       </div>
       <!-- MOBILE: two rows (<md) -->
       <div data-id="36" id="hdr-mobile">
@@ -1061,7 +1040,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div data-id="48" class="etd-divider"></div>
           <div data-id="49" id="boarding-countdown-m" class="tabular-nums leading-none" style="font-size:20px;">--:--:--</div>
         </div>
-        <div data-id="50" class="flex items-center justify-around px-2 pb-2 gap-1">
+        <div data-id="50" class="flex items-center justify-around px-2 pb-2 gap-1" style="display:none;">
           <button data-id="51" id="btn-import-mob" class="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg border border-white/40 text-white text-xs font-semibold min-h-[36px] hover:bg-white/10 transition-colors" style="background:#F59E0B;color:#1a1a1a;">
             <i data-id="52" data-lucide="upload" class="w-3.5 h-3.5 flex-shrink-0"></i><span data-id="53">Import</span>
           </button>
@@ -1080,7 +1059,6 @@ document.addEventListener('DOMContentLoaded', function() {
           <button data-id="68-edit" id="btn-edit-mode-mob" class="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/40 text-white min-h-[36px] hover:bg-white/10 transition-colors" style="background:rgba(255,255,255,0.2);">
             <span id="edit-mode-text-mob">✏️ Edit Off</span>
           </button>
-          <span data-id="69" id="hdr-lock-badge-m" style="display:none;align-items:center;gap:3px;font-size:10px;font-weight:600;color:#fff;background:rgba(255,255,255,0.2);border-radius:99px;padding:3px 8px;white-space:nowrap;"></span>
         </div>
       </div>
     </header>
@@ -1243,7 +1221,9 @@ document.addEventListener('DOMContentLoaded', function() {
           <button id="btn-clear-nav" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-white text-xs font-semibold hover:bg-white/20 transition-colors flex-shrink-0" style="background:rgba(239,68,68,0.9);min-height:32px;white-space:nowrap;border:none;cursor:pointer;">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear
           </button>
-          <span id="hdr-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#fff;background:rgba(255,255,255,0.2);border-radius:99px;padding:4px 10px;white-space:nowrap;flex-shrink:0;"></span>
+          <button id="btn-edit-mode-nav" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-white text-xs font-semibold hover:bg-white/20 transition-colors flex-shrink-0" style="background:rgba(255,255,255,0.2);min-height:32px;white-space:nowrap;border:none;cursor:pointer;">
+            ✏️ <span id="edit-mode-text-nav">Edit Off</span>
+          </button>
         </div>
 
         <div data-id="134" class="section-hdr">Flight Information</div>
@@ -3120,14 +3100,9 @@ function renderPaxLoadTable() {
           el.classList.add('field-locked');
         }
       });
-      ['hdr-lock-badge','hdr-lock-badge-m'].forEach(function(id){
-        var el = document.getElementById(id);
-        if (!el) return;
-        el.style.display = 'inline-flex';
-        el.innerHTML = '\uD83D\uDD12 Locked <button class="lock-toggle-btn lock-badge-btn" style="background:rgba(255,255,255,0.3);border:none;border-radius:99px;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer;margin-left:4px;">Unlock</button>';
-      });
       document.getElementById('edit-mode-text').textContent = 'Edit Off';
       document.getElementById('edit-mode-text-mob').textContent = '✏️ Edit Off';
+      document.getElementById('edit-mode-text-nav').textContent = 'Edit Off';
       wireLockBadgeButtons();
       wireEditModeButtons();
       state._locked = true;
@@ -3141,14 +3116,9 @@ function renderPaxLoadTable() {
         el.style.userSelect = '';
         el.classList.remove('field-locked');
       });
-      ['hdr-lock-badge','hdr-lock-badge-m'].forEach(function(id){
-        var el = document.getElementById(id);
-        if (!el) return;
-        el.style.display = 'inline-flex';
-        el.innerHTML = '\uD83D\uDD13 Unlocked <button class="lock-toggle-btn lock-badge-btn" style="background:rgba(255,255,255,0.3);border:none;border-radius:99px;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer;margin-left:4px;">Lock</button>';
-      });
       document.getElementById('edit-mode-text').textContent = 'Edit On';
       document.getElementById('edit-mode-text-mob').textContent = '✏️ Edit On';
+      document.getElementById('edit-mode-text-nav').textContent = 'Edit On';
       wireLockBadgeButtons();
       wireEditModeButtons();
       state._locked = false;
@@ -3174,7 +3144,7 @@ function renderPaxLoadTable() {
     }
 
     function wireEditModeButtons() {
-      ['btn-edit-mode', 'btn-edit-mode-mob'].forEach(function(id) {
+      ['btn-edit-mode', 'btn-edit-mode-mob', 'btn-edit-mode-nav'].forEach(function(id) {
         var btn = document.getElementById(id);
         if (!btn) return;
         btn.onclick = function(e) {
