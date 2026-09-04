@@ -3371,7 +3371,7 @@ function renderPaxLoadTable() {
         var j=numOrZero(s[jk]),w=numOrZero(s[wk]),y=numOrZero(s[yk]),inf=numOrZero(s[infk]);
         var calcTotal = j+w+y;
         var tot=s[totk]&&String(s[totk]).trim()?String(s[totk]):calcTotal;
-        return '<tr><td class="lbl">'+label+'</td><td class="val">J:'+j+' W:'+w+' Y:'+y+' INF:'+inf+' Total:'+tot+'</td></tr>';
+        return '<tr><td class="lbl">'+label+'</td><td class="val">J: '+j+' / W: '+w+' / Y: '+y+' / INF: '+inf+' / Total: '+tot+'</td></tr>';
       }
 
       // Arrival PTS — Fix 7: show target + actual + variance
@@ -3477,7 +3477,7 @@ function renderPaxLoadTable() {
         section('Arrival Crew', row('CN',v('arr_cn'))+row('ISM',v('arr_ism'))),
         section('Arrival Pax',
           (function(){var aj=numOrZero(s.arr_pax_j),aw=numOrZero(s.arr_pax_w),ay=numOrZero(s.arr_pax_y),ai=numOrZero(s.arr_pax_inf);
-            return row('Pax','J:'+aj+' W:'+aw+' Y:'+ay+' INF:'+ai+' Total:'+(aj+aw+ay));})()
+            return row('Pax','J: '+aj+' / W: '+aw+' / Y: '+ay+' / INF: '+ai+' / Total: '+(aj+aw+ay));})()
         ),
         section('Arrival Special Handling',
           row('WCHR/S',v('arr_wchr_s'))+row('WCHC',v('arr_wchc'))+row('MAAS',v('arr_maas'))+
@@ -3510,9 +3510,9 @@ function renderPaxLoadTable() {
         ),
         section('Defects', row('Defects',v('defects'))),
         section('Capacity',
-          row('CAP','J:'+v('cap_j')+' W:'+v('cap_w')+' Y:'+v('cap_y'))+
-          row('Avail','J:'+v('avail_j')+' W:'+v('avail_w')+' Y:'+v('avail_y'))+
-          row('Est','J:'+v('est_j')+' W:'+v('est_w')+' Y:'+v('est_y'))
+          row('CAP','J: '+v('cap_j')+' / W: '+v('cap_w')+' / Y: '+v('cap_y'))+
+          row('Avail','J: '+v('avail_j')+' / W: '+v('avail_w')+' / Y: '+v('avail_y'))+
+          row('Est','J: '+v('est_j')+' / W: '+v('est_w')+' / Y: '+v('est_y'))
         ),
         section('Pax Loading (Final)',
           paxRow('Final',    'final_j','final_w','final_y','final_inf','final_total')+
