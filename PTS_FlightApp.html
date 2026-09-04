@@ -3288,8 +3288,8 @@ function renderPaxLoadTable() {
       
       var tableHTML = '<table style="width:auto;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
       
-      allCells.forEach(function(row) {
-        tableHTML += '<tr>';
+      allCells.forEach(function(row, rowIdx) {
+        tableHTML += '<tr id="itd-tag-card-row-' + rowIdx + '" style="transition:background-color 0.3s ease;">';
         row.forEach(function(cell, idx) {
           var cellContent = cell.trim() || '&nbsp;';
           tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;min-width:' + colWidths[idx] + 'px;text-align:left;">' + 
@@ -3331,10 +3331,19 @@ function renderPaxLoadTable() {
     function searchITDTagCard(searchTerm) {
       var textarea = document.getElementById('itd-tag-card-textarea');
       var resultDiv = document.getElementById('itd-search-result');
+      var previewId = textarea.id + '-preview';
+      var preview = document.getElementById(previewId);
       
       if (!searchTerm.trim()) {
         resultDiv.textContent = 'Ready to search...';
         resultDiv.style.color = '#1f2937';
+        // Clear any previous highlighting
+        if (preview) {
+          var rows = preview.querySelectorAll('tr');
+          rows.forEach(function(row) {
+            row.style.backgroundColor = '';
+          });
+        }
         return;
       }
       
@@ -3350,6 +3359,7 @@ function renderPaxLoadTable() {
       // Parse the table data from textarea
       var lines = textarea.value.split('\n');
       var searchTermLower = searchTerm.toLowerCase();
+      var rowIndex = 0;
       
       for (var i = 0; i < lines.length; i++) {
         var line = lines[i];
@@ -3383,17 +3393,45 @@ function renderPaxLoadTable() {
           if (location) {
             resultDiv.textContent = '📍 ' + location;
             resultDiv.style.color = '#059669';
-            console.log('Result:', location);
+            console.log('Result:', location, 'at row', rowIndex);
+            
+            // Clear previous highlighting
+            if (preview) {
+              var allRows = preview.querySelectorAll('tr');
+              allRows.forEach(function(row) {
+                row.style.backgroundColor = '';
+              });
+              
+              // Highlight the matching row
+              var rowId = 'itd-tag-card-row-' + rowIndex;
+              var matchRow = preview.getElementById(rowId);
+              if (matchRow) {
+                matchRow.style.backgroundColor = '#FFFF00';
+                matchRow.style.transition = 'background-color 0.3s ease';
+                // Scroll into view
+                matchRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }
             return;
           } else {
             console.log('No location found in row - all cells empty after match');
           }
         }
+        
+        rowIndex++;
       }
       
       resultDiv.textContent = 'Not found';
       resultDiv.style.color = '#ef4444';
       console.log('No match found');
+      
+      // Clear highlighting
+      if (preview) {
+        var allRows = preview.querySelectorAll('tr');
+        allRows.forEach(function(row) {
+          row.style.backgroundColor = '';
+        });
+      }
     }
 
     // ===========================
