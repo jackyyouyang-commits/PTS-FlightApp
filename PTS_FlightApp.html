@@ -3453,7 +3453,7 @@ function renderPaxLoadTable() {
         // ── Page 1: PTS Data ──
         section('Flight Information',
           row('Flight',v('flight'))+row('Date',v('date'))+row('REGN',v('regn'))+row('Config',v('config'))+
-          row('STA',v('sta'))+row('ETA',v('eta'))+row('Gate',v('gate'))+row('Carousel',v('carousel'))+
+          row('STA',v('sta'))+row('ETA',v('eta'))+row('ATA',v('ata'))+row('Gate',v('gate'))+row('Carousel',v('carousel'))+
           row('Weather',v('weather'))+row('Delay Code',v('delayCode'))
         ),
         section('Arrival Crew', row('CN',v('arr_cn'))+row('ISM',v('arr_ism'))),
@@ -3474,7 +3474,7 @@ function renderPaxLoadTable() {
         row('Doorside', (v('arr_doorside') && v('arr_doorside')!=='-' ? v('arr_doorside').replace(/\n/g,'<br>') : v('arr_doorside')) )+row('Total Bags',v('arr_total_bags'))+
           row('First Bag',v('arr_first_bag'))+row('Last Bag',v('arr_last_bag'))
         ),
-        arrPtsHtml ? section('Arrival PTS', arrPtsHtml) : '',
+        arrPtsHtml ? section('Arrival Precision Timing Schedule', arrPtsHtml) : '',
         section('Departure Flight Info',
           row('STD',v('dep_std'))+row('ETD',v('dep_etd'))+row('Delay',v('dep_delay'))+
           row('Board Time',v('dep_board_time'))+row('Gate Close',v('dep_gate_close'))+
@@ -3482,11 +3482,13 @@ function renderPaxLoadTable() {
           row('ETA HKG',v('dep_eta_hkg'))+row('STA HKG',v('dep_sta_hkg'))
         ),
         section('Departure Crew', row('CN',v('dep_cn'))+row('ISM',v('dep_ism'))+row('Crew Fig',v('dep_crew_fig'))+row('PX/DT Crew',v('dep_px_dt'))),
-        section('Cargo & Fuel',
+        section('Weight Fuel Cargo and Baggage Details',
           row('Cargo Type',v('dep_cargo_type'))+row('Cargo Weight',v('dep_cargo_kg'))+
           row('Pre Fuel',v('dep_pre_fuel'))+row('Total Fuel',v('dep_total_fuel'))+
           row('Actual Fuel',v('dep_actual_fuel'))+row('MZFW',v('dep_mzfw'))+
-          row('EZFW',v('dep_ezfw'))+row('AZFW',v('dep_azfw'))+row('Underload',v('Q31'))
+          row('EZFW',v('dep_ezfw'))+row('AZFW',v('dep_azfw'))+row('Underload',v('Q31'))+
+          row('Total Bags',v('dep_total_bags'))+row('Crew Bags',v('dep_crew_bags'))+
+          row('STRL',v('dep_strl'))+row('WCH',v('dep_wch'))+row('Carry-On',v('dep_carry_on'))
         ),
         section('Defects', row('Defects',v('defects'))),
         section('Capacity',
@@ -3509,11 +3511,7 @@ function renderPaxLoadTable() {
           row('CIS',v('dep_cis'))+row('IC',v('dep_ic'))+row('OC',v('dep_oc'))+
           row('JOIN',v('dep_join'))+row('HKG',v('dep_hkg'))
         ),
-        section('Departure Baggage',
-          row('Total Bags',v('dep_total_bags'))+row('Crew Bags',v('dep_crew_bags'))+
-          row('STRL',v('dep_strl'))+row('WCH',v('dep_wch'))+row('Carry-On',v('dep_carry_on'))
-        ),
-        depPtsHtml ? section('Departure PTS', depPtsHtml) : '',
+        depPtsHtml ? section('Departure Precision Timing Schedule', depPtsHtml) : '',
 
         // ── Page 2: Staff Acceptance ──
         staffAccContent ? '<div class="page-break">'+preSection('Staff Acceptance', staffAccContent)+'</div>' : '',
@@ -3531,7 +3529,7 @@ function renderPaxLoadTable() {
         crewArrContent ? '<div class="page-break">'+preSection('Crew List — Arrival', crewArrContent)+'</div>' : '',
 
         // ── Page 7: Crew List — Departure ──
-        crewDepContent ? '<div class="page-break">'+preSection('Crew List — Departure', crewDepContent)+'</div>' : '',
+        crewDepContent ? '<div class="page-break">'+preSection('Crew List — Departure', crewDepContent)+'</div>' : ''
       ].join('\n');
 
       return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PTS Report '+(s.flight||'')+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
