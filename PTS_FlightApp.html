@@ -3349,7 +3349,7 @@ function renderPaxLoadTable() {
       var s = state;
       function v(k){ return (s[k]&&String(s[k]).trim()) ? String(s[k]) : '—'; }
       function numOrZero(x){ return parseInt(x)||0; }
-      function row(label,val){ return val&&val!=='—'?'<tr><td class="lbl">'+label+'</td><td class="val">'+val+'</td></tr>':''; }
+      function row(label,val){ return '<tr><td class="lbl">'+label+'</td><td class="val">'+val+'</td></tr>'; }
 
       // Flight header
       var flightLabel = (s.flight||'') + (s.date ? '  ·  '+s.date : '');
@@ -3357,7 +3357,6 @@ function renderPaxLoadTable() {
       // Active pax loading row (Rev2 > Rev1 > Final)
       function paxRow(label, jk, wk, yk, infk, totk){
         var j=v(jk),w=v(wk),y=v(yk),inf=v(infk),tot=v(totk);
-        if([j,w,y,inf,tot].every(function(x){return x==='—';})) return '';
         return '<tr><td class="lbl">'+label+'</td><td class="val">J:'+j+' W:'+w+' Y:'+y+' INF:'+inf+' Total:'+tot+'</td></tr>';
       }
 
@@ -3426,7 +3425,6 @@ function renderPaxLoadTable() {
       ].join('\n');
 
       function section(title, tableRows){
-        if(!tableRows.trim()) return '';
         return '<div class="section"><h2>'+title+'</h2><table>'+tableRows+'</table></div>';
       }
       function preSection(title, content, extraClass){
@@ -3474,7 +3472,7 @@ function renderPaxLoadTable() {
         row('Doorside', (v('arr_doorside') && v('arr_doorside')!=='-' ? v('arr_doorside').replace(/\n/g,'<br>') : v('arr_doorside')) )+row('Total Bags',v('arr_total_bags'))+
           row('First Bag',v('arr_first_bag'))+row('Last Bag',v('arr_last_bag'))
         ),
-        arrPtsHtml ? section('Arrival Precision Timing Schedule', arrPtsHtml) : '',
+        arrPtsHtml ? section('Arrival Precision Timing Schedule', arrPtsHtml) : section('Arrival Precision Timing Schedule', ''),
         section('Departure Flight Info',
           row('STD',v('dep_std'))+row('ETD',v('dep_etd'))+row('Delay Code(s) ex HKG',v('dep_delay'))+
           row('Board Time',v('dep_board_time'))+row('Gate Close',v('dep_gate_close'))+
@@ -3511,7 +3509,7 @@ function renderPaxLoadTable() {
           row('CIS',v('dep_cis'))+row('IC',v('dep_ic'))+row('OC',v('dep_oc'))+
           row('JOIN',v('dep_join'))+row('HKG',v('dep_hkg'))
         ),
-        depPtsHtml ? section('Departure Precision Timing Schedule', depPtsHtml) : '',
+        depPtsHtml ? section('Departure Precision Timing Schedule', depPtsHtml) : section('Departure Precision Timing Schedule', ''),
 
         // ── Page 2: Staff Acceptance ──
         staffAccContent ? '<div class="page-break">'+preSection('Staff Acceptance', staffAccContent)+'</div>' : '',
