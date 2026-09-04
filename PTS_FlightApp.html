@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .pax-table .total-cell { font-weight: 800; color: var(--cx-teal); font-size: 15px; text-align: center; min-height: 38px; display: flex; align-items: center; justify-content: center; }
 
       .sum-label { font-size: 0.7rem; font-weight: 600; color: #6B7280; text-transform: uppercase; }
-      .sum-value { font-size: 0.95rem; font-weight: 700; color: var(--cx-teal-dark); margin-top: 2px; }
+      .sum-value { font-size: 0.95rem; font-weight: 400; color: var(--cx-teal-dark); margin-top: 2px; }
 
       .import-field-preview {
         display: flex; justify-content: space-between; align-items: center;
@@ -2148,7 +2148,7 @@ function renderPaxLoadTable() {
             '<div><div class="sum-label">W</div><div class="sum-value">' + (state.arr_pax_w||'-') + '</div></div>' +
             '<div><div class="sum-label">Y</div><div class="sum-value">' + (state.arr_pax_y||'-') + '</div></div>' +
             '<div><div class="sum-label">+INF</div><div class="sum-value">' + (state.arr_pax_inf||'-') + '</div></div>' +
-            '<div><div class="sum-label">Total</div><div class="sum-value font-extrabold text-cx-teal">' + (arrTotal||'-') + '</div></div>' +
+            '<div><div class="sum-label">Total</div><div class="sum-value text-cx-teal">' + (arrTotal||'-') + '</div></div>' +
           '</div>' +
           '<div class="mt-4">' +
             '<div class="sum-label" style="display:block;margin-bottom:8px;">Special Handling</div>' +
@@ -2189,7 +2189,7 @@ function renderPaxLoadTable() {
             '<div><div class="sum-label">W</div><div class="sum-value" id="final-loading-w">-</div></div>' +
             '<div><div class="sum-label">Y</div><div class="sum-value" id="final-loading-y">-</div></div>' +
             '<div><div class="sum-label">INF</div><div class="sum-value" id="final-loading-inf">-</div></div>' +
-            '<div><div class="sum-label">Total</div><div class="sum-value font-extrabold text-cx-teal" id="final-loading-total">-</div></div>' +
+            '<div><div class="sum-label">Total</div><div class="sum-value text-cx-teal" id="final-loading-total">-</div></div>' +
           '</div>' +
           '<div class="mt-4">' +
             '<div class="sum-label" style="display:block;margin-bottom:8px;">Special Handling</div>' +
