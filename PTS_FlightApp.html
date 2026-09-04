@@ -2138,7 +2138,7 @@ function renderPaxLoadTable() {
           '<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">' +
             '<div><div class="sum-label">CN</div><div class="sum-value">' + v('arr_cn') + '</div></div>' +
             '<div><div class="sum-label">ISM</div><div class="sum-value">' + v('arr_ism') + '</div></div>' +
-            '<div><div class="sum-label">STA / ETA / ATA</div><div class="sum-value">' + v('sta') + ' / ' + v('eta') + ' / ' + v('ata') + '</div></div>' +
+            '<div><div class="sum-label">STA / ETA / ATA</div><div class="sum-value">' + v('sta') + ' / ' + v('eta') + ' / ' + (arrActual[0] || v('ata')) + '</div></div>' +
           '</div>' +
         '</div>' +
         '<div class="card">' +
