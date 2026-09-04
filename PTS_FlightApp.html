@@ -3517,16 +3517,16 @@ function renderPaxLoadTable() {
         '<div class="page-break">'+preSection('Arrival PTM', arrPtmContent)+'</div>',
 
         // ── Page 4: ARR OIR ──
-        '<div class="page-break">'+preSection('Arrival OIR', oirContent)+'</div>',
+        '<div class="page-break">'+preSection('Arrival Offloading Instruction', oirContent)+'</div>',
 
         // ── Page 5: DEP LIR ──
-        '<div class="page-break">'+preSection('DEP LIR', depLirContent)+'</div>',
+        '<div class="page-break">'+preSection('Departure Onloading Instruction', depLirContent)+'</div>',
 
         // ── Page 6: Crew List — Arrival ──
-        '<div class="page-break">'+preSection('Crew List — Arrival', crewArrContent)+'</div>',
+        '<div class="page-break">'+preSection('Arrival Crew List', crewArrContent)+'</div>',
 
         // ── Page 7: Crew List — Departure ──
-        '<div class="page-break">'+preSection('Crew List — Departure', crewDepContent)+'</div>'
+        '<div class="page-break">'+preSection('Departure Gen Dec', crewDepContent)+'</div>'
       ].join('\n');
 
       return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PTS Report '+(s.flight||'')+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
