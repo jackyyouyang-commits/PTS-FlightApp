@@ -1684,7 +1684,11 @@ document.addEventListener('DOMContentLoaded', function() {
         flightField.value = '';
         if (state) state.flight = '';
       }
-      updateHeaderFlightNum();
+      // Directly clear header flight number display
+      ['hdr-flight-num','hdr-flight-num-m'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.textContent = '';
+      });
       ['import-modal-k1l2','send-modal','share-modal'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.style.display = 'none';
