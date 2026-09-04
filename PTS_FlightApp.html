@@ -3369,13 +3369,24 @@ function renderPaxLoadTable() {
         }
         
         if (foundMatch) {
-          // Get last cell (Location)
-          var location = cells[cells.length - 1].trim();
+          // Get last NON-EMPTY cell (Location)
+          var location = '';
+          for (var k = cells.length - 1; k >= 0; k--) {
+            var cellVal = cells[k].trim();
+            if (cellVal) {
+              location = cellVal;
+              console.log('Found location at cell', k, ':', location);
+              break;
+            }
+          }
+          
           if (location) {
             resultDiv.textContent = '📍 ' + location;
             resultDiv.style.color = '#059669';
             console.log('Result:', location);
             return;
+          } else {
+            console.log('No location found in row - all cells empty after match');
           }
         }
       }
