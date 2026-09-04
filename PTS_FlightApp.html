@@ -3267,16 +3267,28 @@ function renderPaxLoadTable() {
       // Store the raw data in textarea
       textarea.value = data;
       
-      // Parse and create HTML table display
+      // Parse lines and calculate column widths for auto-fit
       var lines = data.split('\n').filter(function(line) { return line.trim(); });
       console.log('Lines parsed:', lines.length);
+      
+      var allCells = lines.map(function(line) { return line.split('\t'); });
+      var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
+      var colWidths = new Array(numCols).fill(0);
+      
+      // Calculate max width for each column
+      allCells.forEach(function(row) {
+        row.forEach(function(cell, idx) {
+          var width = (cell.trim() || '&nbsp;').length * 8 + 16; // ~8px per char + padding
+          colWidths[idx] = Math.max(colWidths[idx], width);
+        });
+      });
+      
       var tableHTML = '<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
       
-      lines.forEach(function(line) {
+      allCells.forEach(function(row) {
         tableHTML += '<tr>';
-        var cells = line.split('\t');
-        cells.forEach(function(cell) {
-          tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;">' + 
+        row.forEach(function(cell, idx) {
+          tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;width:' + colWidths[idx] + 'px;">' + 
             (cell.trim() || '&nbsp;') + '</td>';
         });
         tableHTML += '</tr>';
@@ -3322,11 +3334,14 @@ function renderPaxLoadTable() {
         return;
       }
       
-      if (!textarea.value) {
+      if (!textarea || !textarea.value) {
         resultDiv.textContent = 'No data to search';
         resultDiv.style.color = '#ef4444';
+        console.log('No textarea or value. textarea:', !!textarea, 'value:', textarea ? textarea.value.length : 0);
         return;
       }
+      
+      console.log('Searching for:', searchTerm, 'in', textarea.value.length, 'chars');
       
       // Parse the table data from textarea
       var lines = textarea.value.split('\n');
@@ -3337,12 +3352,14 @@ function renderPaxLoadTable() {
         if (!line.trim()) continue;
         
         var cells = line.split('\t');
+        console.log('Row ' + i + ' cells:', cells.length, 'content:', cells.join('|'));
         
         // Search through all cells (not just first) to find the tag number
         var foundMatch = false;
         for (var j = 0; j < cells.length; j++) {
           if (cells[j].toLowerCase().includes(searchTermLower)) {
             foundMatch = true;
+            console.log('Found match in cell', j, ':', cells[j]);
             break;
           }
         }
@@ -3353,6 +3370,7 @@ function renderPaxLoadTable() {
           if (location) {
             resultDiv.textContent = '📍 ' + location;
             resultDiv.style.color = '#059669';
+            console.log('Result:', location);
             return;
           }
         }
@@ -3360,6 +3378,7 @@ function renderPaxLoadTable() {
       
       resultDiv.textContent = 'Not found';
       resultDiv.style.color = '#ef4444';
+      console.log('No match found');
     }
 
     // ===========================
