@@ -3180,14 +3180,19 @@ function renderPaxLoadTable() {
       
       // Use modern Clipboard API to read from clipboard
       if (navigator.clipboard && navigator.clipboard.readText) {
-        console.log('Clipboard API available, attempting to read...');
+        console.log('Clipboard API available, requesting focus...');
+        
+        // Ensure the window/document has focus
+        window.focus();
+        textarea.focus();
+        
+        // Try to read clipboard
         navigator.clipboard.readText().then(function(data) {
-          console.log('Clipboard data received:', data.substring(0, 100));
+          console.log('Clipboard data received, length:', data.length);
           if (data) {
             // Store the raw data in textarea (keep for saving/export)
             textarea.value = data;
             textarea.focus();
-            console.log('Data set to textarea, length:', data.length);
             
             // Parse and create HTML table display
             var lines = data.split('\n').filter(function(line) { return line.trim(); });
@@ -3205,7 +3210,6 @@ function renderPaxLoadTable() {
             });
             
             tableHTML += '</table>';
-            console.log('Table HTML generated');
             
             // Find or create preview container
             var previewId = textareaId + '-preview';
@@ -3215,7 +3219,6 @@ function renderPaxLoadTable() {
               preview.id = previewId;
               preview.style.cssText = 'margin-top:10px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#f9fafb;max-height:400px;overflow:auto;';
               textarea.parentNode.insertBefore(preview, textarea);
-              console.log('Preview container created');
             }
             preview.innerHTML = tableHTML;
             preview.style.display = 'block';
@@ -3227,10 +3230,17 @@ function renderPaxLoadTable() {
             textarea.dispatchEvent(changeEvent);
             
             showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
+          } else {
+            showToast('Clipboard is empty. Please copy data from Excel first.', 'orange');
           }
         }).catch(function(err) {
           console.error('Clipboard read failed:', err);
-          showToast('Unable to read clipboard. Please ensure you have copied data and granted clipboard permissions.', 'red');
+          var errMsg = err.name + ': ' + err.message;
+          if (err.name === 'NotAllowedError') {
+            showToast('Clipboard permission denied. Click on the page first, then try again.', 'red');
+          } else {
+            showToast('Unable to read clipboard. Make sure you copied data and the page has focus.', 'red');
+          }
         });
       } else {
         console.error('Clipboard API not available');
