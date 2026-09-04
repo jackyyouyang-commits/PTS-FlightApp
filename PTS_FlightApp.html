@@ -1213,7 +1213,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div data-id="158"><label data-id="159" class="field-label">Carousel</label><input data-id="160" class="field-input sm" id="f-carousel" data-key="carousel" placeholder="24" inputmode="numeric"></div>
             <div data-id="161"><label data-id="162" class="field-label">Weather</label><input data-id="163" class="field-input sm" id="f-weather" data-key="weather" placeholder="Fine"></div>
           </div>
-          <div data-id="164" class="mt-3"><label data-id="165" class="field-label">Delay Code</label><input data-id="166" class="field-input sm" id="f-delayCode" data-key="delayCode" placeholder="e.g. FAC8 / IAK3"></div>
+          <div data-id="164" class="mt-3"><label data-id="165" class="field-label">Delay Code(s) ex HKG</label><input data-id="166" class="field-input sm" id="f-delayCode" data-key="delayCode" placeholder="e.g. FAC8 / IAK3"></div>
         </div>
 
         <div data-id="167" class="section-hdr green text-center text-base tracking-widest" style="font-size:0.85rem;">─── ARRIVAL ───</div>
@@ -1752,7 +1752,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===========================
     var FIELD_LABELS = {
       flight:'Flight', date:'Date', regn:'REGN', config:'Config', sta:'STA', eta:'ETA',
-      gate:'Gate', carousel:'Carousel', weather:'Weather', delayCode:'Delay Code',
+      gate:'Gate', carousel:'Carousel', weather:'Weather', delayCode:'Delay Code(s) ex HKG',
       arr_cn:'Arr CN', arr_ism:'Arr ISM',
       arr_pax_j:'Arr PAX J', arr_pax_w:'Arr PAX W', arr_pax_y:'Arr PAX Y', arr_pax_inf:'Arr PAX INF',
       arr_wchr_s:'WCHR/S', arr_wchr_s_details:'WCHR/S Details', arr_wchc:'WCHC', arr_maas:'MAAS',
@@ -1761,7 +1761,7 @@ document.addEventListener('DOMContentLoaded', function() {
       arr_doorside:'Doorside', F19:'Doorside', arr_total_bags:'Arr Total Bags', arr_first_bag:'First Bag', arr_last_bag:'Last Bag',
       dep_std:'STD', dep_etd:'ETD', dep_board_time:'Board Time', dep_dct:'DCT',
       dep_gate_close:'Gate Close', dep_blk:'BLK', dep_eta_hkg:'ETA HKG', dep_sta_hkg:'STA HKG',
-      dep_delay:'Delay', dep_px_dt:'PX/DT Crew',
+      dep_delay:'Delay Code(s) ex HKG', dep_px_dt:'PX/DT Crew',
       dep_cn:'Dep CN', dep_ism:'Dep ISM', dep_crew_fig:'Crew Fig', dep_ft:'FT',
       dep_cat_j:'CAT J', dep_cat_w:'CAT W', dep_cat_y:'CAT Y',
       dep_cargo_type:'Cargo Type', dep_cargo_kg:'Cargo KG',
@@ -2316,7 +2316,7 @@ function renderPaxLoadTable() {
       sec('FLIGHT INFORMATION');
       fld('Flight','flight'); fld('Date','date'); fld('REGN','regn'); fld('Config','config');
       fld('STA','sta'); fld('ETA','eta'); fld('Gate','gate'); fld('Carousel','carousel');
-      fld('Weather','weather'); fld('Delay Code','delayCode');
+      fld('Weather','weather'); fld('Delay Code(s) ex HKG','delayCode');
       lines.push('');
 
       sec('ARRIVAL CREW');
@@ -2357,7 +2357,7 @@ function renderPaxLoadTable() {
       fld('STD','dep_std'); fld('ETD','dep_etd'); fld('Board Time','dep_board_time');
       fld('DCT','dep_dct'); fld('Gate Close','dep_gate_close'); fld('BLK','dep_blk');
       fld('FT','dep_ft'); fld('ETA HKG','dep_eta_hkg'); fld('STA HKG','dep_sta_hkg');
-      fld('Delay','dep_delay');
+      fld('Delay Code(s) ex HKG','dep_delay');
       lines.push('');
 
       sec('DEPARTURE CREW');
@@ -3454,7 +3454,7 @@ function renderPaxLoadTable() {
         section('Flight Information',
           row('Flight',v('flight'))+row('Date',v('date'))+row('REGN',v('regn'))+row('Config',v('config'))+
           row('STA',v('sta'))+row('ETA',v('eta'))+row('ATA',v('ata'))+row('Gate',v('gate'))+row('Carousel',v('carousel'))+
-          row('Weather',v('weather'))+row('Delay Code',v('delayCode'))
+          row('Weather',v('weather'))+row('Delay Code(s) ex HKG',v('delayCode'))
         ),
         section('Arrival Crew', row('CN',v('arr_cn'))+row('ISM',v('arr_ism'))),
         section('Arrival Pax',
@@ -3476,7 +3476,7 @@ function renderPaxLoadTable() {
         ),
         arrPtsHtml ? section('Arrival Precision Timing Schedule', arrPtsHtml) : '',
         section('Departure Flight Info',
-          row('STD',v('dep_std'))+row('ETD',v('dep_etd'))+row('Delay',v('dep_delay'))+
+          row('STD',v('dep_std'))+row('ETD',v('dep_etd'))+row('Delay Code(s) ex HKG',v('dep_delay'))+
           row('Board Time',v('dep_board_time'))+row('Gate Close',v('dep_gate_close'))+
           row('DCT',v('dep_dct'))+row('FT',v('dep_ft'))+row('BLK',v('dep_blk'))+
           row('ETA HKG',v('dep_eta_hkg'))+row('STA HKG',v('dep_sta_hkg'))
