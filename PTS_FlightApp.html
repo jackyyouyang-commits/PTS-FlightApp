@@ -3145,7 +3145,10 @@ function renderPaxLoadTable() {
           return;
         }
         
-        if (dGateSec !== null && dGateSec <= 0) {
+        // Check if Last Pax Onboard time was logged (index 20 in depActivities)
+        var lastPaxLogged = depActual[20];
+        
+        if (dGateSec !== null && dGateSec <= 0 && lastPaxLogged) {
           bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Closed</span></div>' + sep + '<span style="color:#fff;display:inline-flex;align-items:center;height:56px;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>'; bl.style.color = '#FCA5A5'; return;
         }
         if (dBoardSec <= 0) {
