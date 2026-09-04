@@ -2570,9 +2570,42 @@ function renderPaxLoadTable() {
       return lines.join('\n');
     }
 
-    // ===========================
-    // SAVE / RESTORE
-    // ===========================
+    function buildReportHTML() {
+      var html = '<div style="font-family:sans-serif;line-height:1.6;color:#333;">';
+      var itdTagCardVal = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
+      if(itdTagCardVal.trim()) {
+        var lines = itdTagCardVal.split('\n').filter(function(line) { return line.trim(); });
+        var allCells = lines.map(function(line) { return line.split('\t'); });
+        var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
+        var colWidths = new Array(numCols).fill(80);
+        allCells.forEach(function(row) {
+          row.forEach(function(cell, idx) {
+            var width = Math.max(80, (cell.trim()||'').length * 9 + 16);
+            colWidths[idx] = Math.max(colWidths[idx], width);
+          });
+        });
+        
+        var tableHTML = '<table style="width:auto;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;border:1px solid #ccc;margin:16px 0;">';
+        allCells.forEach(function(row, rowIdx) {
+          tableHTML += '<tr style="border-bottom:1px solid #ccc;">';
+          row.forEach(function(cell, idx) {
+            var cellContent = cell.trim() || '&nbsp;';
+            var bgColor = rowIdx === 0 ? '#f0f0f0' : '#fff';
+            var fontWeight = rowIdx === 0 ? 'font-weight:bold;' : '';
+            tableHTML += '<td style="border-right:1px solid #ccc;padding:8px;white-space:nowrap;min-width:' + colWidths[idx] + 'px;text-align:left;background:' + bgColor + ';' + fontWeight + '">' + cellContent + '</td>';
+          });
+          tableHTML += '</tr>';
+        });
+        tableHTML += '</table>';
+        
+        html += '<div style="margin-bottom:20px;">';
+        html += '<h3 style="border-bottom:2px solid #333;padding-bottom:8px;margin:16px 0 8px 0;">ITD TAG CARD</h3>';
+        html += '<div style="overflow-x:auto;">' + tableHTML + '</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+      return html;
+    }
     var PTS_SAVE_KEY = 'pts_saved_state_v1';
 
     function saveToLocal() {
@@ -4015,7 +4048,7 @@ function renderPaxLoadTable() {
         var st = document.getElementById('send-modal-title');
         var sp = document.getElementById('send-report-pre');
         if (st) st.textContent = 'Send Report' + (state.flight ? ' — ' + state.flight : '');
-        try { if (sp) sp.textContent = buildReport(); } catch(e) {}
+        try { if (sp) sp.innerHTML = buildReportHTML(); } catch(e) {}
         if (sm) sm.style.display = 'flex';
       }
     }
