@@ -2157,6 +2157,7 @@ function renderPaxLoadTable() {
         var isFinal = row.label === 'FINAL' || row.label === 'FINAL REV 1' || row.label === 'FINAL REV 2';
         var isRev = row.label === 'FINAL REV 1' || row.label === 'FINAL REV 2';
         var cls = isFinal ? 'font-extrabold text-cx-teal' : '';
+        var totalCls = isFinal ? 'text-cx-teal' : '';
         var inputCls = isRev ? 'pax-tbl-input pax-no-indicator' : 'pax-tbl-input';
         var cells = '';
         cells += '<td><input class="' + inputCls + '" data-key="' + row.keys[0] + '" value="' + (state[row.keys[0]]||'') + '" inputmode="numeric" placeholder=""></td>';
@@ -2169,7 +2170,7 @@ function renderPaxLoadTable() {
         }
         var total = 0;
         row.keys.forEach(function(k) { total += numOrZero(state[k]); });
-        cells += '<td><div class="total-cell ' + cls + '">' + (total || '\u2014') + '</div></td>';
+        cells += '<td><div class="total-cell ' + totalCls + '">' + (total || '\u2014') + '</div></td>';
         html += '<tr><td class="' + cls + '">' + row.label + '</td>' + cells + '</tr>';
       }
       tbody.innerHTML = html;
