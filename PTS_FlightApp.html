@@ -2485,7 +2485,28 @@ function renderPaxLoadTable() {
 
       sec('ITD TAG CARD');
       var itdTagCardVal = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
-      if(itdTagCardVal.trim()) lines.push(itdTagCardVal.trim());
+      if(itdTagCardVal.trim()) {
+        var rows = itdTagCardVal.trim().split('\n').map(function(row){ return row.split('\t'); });
+        if(rows.length > 0) {
+          var colWidths = [];
+          rows.forEach(function(row){
+            row.forEach(function(cell, idx){
+              var len = (cell||'').length;
+              colWidths[idx] = Math.max(colWidths[idx]||0, len);
+            });
+          });
+          rows.forEach(function(row){
+            var line = '';
+            row.forEach(function(cell, idx){
+              if(idx < row.length) {
+                var padded = (cell||'').padEnd(colWidths[idx], ' ');
+                line += padded + '  ';
+              }
+            });
+            lines.push(line.trim());
+          });
+        }
+      }
       lines.push('');
 
       sec('DEP LIR');
