@@ -1689,12 +1689,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (el) el.style.display = 'none';
       });
       localStorage.removeItem(PTS_SAVE_KEY);
+      // Clear all tabs
       clearOIR();
       clearCrew();
       clearDepCrew();
       clearStaffAcc();
       clearArrPTM();
       clearDepLIR();
+      clearITDTagCard();
+      clearDepGenDec();
+      clearAgentPos();
       refreshSummarySpans();
       refreshFinalLoading();
       if (typeof showToast === 'function') showToast('All data cleared', 'red');
