@@ -1034,6 +1034,9 @@ document.addEventListener('DOMContentLoaded', function() {
           <button data-id="33" id="btn-clear-all" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-400/60 text-red-200 text-xs font-semibold hover:bg-red-500/20 transition-colors" style="background:#EF4444;color:#ffffff;">
             <i data-id="34" data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear
           </button>
+          <button data-id="35-edit" id="btn-edit-mode" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/40 text-white hover:bg-white/10 transition-colors" style="background:rgba(255,255,255,0.2);">
+            ✏️ <span id="edit-mode-text">Edit Off</span>
+          </button>
           <span data-id="35" id="hdr-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#fff;background:rgba(255,255,255,0.2);border-radius:99px;padding:4px 10px;white-space:nowrap;"></span>
         </div>
       </div>
@@ -1074,6 +1077,9 @@ document.addEventListener('DOMContentLoaded', function() {
           </button>
           <button data-id="66" id="btn-clear-mob" class="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg border border-red-400/60 text-red-200 text-xs font-semibold min-h-[36px] hover:bg-red-500/20 transition-colors" style="background:#EF4444;color:#ffffff;">
             <i data-id="67" data-lucide="trash-2" class="w-3.5 h-3.5 flex-shrink-0"></i><span data-id="68">Clear</span>
+          </button>
+          <button data-id="68-edit" id="btn-edit-mode-mob" class="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/40 text-white min-h-[36px] hover:bg-white/10 transition-colors" style="background:rgba(255,255,255,0.2);">
+            <span id="edit-mode-text-mob">✏️ Edit Off</span>
           </button>
           <span data-id="69" id="hdr-lock-badge-m" style="display:none;align-items:center;gap:3px;font-size:10px;font-weight:600;color:#fff;background:rgba(255,255,255,0.2);border-radius:99px;padding:3px 8px;white-space:nowrap;"></span>
         </div>
@@ -3121,7 +3127,10 @@ function renderPaxLoadTable() {
         el.style.display = 'inline-flex';
         el.innerHTML = '\uD83D\uDD12 Locked <button class="lock-toggle-btn lock-badge-btn" style="background:rgba(255,255,255,0.3);border:none;border-radius:99px;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer;margin-left:4px;">Unlock</button>';
       });
+      document.getElementById('edit-mode-text').textContent = 'Edit Off';
+      document.getElementById('edit-mode-text-mob').textContent = '✏️ Edit Off';
       wireLockBadgeButtons();
+      wireEditModeButtons();
       state._locked = true;
       try { localStorage.setItem('pts_state', JSON.stringify(state)); } catch(e) {}
     }
@@ -3139,7 +3148,10 @@ function renderPaxLoadTable() {
         el.style.display = 'inline-flex';
         el.innerHTML = '\uD83D\uDD13 Unlocked <button class="lock-toggle-btn lock-badge-btn" style="background:rgba(255,255,255,0.3);border:none;border-radius:99px;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer;margin-left:4px;">Lock</button>';
       });
+      document.getElementById('edit-mode-text').textContent = 'Edit On';
+      document.getElementById('edit-mode-text-mob').textContent = '✏️ Edit On';
       wireLockBadgeButtons();
+      wireEditModeButtons();
       state._locked = false;
       try { localStorage.setItem('pts_state', JSON.stringify(state)); } catch(e) {}
     }
@@ -3159,6 +3171,21 @@ function renderPaxLoadTable() {
             }
           });
         }
+      });
+    }
+
+    function wireEditModeButtons() {
+      ['btn-edit-mode', 'btn-edit-mode-mob'].forEach(function(id) {
+        var btn = document.getElementById(id);
+        if (!btn) return;
+        btn.onclick = function(e) {
+          e.stopPropagation();
+          if (state._locked) {
+            unlockFields();
+          } else {
+            lockFields();
+          }
+        };
       });
     }
 
@@ -3683,6 +3710,9 @@ function renderPaxLoadTable() {
       safeOn('btn-share-mob',   generateShareCode);
       safeOn('btn-email-mob',   openSendModal);
             safeOn('btn-clear-mob',   clearAll);
+
+      // Edit Mode buttons (both desktop and mobile)
+      wireEditModeButtons();
 
       // Clear confirm
       safeOn('clear-confirm-yes', doClearAll);
