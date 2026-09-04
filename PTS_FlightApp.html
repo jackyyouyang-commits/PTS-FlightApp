@@ -1678,6 +1678,12 @@ document.addEventListener('DOMContentLoaded', function() {
       ['hdr-lock-badge','hdr-lock-badge-m'].forEach(function(id){
         var el=document.getElementById(id); if(el) { el.style.display='none'; el.innerHTML=''; }
       });
+      // Ensure flight field is cleared and state is updated
+      var flightField = document.getElementById('f-flight');
+      if (flightField) {
+        flightField.value = '';
+        if (state) state.flight = '';
+      }
       updateHeaderFlightNum();
       ['import-modal-k1l2','send-modal','share-modal'].forEach(function(id) {
         var el = document.getElementById(id);
