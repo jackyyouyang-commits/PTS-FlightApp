@@ -3140,7 +3140,7 @@ function renderPaxLoadTable() {
 
         // Check if within 5 minutes before gate close
         if (dGateSec !== null && dGateSec > 0 && dGateSec <= 300) {
-          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Gate Closing</span><br><span class="blink-countdown" style="font-size:0.75em;opacity:0.85;color:#FCA5A5;"> -' + fmtFromSec(dGateSec) + '</span></div>' + sep + '<span style="color:#fff;display:inline-flex;align-items:center;height:56px;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>';
+          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span><br><span class="blink-countdown" style="font-size:0.75em;opacity:0.9;color:#FFD700;"> -' + fmtFromSec(dGateSec) + '</span></div>' + sep + '<span style="color:#fff;display:inline-flex;align-items:center;height:56px;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>';
           bl.style.color = '#fff';
           return;
         }
