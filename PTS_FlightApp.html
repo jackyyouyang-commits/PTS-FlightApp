@@ -2638,6 +2638,14 @@ function renderPaxLoadTable() {
     function generateShareCode() {
       try {
         var payload = { v: 1, state: state, arrActual: arrActual, depActual: depActual };
+        // Include paste-tab content in share payload
+        payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
+        payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
+        payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
+        payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
+        payload._dep_lir   = (document.getElementById('dep-lir-textarea')||{}).value||'';
+        payload._crew      = (document.getElementById('crew-textarea')||{}).value||'';
+        payload._dep_crew  = (document.getElementById('dep-crew-textarea')||{}).value||'';
         var code = btoa(encodeURIComponent(JSON.stringify(payload)));
         var el = document.getElementById('share-code-output');
         if (el) el.value = code;
