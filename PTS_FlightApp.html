@@ -2022,11 +2022,15 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!tbody) return;
       var baseMin = parseTime(state[baseTimeKey]);
       var html = '';
+      var prevTarget = null;
       for (var i = 0; i < defs.length; i++) {
         var act = defs[i];
         var target = null;
         if (act.offset !== null && baseMin !== null) {
           target = baseMin + act.offset;
+          prevTarget = target;
+        } else if (act.offset === null && prevTarget !== null) {
+          target = prevTarget;
         }
         var targetStr = target !== null ? fmtMin(target) : '\u2014';
         var logged = actualObj[i];
