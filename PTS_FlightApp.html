@@ -3180,68 +3180,64 @@ function renderPaxLoadTable() {
       
       // Use modern Clipboard API to read from clipboard
       if (navigator.clipboard && navigator.clipboard.readText) {
-        console.log('Clipboard API available, requesting focus...');
+        console.log('Clipboard API available, focusing element...');
         
-        // Ensure the window/document has focus
-        window.focus();
+        // Focus the textarea first
         textarea.focus();
         
-        // Try to read clipboard
-        navigator.clipboard.readText().then(function(data) {
-          console.log('Clipboard data received, length:', data.length);
-          if (data) {
-            // Store the raw data in textarea (keep for saving/export)
-            textarea.value = data;
-            textarea.focus();
-            
-            // Parse and create HTML table display
-            var lines = data.split('\n').filter(function(line) { return line.trim(); });
-            console.log('Lines parsed:', lines.length);
-            var tableHTML = '<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
-            
-            lines.forEach(function(line) {
-              tableHTML += '<tr>';
-              var cells = line.split('\t');
-              cells.forEach(function(cell) {
-                tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;">' + 
-                  (cell.trim() || '&nbsp;') + '</td>';
+        // Small delay to ensure focus is registered
+        setTimeout(function() {
+          navigator.clipboard.readText().then(function(data) {
+            console.log('Clipboard data received, length:', data.length);
+            if (data) {
+              // Store the raw data in textarea (keep for saving/export)
+              textarea.value = data;
+              textarea.focus();
+              
+              // Parse and create HTML table display
+              var lines = data.split('\n').filter(function(line) { return line.trim(); });
+              console.log('Lines parsed:', lines.length);
+              var tableHTML = '<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
+              
+              lines.forEach(function(line) {
+                tableHTML += '<tr>';
+                var cells = line.split('\t');
+                cells.forEach(function(cell) {
+                  tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;">' + 
+                    (cell.trim() || '&nbsp;') + '</td>';
+                });
+                tableHTML += '</tr>';
               });
-              tableHTML += '</tr>';
-            });
-            
-            tableHTML += '</table>';
-            
-            // Find or create preview container
-            var previewId = textareaId + '-preview';
-            var preview = document.getElementById(previewId);
-            if (!preview) {
-              preview = document.createElement('div');
-              preview.id = previewId;
-              preview.style.cssText = 'margin-top:10px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#f9fafb;max-height:400px;overflow:auto;';
-              textarea.parentNode.insertBefore(preview, textarea);
+              
+              tableHTML += '</table>';
+              
+              // Find or create preview container
+              var previewId = textareaId + '-preview';
+              var preview = document.getElementById(previewId);
+              if (!preview) {
+                preview = document.createElement('div');
+                preview.id = previewId;
+                preview.style.cssText = 'margin-top:10px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#f9fafb;max-height:400px;overflow:auto;';
+                textarea.parentNode.insertBefore(preview, textarea);
+              }
+              preview.innerHTML = tableHTML;
+              preview.style.display = 'block';
+              
+              // Trigger events for state update
+              var event = new Event('input', { bubbles: true });
+              textarea.dispatchEvent(event);
+              var changeEvent = new Event('change', { bubbles: true });
+              textarea.dispatchEvent(changeEvent);
+              
+              showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
+            } else {
+              showToast('Clipboard is empty. Please copy data from Excel first.', 'orange');
             }
-            preview.innerHTML = tableHTML;
-            preview.style.display = 'block';
-            
-            // Trigger events for state update
-            var event = new Event('input', { bubbles: true });
-            textarea.dispatchEvent(event);
-            var changeEvent = new Event('change', { bubbles: true });
-            textarea.dispatchEvent(changeEvent);
-            
-            showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
-          } else {
-            showToast('Clipboard is empty. Please copy data from Excel first.', 'orange');
-          }
-        }).catch(function(err) {
-          console.error('Clipboard read failed:', err);
-          var errMsg = err.name + ': ' + err.message;
-          if (err.name === 'NotAllowedError') {
-            showToast('Clipboard permission denied. Click on the page first, then try again.', 'red');
-          } else {
-            showToast('Unable to read clipboard. Make sure you copied data and the page has focus.', 'red');
-          }
-        });
+          }).catch(function(err) {
+            console.error('Clipboard read failed:', err);
+            showToast('Make sure the browser window is in focus and you copied data from Excel. Try clicking the page, then the paste button again.', 'red');
+          });
+        }, 50);
       } else {
         console.error('Clipboard API not available');
         showToast('Clipboard access not supported in this browser.', 'red');
