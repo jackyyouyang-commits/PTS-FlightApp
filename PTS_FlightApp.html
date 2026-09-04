@@ -3038,14 +3038,15 @@ function renderPaxLoadTable() {
 
         if (diffSec < 0) {
           // Past ETD - check all three disruption scenarios
-          var hasDepActual = false;
+          // Only show "Departed" if ATD (index 27) is logged, not any other activity
+          var atdLogged = depActual && depActual[27]; // ATD is at index 27 in depActivities
+          var hasDepActual = atdLogged;
           var maxActualMin = null;
           
           try {
             if (typeof depActual !== 'undefined') {
               for (var daKey in depActual) { 
                 if (depActual[daKey]) { 
-                  hasDepActual = true; 
                   var actualTime = parseTime(depActual[daKey]);
                   if (actualTime != null) {
                     // If actual time is much earlier than STD (e.g., 01:53 vs 14:55), assume it's next day
