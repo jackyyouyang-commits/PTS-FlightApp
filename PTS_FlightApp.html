@@ -3883,14 +3883,28 @@ function renderPaxLoadTable() {
         var lines = content.split('\n').filter(function(line) { return line.trim(); });
         var allCells = lines.map(function(line) { return line.split('\t'); });
         var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
-        var tableHTML = '<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:11px;border:1px solid #999;margin:10px 0;"><tbody>';
+        
+        // Calculate column widths by measuring all cells
+        var colWidths = [];
+        for(var c = 0; c < numCols; c++){
+          var maxWidth = 0;
+          allCells.forEach(function(row) {
+            var cell = (row[c] || '').trim();
+            var width = Math.max(60, cell.length * 7 + 12);
+            maxWidth = Math.max(maxWidth, width);
+          });
+          colWidths[c] = maxWidth;
+        }
+        
+        var tableHTML = '<table style="border-collapse:collapse;font-family:monospace;font-size:11px;border:1px solid #999;margin:10px 0;"><tbody>';
         allCells.forEach(function(row, rowIdx) {
           tableHTML += '<tr style="border-bottom:1px solid #ccc;">';
-          row.forEach(function(cell) {
+          row.forEach(function(cell, colIdx) {
             var cellContent = cell.trim() || '&nbsp;';
             var bgColor = rowIdx === 0 ? '#e0e0e0' : '#fff';
             var fontWeight = rowIdx === 0 ? 'font-weight:bold;' : '';
-            tableHTML += '<td style="border-right:1px solid #ccc;padding:6px;' + fontWeight + 'background:' + bgColor + ';">' + cellContent + '</td>';
+            var width = colWidths[colIdx] || 60;
+            tableHTML += '<td style="border-right:1px solid #ccc;padding:6px;width:' + width + 'px;' + fontWeight + 'background:' + bgColor + ';">' + cellContent + '</td>';
           });
           tableHTML += '</tr>';
         });
