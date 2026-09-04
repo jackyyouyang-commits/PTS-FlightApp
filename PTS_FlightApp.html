@@ -1015,6 +1015,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div data-id="19" id="etd-countdown" class="tabular-nums leading-none" style="font-size:22px;">ETD --:--:--</div>
           <div data-id="20" class="etd-divider"></div>
           <div data-id="21" id="boarding-countdown" class="tabular-nums leading-none" style="font-size:22px;">--:--:--</div>
+          <div data-id="20-gate" class="etd-divider"></div>
+          <div data-id="21-gate" id="gate-display" class="tabular-nums leading-none" style="font-size:22px;white-space:nowrap;">Gate: --</div>
         </div>
       </div>
       <!-- MOBILE: two rows (<md) -->
@@ -1038,6 +1040,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div data-id="47" id="etd-countdown-m" class="tabular-nums leading-none" style="font-size:20px;">ETD --:--:--</div>
           <div data-id="48" class="etd-divider"></div>
           <div data-id="49" id="boarding-countdown-m" class="tabular-nums leading-none" style="font-size:20px;">--:--:--</div>
+          <div data-id="48-gate" class="etd-divider"></div>
+          <div data-id="49-gate" id="gate-display-m" class="tabular-nums leading-none" style="font-size:20px;white-space:nowrap;">Gate: --</div>
         </div>
         <div data-id="50" class="flex items-center justify-around px-2 pb-2 gap-1" style="display:none;">
           <button data-id="51" id="btn-import-mob" class="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg border border-white/40 text-white text-xs font-semibold min-h-[36px] hover:bg-white/10 transition-colors" style="background:#F59E0B;color:#1a1a1a;">
@@ -3135,13 +3139,13 @@ function renderPaxLoadTable() {
         var sepMargin = isMobile ? '4px' : '10px';
         var sep = '<span style="width:1px;height:28px;background:rgba(255,255,255,0.3);display:inline-block;margin:0 ' + sepMargin + ';vertical-align:middle;flex-shrink:0;font-size:0;"></span>';
         
-        if (!btTargetMs) { bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;">--:--:--</span></div>' + sep + '<span style="color:#fff;display:inline-flex;align-items:center;height:56px;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>'; bl.style.color = '#fff'; return; }
+        if (!btTargetMs) { bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;">--:--:--</span></div>' + sep; bl.style.color = '#fff'; return; }
         var dBoardSec = Math.round((btTargetMs - nowMs)/1000);
         var dGateSec = gctTargetMs ? Math.round((gctTargetMs - nowMs)/1000) : null;
 
         // Check if within 5 minutes before gate close
         if (dGateSec !== null && dGateSec > 0 && dGateSec <= 300) {
-          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span><br><span class="blink-countdown" style="font-size:0.75em;opacity:0.9;color:#FFD700;"> -' + fmtFromSec(dGateSec) + '</span></div>' + sep + '<span style="color:#fff;display:inline-flex;align-items:center;height:56px;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>';
+          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span><br><span class="blink-countdown" style="font-size:0.75em;opacity:0.9;color:#FFD700;"> -' + fmtFromSec(dGateSec) + '</span></div>' + sep;
           bl.style.color = '#fff';
           return;
         }
@@ -3150,19 +3154,28 @@ function renderPaxLoadTable() {
         var lastPaxLogged = depActual[20];
         
         if (dGateSec !== null && dGateSec <= 0 && lastPaxLogged) {
-          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Closed</span></div>' + sep + '<span style="color:#fff;display:inline-flex;align-items:center;height:56px;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>'; bl.style.color = '#FCA5A5'; return;
+          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Closed</span></div>' + sep; bl.style.color = '#FCA5A5'; return;
         }
         if (dBoardSec <= 0) {
           bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span>';
           if (dGateSec !== null) {
             bl.innerHTML += '<br><span style="font-size:0.75em;opacity:0.9;color:#fff;">Gate Close -' + fmtFromSec(Math.abs(dGateSec)) + '</span>';
           }
-          bl.innerHTML += '</div>' + sep + '<span style="color:#fff;display:inline-flex;align-items:center;height:56px;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>';
+          bl.innerHTML += '</div>' + sep;
           bl.style.color = '#fff';
           return;
         }
-        bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> -' + fmtFromSec(dBoardSec) + '</span></div>' + sep + '<span style="color:#fff;display:inline-flex;align-items:center;height:56px;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>';
+        bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> -' + fmtFromSec(dBoardSec) + '</span></div>' + sep;
         bl.style.color = dBoardSec < 1200 ? '#fff' : '#fff';
+      });
+      
+      // Update gate display
+      ['gate-display', 'gate-display-m'].forEach(function(id) {
+        var gEl = document.getElementById(id);
+        if (gEl) {
+          var gateNum = state.gate && String(state.gate).trim() !== '' ? state.gate : '--';
+          gEl.textContent = 'Gate: ' + gateNum;
+        }
       });
     }
 
