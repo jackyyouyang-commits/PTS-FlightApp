@@ -763,6 +763,16 @@ document.addEventListener('DOMContentLoaded', function() {
         .sum-value { font-size: 0.85rem !important; margin-top: 1px !important; }
       }
 
+      /* S25 portrait - even more compact */
+      @media (max-width: 430px) {
+        .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        .grid-cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        .gap-4 { gap: 4px !important; }
+        .gap-3 { gap: 3px !important; }
+        .card { padding: 8px !important; margin-bottom: 6px !important; }
+        div[style*="width:70px"] { width: 60px !important; padding: 4px 6px !important; font-size: 0.9rem !important; }
+      }
+
       /* iPad & large device optimization */
       @media (min-width: 768px) {
         #main-content-w3x4 { 
@@ -826,6 +836,13 @@ document.addEventListener('DOMContentLoaded', function() {
         #hdr-mobile button{padding:4px 5px!important;font-size:9px!important;min-height:28px!important;}
         #bottom-nav-k1>div>button,.bottom-tab{min-width:46px!important;font-size:8.5px!important;padding:4px 2px!important;}
         .tab-content>div{padding:6px!important;}
+        .section-hdr { font-size: 0.95rem !important; margin-bottom: 8px !important; }
+        .card { padding: 8px !important; margin-bottom: 6px !important; }
+        .grid { gap: 4px !important; }
+        .sum-label { font-size: 0.6rem !important; margin-bottom: 2px !important; }
+        .sum-value { font-size: 0.8rem !important; }
+        .mt-3 { margin-top: 8px !important; }
+        .mt-4 { margin-top: 10px !important; }
       }
 
       /* ── Phone landscape ── */
