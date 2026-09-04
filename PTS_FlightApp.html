@@ -1684,11 +1684,13 @@ document.addEventListener('DOMContentLoaded', function() {
         flightField.value = '';
         if (state) state.flight = '';
       }
-      // Directly clear header flight number display
-      ['hdr-flight-num','hdr-flight-num-m'].forEach(function(id){
-        var el = document.getElementById(id);
-        if (el) el.textContent = '';
-      });
+      // Directly clear header flight number display with a small delay to ensure all events settle
+      setTimeout(function() {
+        ['hdr-flight-num','hdr-flight-num-m'].forEach(function(id){
+          var el = document.getElementById(id);
+          if (el) el.textContent = '';
+        });
+      }, 50);
       ['import-modal-k1l2','send-modal','share-modal'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.style.display = 'none';
