@@ -3125,6 +3125,10 @@ function renderPaxLoadTable() {
 
       ['boarding-countdown','boarding-countdown-m'].forEach(function(id) {
         var bl = document.getElementById(id); if (!bl) return;
+        bl.style.display = 'inline-block';
+        bl.style.lineHeight = '1.2';
+        bl.style.minHeight = '28px';
+        bl.style.verticalAlign = 'middle';
         var gateNum = state.gate && String(state.gate).trim() !== '' ? state.gate : '--';
         var isMobile = id.includes('-m');
         var sepMargin = isMobile ? '4px' : '10px';
