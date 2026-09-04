@@ -3165,8 +3165,8 @@ function renderPaxLoadTable() {
     // LOCK / UNLOCK FIELDS
     // ===========================
     function lockFields() {
-      // Only lock imported fields that have values
-      document.querySelectorAll('input[data-key].field-imported, textarea[data-key].field-imported, select[data-key].field-imported').forEach(function(el) {
+      // Lock all fields with values in the PTS tab
+      document.getElementById('tab-pts').querySelectorAll('input[data-key], textarea[data-key], select[data-key]').forEach(function(el) {
         if (el.value && el.value.trim() !== '') {
           el.setAttribute('readonly', 'readonly');
           el.style.pointerEvents = 'none';
@@ -3174,9 +3174,10 @@ function renderPaxLoadTable() {
           el.classList.add('field-locked');
         }
       });
-      document.getElementById('edit-mode-text').textContent = 'Edit Off';
-      document.getElementById('edit-mode-text-mob').textContent = '✏️ Edit Off';
-      document.getElementById('edit-mode-text-nav').textContent = 'Edit Off';
+      var textMobEl = document.getElementById('edit-mode-text-mob');
+      if (textMobEl) textMobEl.textContent = '✏️ Edit Off';
+      var textNavEl = document.getElementById('edit-mode-text-nav');
+      if (textNavEl) textNavEl.textContent = 'Edit Off';
       wireLockBadgeButtons();
       wireEditModeButtons();
       state._locked = true;
@@ -3184,16 +3185,17 @@ function renderPaxLoadTable() {
     }
 
     function unlockFields() {
-      // Unlock all imported fields that are currently locked
-      document.querySelectorAll('.field-imported.field-locked').forEach(function(el) {
+      // Unlock all locked fields in the PTS tab
+      document.getElementById('tab-pts').querySelectorAll('.field-locked').forEach(function(el) {
         el.removeAttribute('readonly');
         el.style.pointerEvents = '';
         el.style.userSelect = '';
         el.classList.remove('field-locked');
       });
-      document.getElementById('edit-mode-text').textContent = 'Edit On';
-      document.getElementById('edit-mode-text-mob').textContent = '✏️ Edit On';
-      document.getElementById('edit-mode-text-nav').textContent = 'Edit On';
+      var textMobEl = document.getElementById('edit-mode-text-mob');
+      if (textMobEl) textMobEl.textContent = '✏️ Edit On';
+      var textNavEl = document.getElementById('edit-mode-text-nav');
+      if (textNavEl) textNavEl.textContent = 'Edit On';
       wireLockBadgeButtons();
       wireEditModeButtons();
       state._locked = false;
@@ -3222,14 +3224,22 @@ function renderPaxLoadTable() {
       ['btn-edit-mode', 'btn-edit-mode-mob', 'btn-edit-mode-nav'].forEach(function(id) {
         var btn = document.getElementById(id);
         if (!btn) return;
-        btn.onclick = function(e) {
+        // Remove old listeners by cloning (removes all event listeners)
+        var newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        // Add new listener
+        newBtn.addEventListener('click', function(e) {
+          e.preventDefault();
           e.stopPropagation();
+          console.log('Edit button clicked, current state._locked:', state._locked);
           if (state._locked) {
+            console.log('Unlocking fields...');
             unlockFields();
           } else {
+            console.log('Locking fields...');
             lockFields();
           }
-        };
+        });
       });
     }
 
