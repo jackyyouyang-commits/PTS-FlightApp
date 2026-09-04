@@ -3337,8 +3337,10 @@ function renderPaxLoadTable() {
     function clearOIR() {
       unlockOIR();
       var ta = document.getElementById('oir-textarea'); if(ta) ta.value='';
+      var preview = document.getElementById('oir-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_oir'); localStorage.removeItem('pts_oir_locked'); } catch(e) {}
       var badge = document.getElementById('oir-lock-badge'); if(badge) badge.style.display='none';
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // ===========================
@@ -3377,8 +3379,10 @@ function renderPaxLoadTable() {
     function clearCrew() {
       unlockCrew();
       var ta = document.getElementById('crew-textarea'); if(ta) ta.value='';
+      var preview = document.getElementById('crew-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_crew'); localStorage.removeItem('pts_crew_locked'); } catch(e) {}
       var badge = document.getElementById('crew-lock-badge'); if(badge) badge.style.display='none';
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // ===========================
@@ -3417,8 +3421,10 @@ function renderPaxLoadTable() {
     function clearDepCrew() {
       unlockDepCrew();
       var ta = document.getElementById('dep-crew-textarea'); if(ta) ta.value='';
+      var preview = document.getElementById('dep-crew-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_dep_crew'); localStorage.removeItem('pts_dep_crew_locked'); } catch(e) {}
       var badge = document.getElementById('dep-crew-lock-badge'); if(badge) badge.style.display='none';
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // ===========================
@@ -3457,8 +3463,10 @@ function renderPaxLoadTable() {
     function clearStaffAcc() {
       unlockStaffAcc();
       var ta = document.getElementById('staff-acc-textarea'); if(ta) ta.value='';
+      var preview = document.getElementById('staff-acc-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_staff_acc'); localStorage.removeItem('pts_staff_acc_locked'); } catch(e) {}
       var badge = document.getElementById('staff-acc-lock-badge'); if(badge) badge.style.display='none';
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // ===========================
@@ -3497,8 +3505,10 @@ function renderPaxLoadTable() {
     function clearArrPTM() {
       unlockArrPTM();
       var ta = document.getElementById('arr-ptm-textarea'); if(ta) ta.value='';
+      var preview = document.getElementById('arr-ptm-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_arr_ptm'); localStorage.removeItem('pts_arr_ptm_locked'); } catch(e) {}
       var badge = document.getElementById('arr-ptm-lock-badge'); if(badge) badge.style.display='none';
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // ===========================
@@ -3537,8 +3547,34 @@ function renderPaxLoadTable() {
     function clearDepLIR() {
       unlockDepLIR();
       var ta = document.getElementById('dep-lir-textarea'); if(ta) ta.value='';
+      var preview = document.getElementById('dep-lir-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_dep_lir'); localStorage.removeItem('pts_dep_lir_locked'); } catch(e) {}
       var badge = document.getElementById('dep-lir-lock-badge'); if(badge) badge.style.display='none';
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // ITD Tag Card - simple clear (no lock/unlock needed if not implemented)
+    function clearITDTagCard() {
+      var ta = document.getElementById('itd-tag-card-textarea'); if(ta) ta.value='';
+      var preview = document.getElementById('itd-tag-card-textarea-preview'); if(preview) preview.remove();
+      try { localStorage.removeItem('pts_itd_tag_card'); } catch(e) {}
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // Departure Gen Dec - simple clear
+    function clearDepGenDec() {
+      var ta = document.getElementById('dep-gen-dec-textarea'); if(ta) ta.value='';
+      var preview = document.getElementById('dep-gen-dec-textarea-preview'); if(preview) preview.remove();
+      try { localStorage.removeItem('pts_dep_gen_dec'); } catch(e) {}
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // Agent Positions - simple clear
+    function clearAgentPos() {
+      var ta = document.getElementById('agent-pos-textarea'); if(ta) ta.value='';
+      var preview = document.getElementById('agent-pos-textarea-preview'); if(preview) preview.remove();
+      try { localStorage.removeItem('pts_agent_pos'); } catch(e) {}
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // ===========================
@@ -3998,6 +4034,15 @@ function renderPaxLoadTable() {
       // DEP LIR buttons
       safeOn('dep-lir-save-btn', saveDepLIR);
       safeOn('dep-lir-clear-btn', clearDepLIR);
+
+      // ITD Tag Card clear
+      safeOn('itd-tag-card-clear-btn', clearITDTagCard);
+
+      // Departure Gen Dec clear
+      safeOn('dep-gen-dec-clear-btn', clearDepGenDec);
+
+      // Agent Positions clear
+      safeOn('agent-pos-clear-btn', clearAgentPos);
 
       // Paste from Excel buttons
       safeOn('staff-acc-paste-btn', function() { pasteFromExcel('staff-acc-textarea'); });
