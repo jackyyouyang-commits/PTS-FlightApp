@@ -3184,8 +3184,8 @@ function renderPaxLoadTable() {
     }
 
     function unlockFields() {
-      // Only unlock imported fields that are currently locked
-      document.querySelectorAll('input[data-key].field-imported.field-locked, textarea[data-key].field-imported.field-locked, select[data-key].field-imported.field-locked').forEach(function(el) {
+      // Unlock all imported fields that are currently locked
+      document.querySelectorAll('.field-imported.field-locked').forEach(function(el) {
         el.removeAttribute('readonly');
         el.style.pointerEvents = '';
         el.style.userSelect = '';
