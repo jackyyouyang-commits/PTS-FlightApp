@@ -2156,7 +2156,7 @@ function renderPaxLoadTable() {
         var row = paxLoadRows[r];
         var isFinal = row.label === 'FINAL' || row.label === 'FINAL REV 1' || row.label === 'FINAL REV 2';
         var isRev = row.label === 'FINAL REV 1' || row.label === 'FINAL REV 2';
-        var cls = isFinal ? 'font-extrabold text-cx-teal' : '';
+        var cls = isFinal ? 'text-cx-teal' : '';
         var totalCls = isFinal ? 'text-cx-teal' : '';
         var inputCls = isRev ? 'pax-tbl-input pax-no-indicator' : 'pax-tbl-input';
         var cells = '';
