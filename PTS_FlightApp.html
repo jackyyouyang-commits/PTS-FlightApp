@@ -3161,7 +3161,7 @@ function renderPaxLoadTable() {
           if (dGateSec !== null) {
             var gateCloseColor = dGateSec < 0 ? '#FCA5A5' : '#fff';
             var gateClosePrefix = dGateSec < 0 ? '+' : '-';
-            bl.innerHTML += '<br><span style="font-size:0.75em;opacity:0.9;color:' + gateCloseColor + ';">Gate Close ' + gateClosePrefix + fmtFromSec(Math.abs(dGateSec)) + '</span>';
+            bl.innerHTML += '<br><span style="font-size:0.75em;opacity:0.9;color:#fff;">Gate Close </span><span style="font-size:0.75em;opacity:0.9;color:' + gateCloseColor + ';">' + gateClosePrefix + fmtFromSec(Math.abs(dGateSec)) + '</span>';
           }
           bl.innerHTML += '</div>' + sep;
           bl.style.color = '#fff';
