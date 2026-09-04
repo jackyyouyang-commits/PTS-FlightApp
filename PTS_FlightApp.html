@@ -400,6 +400,10 @@ document.addEventListener('DOMContentLoaded', function() {
         #live-clock, #live-clock-m { font-size: 20px !important; }
         #etd-countdown, #etd-countdown-m { font-size: 18px !important; }
         #boarding-countdown, #boarding-countdown-m { font-size: 18px !important; }
+        /* Prevent time/date cutoff in mobile header */
+        #hdr-mobile .flex.flex-col { min-width: 0 !important; }
+        #hdr-mobile div[data-id="43"] { max-width: 70px !important; }
+        #live-date-m { font-size: 11px !important; white-space: normal !important; word-break: break-word !important; }
       }
 
       @media (min-width: 768px) and (orientation: landscape) {
@@ -812,6 +816,7 @@ document.addEventListener('DOMContentLoaded', function() {
         #hdr-mobile .gap-2{gap:3px!important;}
         #hdr-mobile button{padding:5px 7px!important;font-size:10px!important;min-height:30px!important;}
         #live-clock-m{font-size:17px!important;}
+        #live-date-m{font-size:13px!important;}
         #etd-countdown-m{font-size:13px!important;}
         #boarding-countdown-m{font-size:12px!important;}
         #hdr-flight-num-m{font-size:16px!important;font-weight:800!important;}
@@ -830,6 +835,7 @@ document.addEventListener('DOMContentLoaded', function() {
       /* ── S25 portrait ≤430px ── */
       @media(max-width:430px){
         #live-clock-m{font-size:15px!important;}
+        #live-date-m{font-size:11px!important;margin-top:1px!important;}
         #etd-countdown-m{font-size:11px!important;}
         #boarding-countdown-m{font-size:10px!important;}
         #hdr-flight-num-m{font-size:14px!important;}
@@ -843,6 +849,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .sum-value { font-size: 0.8rem !important; }
         .mt-3 { margin-top: 8px !important; }
         .mt-4 { margin-top: 10px !important; }
+        /* Fix time/date cutoff in mobile header */
+        #hdr-mobile .flex.flex-col[data-id="43"] { flex-shrink: 1 !important; min-width: 0 !important; }
       }
 
       /* ── Phone landscape ── */
