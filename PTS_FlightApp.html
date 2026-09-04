@@ -3391,6 +3391,7 @@ function renderPaxLoadTable() {
       var depLirContent   = taVal('dep-lir-textarea');
       var crewArrContent  = taVal('crew-textarea');
       var crewDepContent  = taVal('dep-crew-textarea');
+      var agentPosContent = taVal('agent-pos-textarea');
 
       var css = [
         '*{box-sizing:border-box;margin:0;padding:0;}',
@@ -3526,7 +3527,10 @@ function renderPaxLoadTable() {
         '<div class="page-break">'+preSection('Arrival Crew List', crewArrContent)+'</div>',
 
         // ── Page 7: Crew List — Departure ──
-        '<div class="page-break">'+preSection('Departure Gen Dec', crewDepContent)+'</div>'
+        '<div class="page-break">'+preSection('Departure Gen Dec', crewDepContent)+'</div>',
+
+        // ── Page 8: Agent Positions & Roster ──
+        '<div class="page-break">'+preSection('Agent Positions & Roster', agentPosContent)+'</div>'
       ].join('\n');
 
       return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PTS Report '+(s.flight||'')+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
