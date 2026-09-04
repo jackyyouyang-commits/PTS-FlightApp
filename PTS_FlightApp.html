@@ -3135,7 +3135,7 @@ function renderPaxLoadTable() {
         var gateNum = state.gate && String(state.gate).trim() !== '' ? state.gate : '--';
         var isMobile = id.includes('-m');
         var sepMargin = isMobile ? '4px' : '10px';
-        var sep = '<div class="etd-divider" style="margin:0 ' + sepMargin + ';"></div>';
+        var sep = '<span style="width:1px;height:28px;background:rgba(255,255,255,0.3);display:inline-block;margin:0 ' + sepMargin + ';vertical-align:middle;flex-shrink:0;font-size:0;"></span>';
         
         if (!btTargetMs) { bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;">--:--:--</span></div>' + sep; bl.style.color = '#fff'; return; }
         var dBoardSec = Math.round((btTargetMs - nowMs)/1000);
