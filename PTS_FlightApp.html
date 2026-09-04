@@ -3183,6 +3183,15 @@ function renderPaxLoadTable() {
             
             textarea.value = formatted;
             textarea.focus();
+            
+            // Trigger input event to update state (needed for clear button to work)
+            var event = new Event('input', { bubbles: true });
+            textarea.dispatchEvent(event);
+            
+            // Also trigger change event for any other listeners
+            var changeEvent = new Event('change', { bubbles: true });
+            textarea.dispatchEvent(changeEvent);
+            
             showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
           }
         }).catch(function(err) {
