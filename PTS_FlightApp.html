@@ -3133,29 +3133,31 @@ function renderPaxLoadTable() {
         var isMobile = id.includes('-m');
         var sepMargin = isMobile ? '4px' : '10px';
         var sep = '<span style="width:1px;height:28px;background:rgba(255,255,255,0.3);display:inline-block;margin:0 ' + sepMargin + ';vertical-align:middle;flex-shrink:0;font-size:0;"></span>';
-        if (!btTargetMs) { bl.innerHTML = '<span style="color:#fff;vertical-align:middle;font-size:1em;">--:--:--</span>' + sep + '<span style="color:#fff;vertical-align:middle;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>'; bl.style.color = '#fff'; return; }
+        
+        if (!btTargetMs) { bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;">--:--:--</span></div>' + sep + '<span style="color:#fff;vertical-align:middle;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>'; bl.style.color = '#fff'; return; }
         var dBoardSec = Math.round((btTargetMs - nowMs)/1000);
         var dGateSec = gctTargetMs ? Math.round((gctTargetMs - nowMs)/1000) : null;
 
         // Check if within 5 minutes before gate close
         if (dGateSec !== null && dGateSec > 0 && dGateSec <= 300) {
-          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;font-size:1em;"> Gate Closing</span><span style="font-size:0.75em;opacity:0.85;color:#fff;"> -' + fmtFromSec(dGateSec) + '</span>' + sep + '<span style="color:#fff;vertical-align:middle;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>';
+          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Gate Closing</span><br><span style="font-size:0.75em;opacity:0.85;color:#fff;"> -' + fmtFromSec(dGateSec) + '</span></div>' + sep + '<span style="color:#fff;vertical-align:middle;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>';
           bl.style.color = '#fff';
           return;
         }
         
         if (dGateSec !== null && dGateSec <= 0) {
-          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;font-size:1em;"> Boarding Closed</span>' + sep + '<span style="color:#fff;vertical-align:middle;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>'; bl.style.color = '#FCA5A5'; return;
+          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Closed</span></div>' + sep + '<span style="color:#fff;vertical-align:middle;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>'; bl.style.color = '#FCA5A5'; return;
         }
         if (dBoardSec <= 0) {
-          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;display:inline-block;min-width:120px;"> Boarding</span>' + sep + '<span style="color:#fff;vertical-align:middle;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>';
+          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span>';
           if (dGateSec !== null) {
-            bl.innerHTML += '<br><span style="font-size:0.75em;opacity:0.9;color:#fff;vertical-align:middle;white-space:nowrap;">Gate Close -' + fmtFromSec(Math.abs(dGateSec)) + '</span>';
+            bl.innerHTML += '<br><span style="font-size:0.75em;opacity:0.9;color:#fff;">Gate Close -' + fmtFromSec(Math.abs(dGateSec)) + '</span>';
           }
+          bl.innerHTML += '</div>' + sep + '<span style="color:#fff;vertical-align:middle;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>';
           bl.style.color = '#fff';
           return;
         }
-        bl.innerHTML = '<span style="color:#fff;vertical-align:middle;font-size:1em;"> -' + fmtFromSec(dBoardSec) + '</span>' + sep + '<span style="color:#fff;vertical-align:middle;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>';
+        bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> -' + fmtFromSec(dBoardSec) + '</span></div>' + sep + '<span style="color:#fff;vertical-align:middle;font-size:1em;white-space:nowrap;">Gate: ' + gateNum + '</span>';
         bl.style.color = dBoardSec < 1200 ? '#fff' : '#fff';
       });
     }
