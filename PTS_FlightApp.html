@@ -3173,50 +3173,27 @@ function renderPaxLoadTable() {
       var textarea = document.getElementById(textareaId);
       if (!textarea) return;
       
-      // Create a hidden paste area
-      var pasteArea = document.createElement('textarea');
-      pasteArea.style.position = 'fixed';
-      pasteArea.style.left = '-9999px';
-      pasteArea.style.top = '-9999px';
-      document.body.appendChild(pasteArea);
-      pasteArea.focus();
-      
-      var pasteHandler = function(e) {
-        if (e.clipboardData) {
-          var data = e.clipboardData.getData('text/plain');
+      // Use modern Clipboard API to read from clipboard
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        navigator.clipboard.readText().then(function(data) {
           if (data) {
             // Parse tab-separated data from Excel
-            var lines = data.split('\n').map(line => line.trim()).filter(line => line);
+            var lines = data.split('\n').map(function(line) { return line.trim(); }).filter(function(line) { return line; });
             
             // Format the data nicely
-            var formatted = lines.map(line => {
-              // Replace tabs with readable spacing or preserve them
-              return line;
-            }).join('\n');
+            var formatted = lines.join('\n');
             
             textarea.value = formatted;
             textarea.focus();
             showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
           }
-        }
-        pasteArea.removeEventListener('paste', pasteHandler);
-        document.body.removeChild(pasteArea);
-      };
-      
-      pasteArea.addEventListener('paste', pasteHandler);
-      
-      // Trigger paste by simulating Ctrl+V
-      try {
-        document.execCommand('paste');
-      } catch(e) {}
-      
-      // Fallback: just ask user to paste manually
-      setTimeout(function() {
-        if (pasteArea.parentNode) {
-          pasteArea.removeEventListener('paste', pasteHandler);
-          document.body.removeChild(pasteArea);
-        }
-      }, 100);
+        }).catch(function(err) {
+          showToast('Unable to read clipboard. Please ensure you have copied data and granted clipboard permissions.', 'red');
+          console.error('Clipboard read failed:', err);
+        });
+      } else {
+        showToast('Clipboard access not supported in this browser.', 'red');
+      }
     }
 
     // ===========================
