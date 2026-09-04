@@ -3172,76 +3172,133 @@ function renderPaxLoadTable() {
     function pasteFromExcel(textareaId) {
       console.log('pasteFromExcel called with:', textareaId);
       var textarea = document.getElementById(textareaId);
-      console.log('textarea element:', textarea);
       if (!textarea) {
         console.error('Textarea not found:', textareaId);
         return;
       }
       
-      // Use modern Clipboard API to read from clipboard
+      // Try Clipboard API first
       if (navigator.clipboard && navigator.clipboard.readText) {
-        console.log('Clipboard API available, focusing element...');
-        
-        // Focus the textarea first
+        console.log('Trying Clipboard API...');
         textarea.focus();
         
-        // Small delay to ensure focus is registered
         setTimeout(function() {
           navigator.clipboard.readText().then(function(data) {
-            console.log('Clipboard data received, length:', data.length);
-            if (data) {
-              // Store the raw data in textarea (keep for saving/export)
-              textarea.value = data;
-              textarea.focus();
-              
-              // Parse and create HTML table display
-              var lines = data.split('\n').filter(function(line) { return line.trim(); });
-              console.log('Lines parsed:', lines.length);
-              var tableHTML = '<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
-              
-              lines.forEach(function(line) {
-                tableHTML += '<tr>';
-                var cells = line.split('\t');
-                cells.forEach(function(cell) {
-                  tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;">' + 
-                    (cell.trim() || '&nbsp;') + '</td>';
-                });
-                tableHTML += '</tr>';
-              });
-              
-              tableHTML += '</table>';
-              
-              // Find or create preview container
-              var previewId = textareaId + '-preview';
-              var preview = document.getElementById(previewId);
-              if (!preview) {
-                preview = document.createElement('div');
-                preview.id = previewId;
-                preview.style.cssText = 'margin-top:10px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#f9fafb;max-height:400px;overflow:auto;';
-                textarea.parentNode.insertBefore(preview, textarea);
-              }
-              preview.innerHTML = tableHTML;
-              preview.style.display = 'block';
-              
-              // Trigger events for state update
-              var event = new Event('input', { bubbles: true });
-              textarea.dispatchEvent(event);
-              var changeEvent = new Event('change', { bubbles: true });
-              textarea.dispatchEvent(changeEvent);
-              
-              showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
-            } else {
-              showToast('Clipboard is empty. Please copy data from Excel first.', 'orange');
-            }
+            console.log('Clipboard API succeeded');
+            processPastedData(textarea, data);
           }).catch(function(err) {
-            console.error('Clipboard read failed:', err);
-            showToast('Make sure the browser window is in focus and you copied data from Excel. Try clicking the page, then the paste button again.', 'red');
+            console.error('Clipboard API failed:', err.name);
+            // Fallback to modal paste dialog
+            showPasteModal(textarea);
           });
         }, 50);
       } else {
-        console.error('Clipboard API not available');
-        showToast('Clipboard access not supported in this browser.', 'red');
+        // Fallback to modal paste dialog
+        showPasteModal(textarea);
       }
+    }
+    
+    function showPasteModal(textarea) {
+      // Create modal overlay
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;';
+      
+      var box = document.createElement('div');
+      box.style.cssText = 'background:#fff;border-radius:8px;padding:20px;width:90%;max-width:500px;box-shadow:0 4px 6px rgba(0,0,0,0.1);';
+      
+      var title = document.createElement('h2');
+      title.textContent = 'Paste from Excel';
+      title.style.cssText = 'margin:0 0 10px 0;font-size:18px;color:#333;';
+      box.appendChild(title);
+      
+      var desc = document.createElement('p');
+      desc.textContent = 'Paste your Excel data below, then click Import:';
+      desc.style.cssText = 'margin:0 0 10px 0;color:#666;font-size:14px;';
+      box.appendChild(desc);
+      
+      var pasteTextarea = document.createElement('textarea');
+      pasteTextarea.placeholder = 'Paste Excel data here (Ctrl+V or Cmd+V)';
+      pasteTextarea.style.cssText = 'width:100%;height:150px;padding:10px;border:1px solid #ccc;border-radius:4px;font-family:monospace;font-size:12px;box-sizing:border-box;';
+      pasteTextarea.focus();
+      box.appendChild(pasteTextarea);
+      
+      var buttonDiv = document.createElement('div');
+      buttonDiv.style.cssText = 'display:flex;gap:10px;margin-top:15px;justify-content:flex-end;';
+      
+      var importBtn = document.createElement('button');
+      importBtn.textContent = '✓ Import';
+      importBtn.style.cssText = 'background:#10B981;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;';
+      importBtn.onclick = function() {
+        var data = pasteTextarea.value;
+        if (data.trim()) {
+          processPastedData(textarea, data);
+          modal.remove();
+        } else {
+          showToast('Please paste data first', 'orange');
+        }
+      };
+      buttonDiv.appendChild(importBtn);
+      
+      var cancelBtn = document.createElement('button');
+      cancelBtn.textContent = '✕ Cancel';
+      cancelBtn.style.cssText = 'background:#ccc;color:#333;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;';
+      cancelBtn.onclick = function() { modal.remove(); };
+      buttonDiv.appendChild(cancelBtn);
+      
+      box.appendChild(buttonDiv);
+      modal.appendChild(box);
+      document.body.appendChild(modal);
+      
+      pasteTextarea.focus();
+    }
+    
+    function processPastedData(textarea, data) {
+      console.log('Processing pasted data, length:', data.length);
+      if (!data || !data.trim()) {
+        showToast('No data to paste', 'orange');
+        return;
+      }
+      
+      // Store the raw data in textarea
+      textarea.value = data;
+      textarea.focus();
+      
+      // Parse and create HTML table display
+      var lines = data.split('\n').filter(function(line) { return line.trim(); });
+      console.log('Lines parsed:', lines.length);
+      var tableHTML = '<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
+      
+      lines.forEach(function(line) {
+        tableHTML += '<tr>';
+        var cells = line.split('\t');
+        cells.forEach(function(cell) {
+          tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;">' + 
+            (cell.trim() || '&nbsp;') + '</td>';
+        });
+        tableHTML += '</tr>';
+      });
+      
+      tableHTML += '</table>';
+      
+      // Find or create preview container
+      var previewId = textarea.id + '-preview';
+      var preview = document.getElementById(previewId);
+      if (!preview) {
+        preview = document.createElement('div');
+        preview.id = previewId;
+        preview.style.cssText = 'margin-top:10px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#f9fafb;max-height:400px;overflow:auto;';
+        textarea.parentNode.insertBefore(preview, textarea);
+      }
+      preview.innerHTML = tableHTML;
+      preview.style.display = 'block';
+      
+      // Trigger events for state update
+      var event = new Event('input', { bubbles: true });
+      textarea.dispatchEvent(event);
+      var changeEvent = new Event('change', { bubbles: true });
+      textarea.dispatchEvent(changeEvent);
+      
+      showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
     }
 
     // ===========================
