@@ -3145,7 +3145,7 @@ function renderPaxLoadTable() {
 
         // Check if within 15 minutes before gate close - show blinking yellow
         if (dGateSec !== null && dGateSec > 0 && dGateSec <= 900) {
-          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span><br><span class="blink-countdown" style="font-size:0.75em;opacity:0.9;color:#FFD700;">Gate Close -' + fmtFromSec(dGateSec) + '</span></div>' + sep;
+          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span><br><span style="font-size:0.75em;opacity:0.9;color:#fff;">Gate Close </span><span class="blink-countdown" style="font-size:0.75em;opacity:0.9;color:#FFD700;">-' + fmtFromSec(dGateSec) + '</span></div>' + sep;
           bl.style.color = '#fff';
           return;
         }
