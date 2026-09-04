@@ -3285,7 +3285,8 @@ function renderPaxLoadTable() {
       if (!preview) {
         preview = document.createElement('div');
         preview.id = previewId;
-        preview.style.cssText = 'margin-top:10px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#f9fafb;max-height:400px;overflow:auto;';
+        // Match textarea's flex sizing to maintain container height
+        preview.style.cssText = 'flex:1 1 0;width:100%;border:1px solid #ddd;border-radius:6px;padding:12px;background:#f9fafb;max-height:none;overflow:auto;box-sizing:border-box;';
         textarea.parentNode.insertBefore(preview, textarea);
       }
       preview.innerHTML = tableHTML;
