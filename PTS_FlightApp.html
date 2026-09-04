@@ -1277,7 +1277,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <p data-id="252" class="text-xs text-cx-grey italic mb-3">Targets auto-calculate from ETA. Tap to log actual time, Long press to reset, or edit time manually</p>
           <div data-id="253" class="table-scroll-wrap">
             <div class="table-scroll-wrap"><table data-id="254" class="ms-table" id="arr-ms-table">
-              <thead data-id="255"><tr data-id="256"><th data-id="257">Activity</th><th data-id="258">Target</th><th data-id="259">Actual</th></tr></thead>
+              <thead data-id="255"><tr data-id="256"><th data-id="257">Activity</th><th data-id="258">Target</th><th data-id="259">Actual</th><th style="text-align:center;">Variance</th></tr></thead>
               <tbody data-id="260" id="arr-milestones-a1"></tbody>
             </table></div>
           </div>
@@ -1452,7 +1452,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <p data-id="491" class="text-xs text-cx-grey italic mb-3">Targets auto-calculate from ETD. Tap to log actual time, Long press to reset, or edit time manually</p>
           <div data-id="492" class="table-scroll-wrap">
             <div class="table-scroll-wrap"><table data-id="493" class="ms-table" id="dep-ms-table">
-              <thead data-id="494"><tr data-id="495"><th data-id="496">Activity</th><th data-id="497">Target</th><th data-id="498">Actual</th></tr></thead>
+              <thead data-id="494"><tr data-id="495"><th data-id="496">Activity</th><th data-id="497">Target</th><th data-id="498">Actual</th><th style="text-align:center;">Variance</th></tr></thead>
               <tbody data-id="499" id="dep-milestones-e5"></tbody>
             </table></div>
           </div>
@@ -2043,7 +2043,19 @@ document.addEventListener('DOMContentLoaded', function() {
             '<button class="act-edit-btn" data-ms-type="' + type + '" data-ms-idx="' + i + '" title="Manual input">&#9998;</button>' +
             '</span>';
         }
-        html += '<tr><td>' + act.name + '</td><td>' + targetStr + '</td><td>' + actualCell + '</td></tr>';
+        var variance = '\u2014';
+        if (target !== null && logged) {
+          var actualMin = parseTime(logged);
+          if (actualMin !== null) {
+            var diffMin = actualMin - target;
+            var sign = diffMin >= 0 ? '+' : '-';
+            var absMin = Math.abs(diffMin);
+            var h = Math.floor(absMin / 60);
+            var m = absMin % 60;
+            variance = sign + (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+          }
+        }
+        html += '<tr><td>' + act.name + '</td><td>' + targetStr + '</td><td>' + actualCell + '</td><td style="text-align:center;font-weight:600;color:#059669;">' + variance + '</td></tr>';
       }
       tbody.innerHTML = html;
     }
