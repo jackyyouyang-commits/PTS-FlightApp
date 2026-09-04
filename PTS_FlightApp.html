@@ -3177,9 +3177,11 @@ function renderPaxLoadTable() {
       if (navigator.clipboard && navigator.clipboard.readText) {
         navigator.clipboard.readText().then(function(data) {
           if (data) {
-            // Keep the data exactly as Excel provides it (with tabs and newlines preserved)
-            // This maintains the table structure with columns separated by tabs
-            textarea.value = data;
+            // Replace tabs with consistent spacing for column alignment
+            // Each tab becomes 4 spaces for proper column alignment in monospace font
+            var formatted = data.replace(/\t/g, '    ');
+            
+            textarea.value = formatted;
             textarea.focus();
             showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
           }
