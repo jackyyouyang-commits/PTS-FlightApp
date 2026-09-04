@@ -3177,18 +3177,41 @@ function renderPaxLoadTable() {
       if (navigator.clipboard && navigator.clipboard.readText) {
         navigator.clipboard.readText().then(function(data) {
           if (data) {
-            // Replace tabs with consistent spacing for column alignment
-            // Each tab becomes 4 spaces for proper column alignment in monospace font
-            var formatted = data.replace(/\t/g, '    ');
-            
-            textarea.value = formatted;
+            // Store the raw data in textarea (keep for saving/export)
+            textarea.value = data;
             textarea.focus();
             
-            // Trigger input event to update state (needed for clear button to work)
+            // Parse and create HTML table display
+            var lines = data.split('\n').filter(function(line) { return line.trim(); });
+            var tableHTML = '<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
+            
+            lines.forEach(function(line) {
+              tableHTML += '<tr>';
+              var cells = line.split('\t');
+              cells.forEach(function(cell) {
+                tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;">' + 
+                  (cell.trim() || '&nbsp;') + '</td>';
+              });
+              tableHTML += '</tr>';
+            });
+            
+            tableHTML += '</table>';
+            
+            // Find or create preview container
+            var previewId = textareaId + '-preview';
+            var preview = document.getElementById(previewId);
+            if (!preview) {
+              preview = document.createElement('div');
+              preview.id = previewId;
+              preview.style.cssText = 'margin-top:10px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#f9fafb;max-height:400px;overflow:auto;';
+              textarea.parentNode.insertBefore(preview, textarea);
+            }
+            preview.innerHTML = tableHTML;
+            preview.style.display = 'block';
+            
+            // Trigger events for state update
             var event = new Event('input', { bubbles: true });
             textarea.dispatchEvent(event);
-            
-            // Also trigger change event for any other listeners
             var changeEvent = new Event('change', { bubbles: true });
             textarea.dispatchEvent(changeEvent);
             
