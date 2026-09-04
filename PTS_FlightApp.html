@@ -2483,6 +2483,11 @@ function renderPaxLoadTable() {
       if(oirVal.trim()) lines.push(oirVal.trim());
       lines.push('');
 
+      sec('ITD TAG CARD');
+      var itdTagCardVal = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
+      if(itdTagCardVal.trim()) lines.push(itdTagCardVal.trim());
+      lines.push('');
+
       sec('DEP LIR');
       var depLirVal = (document.getElementById('dep-lir-textarea')||{}).value||'';
       if(depLirVal.trim()) lines.push(depLirVal.trim());
@@ -2528,6 +2533,7 @@ function renderPaxLoadTable() {
         payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
         payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
         payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
+        payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
         payload._dep_lir   = (document.getElementById('dep-lir-textarea')||{}).value||'';
         payload._crew      = (document.getElementById('crew-textarea')||{}).value||'';
         payload._dep_crew  = (document.getElementById('dep-crew-textarea')||{}).value||'';
@@ -2597,7 +2603,7 @@ function renderPaxLoadTable() {
         // Restore paste-tab textarea content from shared payload
         (function(){
           var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm',
-                   'oir-textarea':'_oir','dep-lir-textarea':'_dep_lir',
+                   'oir-textarea':'_oir','itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir',
                    'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew'};
           Object.keys(m).forEach(function(id){
             var ta=document.getElementById(id);
@@ -4284,7 +4290,7 @@ function renderPaxLoadTable() {
         // Restore paste-tab textarea content from local storage payload
         (function(){
           var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm',
-                   'oir-textarea':'_oir','dep-lir-textarea':'_dep_lir',
+                   'oir-textarea':'_oir','itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir',
                    'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew'};
           Object.keys(m).forEach(function(id){
             var ta=document.getElementById(id);
