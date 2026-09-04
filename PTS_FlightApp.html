@@ -3387,6 +3387,7 @@ function renderPaxLoadTable() {
       function taVal(id){ var el=document.getElementById(id); return el&&el.value.trim()?el.value.trim():''; }
       var staffAccContent = taVal('staff-acc-textarea');
       var arrPtmContent   = taVal('arr-ptm-textarea');
+      var itdTagCardContent = taVal('itd-tag-card-textarea');
       var oirContent      = taVal('oir-textarea');
       var depLirContent   = taVal('dep-lir-textarea');
       var crewArrContent  = taVal('crew-textarea');
@@ -3517,19 +3518,22 @@ function renderPaxLoadTable() {
         // ── Page 3: Arrival PTM ──
         '<div class="page-break">'+preSection('Arrival PTM', arrPtmContent)+'</div>',
 
-        // ── Page 4: ARR OIR ──
+        // ── Page 4: ITD Tag Card ──
+        '<div class="page-break">'+preSection('ITD Tag Card', itdTagCardContent)+'</div>',
+
+        // ── Page 5: Arrival Offloading Instruction ──
         '<div class="page-break">'+preSection('Arrival Offloading Instruction', oirContent)+'</div>',
 
-        // ── Page 5: DEP LIR ──
+        // ── Page 6: Departure Onloading Instruction ──
         '<div class="page-break">'+preSection('Departure Onloading Instruction', depLirContent)+'</div>',
 
-        // ── Page 6: Crew List — Arrival ──
+        // ── Page 7: Arrival Crew List ──
         '<div class="page-break">'+preSection('Arrival Crew List', crewArrContent)+'</div>',
 
-        // ── Page 7: Crew List — Departure ──
+        // ── Page 8: Departure Gen Dec ──
         '<div class="page-break">'+preSection('Departure Gen Dec', crewDepContent)+'</div>',
 
-        // ── Page 8: Agent Positions & Roster ──
+        // ── Page 9: Agent Positions & Roster ──
         '<div class="page-break">'+preSection('Agent Positions & Roster', agentPosContent)+'</div>'
       ].join('\n');
 
