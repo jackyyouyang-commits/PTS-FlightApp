@@ -3428,8 +3428,7 @@ function renderPaxLoadTable() {
         return '<div class="section"><h2>'+title+'</h2><table>'+tableRows+'</table></div>';
       }
       function preSection(title, content, extraClass){
-        if(!content) return '';
-        return '<div class="section'+(extraClass?' '+extraClass:'')+'"><h2>'+title+'</h2><div class="pre-content">'+content.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div></div>';
+        return '<div class="section'+(extraClass?' '+extraClass:'')+'"><h2>'+title+'</h2><div class="pre-content">'+(content?content.replace(/</g,'&lt;').replace(/>/g,'&gt;'):'—')+'</div></div>';
       }
 
       var body = [
@@ -3512,22 +3511,22 @@ function renderPaxLoadTable() {
         depPtsHtml ? section('Departure Precision Timing Schedule', depPtsHtml) : section('Departure Precision Timing Schedule', ''),
 
         // ── Page 2: Staff Acceptance ──
-        staffAccContent ? '<div class="page-break">'+preSection('Staff Acceptance', staffAccContent)+'</div>' : '',
+        '<div class="page-break">'+preSection('Staff Acceptance', staffAccContent)+'</div>',
 
         // ── Page 3: Arrival PTM ──
-        arrPtmContent ? '<div class="page-break">'+preSection('Arrival PTM', arrPtmContent)+'</div>' : '',
+        '<div class="page-break">'+preSection('Arrival PTM', arrPtmContent)+'</div>',
 
         // ── Page 4: ARR OIR ──
-        oirContent ? '<div class="page-break">'+preSection('Arrival OIR', oirContent)+'</div>' : '',
+        '<div class="page-break">'+preSection('Arrival OIR', oirContent)+'</div>',
 
         // ── Page 5: DEP LIR ──
-        depLirContent ? '<div class="page-break">'+preSection('DEP LIR', depLirContent)+'</div>' : '',
+        '<div class="page-break">'+preSection('DEP LIR', depLirContent)+'</div>',
 
         // ── Page 6: Crew List — Arrival ──
-        crewArrContent ? '<div class="page-break">'+preSection('Crew List — Arrival', crewArrContent)+'</div>' : '',
+        '<div class="page-break">'+preSection('Crew List — Arrival', crewArrContent)+'</div>',
 
         // ── Page 7: Crew List — Departure ──
-        crewDepContent ? '<div class="page-break">'+preSection('Crew List — Departure', crewDepContent)+'</div>' : ''
+        '<div class="page-break">'+preSection('Crew List — Departure', crewDepContent)+'</div>'
       ].join('\n');
 
       return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PTS Report '+(s.flight||'')+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
