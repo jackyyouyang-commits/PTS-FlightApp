@@ -2201,13 +2201,10 @@ function renderPaxLoadTable() {
             '</div>' +
           '</div>' +
           '<div class="mt-3 grid grid-cols-4 sm:grid-cols-8 gap-2 text-center">' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_dm_e') + '</div><div class="sum-label" style="margin-top:2px;">DM/Emer</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_go_s') + '</div><div class="sum-label" style="margin-top:2px;">GO/Saph</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_sl_r') + '</div><div class="sum-label" style="margin-top:2px;">SL/Ruby</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_ic') + '</div><div class="sum-label" style="margin-top:2px;">IC</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_oc') + '</div><div class="sum-label" style="margin-top:2px;">OC</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_hkg') + '</div><div class="sum-label" style="margin-top:2px;">HKG</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_cis') + '</div><div class="sum-label" style="margin-top:2px;">CIS</div></div>' +
+            ['DM/Emer:'+(state.dep_dm_e||''),'GO/Saph:'+(state.dep_go_s||''),'SL/Ruby:'+(state.dep_sl_r||''),'IC:'+(state.dep_ic||''),'OC:'+(state.dep_oc||''),'HKG:'+(state.dep_hkg||''),'CIS:'+(state.dep_cis||'')].map(function(s) {
+              var val = s.split(':')[1]; var display = val && String(val).trim() ? val : '-';
+              return '<div style="background:'+( val && String(val).trim() ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val && String(val).trim() ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:'+ (val && String(val).trim() ? 'white' : '#111827')+';">'+display+'</div><div style="font-size:0.7rem;color:'+(val && String(val).trim() ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+s.split(':')[0]+'</div></div>';
+            }).join('') +
           '</div>' +
         '</div>' +
         '<div class="card"><div class="section-hdr" style="margin-top:0;">Defects</div><div style="padding:12px;font-size:0.95rem;line-height:1.6;color:#111827;whitespace-pre-wrap;">'+(state.defects||'—')+'</div></div>' +
