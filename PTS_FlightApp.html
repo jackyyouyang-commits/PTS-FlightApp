@@ -3878,8 +3878,30 @@ function renderPaxLoadTable() {
       function section(title, tableRows){
         return '<div class="section"><h2>'+title+'</h2><table>'+tableRows+'</table></div>';
       }
+      function formatITDTagCardTable(content){
+        if(!content || !content.trim()) return '—';
+        var lines = content.split('\n').filter(function(line) { return line.trim(); });
+        var allCells = lines.map(function(line) { return line.split('\t'); });
+        var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
+        var tableHTML = '<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:11px;border:1px solid #999;margin:10px 0;"><tbody>';
+        allCells.forEach(function(row, rowIdx) {
+          tableHTML += '<tr style="border-bottom:1px solid #ccc;">';
+          row.forEach(function(cell) {
+            var cellContent = cell.trim() || '&nbsp;';
+            var bgColor = rowIdx === 0 ? '#e0e0e0' : '#fff';
+            var fontWeight = rowIdx === 0 ? 'font-weight:bold;' : '';
+            tableHTML += '<td style="border-right:1px solid #ccc;padding:6px;' + fontWeight + 'background:' + bgColor + ';">' + cellContent + '</td>';
+          });
+          tableHTML += '</tr>';
+        });
+        tableHTML += '</tbody></table>';
+        return tableHTML;
+      }
       function preSection(title, content, extraClass){
         return '<div class="section'+(extraClass?' '+extraClass:'')+'"><h2>'+title+'</h2><div class="pre-content">'+(content?content.replace(/</g,'&lt;').replace(/>/g,'&gt;'):'—')+'</div></div>';
+      }
+      function htmlSection(title, htmlContent, extraClass){
+        return '<div class="section'+(extraClass?' '+extraClass:'')+'"><h2>'+title+'</h2><div style="padding:8px;background:#fff;">'+(htmlContent||'—')+'</div></div>';
       }
 
       var body = [
@@ -3967,7 +3989,7 @@ function renderPaxLoadTable() {
         '<div class="page-break">'+preSection('Arrival PTM', arrPtmContent)+'</div>',
 
         // ── Page 4: ITD Tag Card ──
-        '<div class="page-break">'+preSection('ITD Tag Card', itdTagCardContent)+'</div>',
+        '<div class="page-break">'+htmlSection('ITD Tag Card', formatITDTagCardTable(itdTagCardContent))+'</div>',
 
         // ── Page 5: Arrival Offloading Instruction ──
         '<div class="page-break">'+preSection('Arrival Offloading Instruction', oirContent)+'</div>',
