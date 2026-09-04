@@ -1141,7 +1141,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div data-id="140"><label data-id="141" class="field-label">Date</label><input data-id="142" class="field-input sm" id="f-date" data-key="date" placeholder="03 May 2026"></div>
             <div data-id="143"><label data-id="144" class="field-label">REGN</label><input data-id="145" class="field-input sm" id="f-regn" data-key="regn" placeholder="KPF"></div>
             <div data-id="146"><label data-id="147" class="field-label">Config</label><input data-id="148" class="field-input sm" id="f-config" data-key="config" placeholder="77J"></div>
-            <div data-id="149-152" style="display:flex;gap:6px;"><div style="flex:1;"><label data-id="150" class="field-label">STA</label><input data-id="151" class="field-input sm" id="f-sta" data-key="sta" placeholder="HH:MM" inputmode="text"></div><div style="flex:1;"><label data-id="153" class="field-label">ETA</label><input data-id="154" class="field-input sm" id="f-eta" data-key="eta" placeholder="HH:MM" inputmode="text"></div></div>
+            <div data-id="149-152" style="display:flex;gap:6px;"><div style="flex:1;"><label data-id="150" class="field-label">STA</label><input data-id="151" class="field-input sm" id="f-sta" data-key="sta" placeholder="HH:MM" inputmode="text"></div><div style="flex:1;"><label data-id="153" class="field-label">ETA</label><input data-id="154" class="field-input sm" id="f-eta" data-key="eta" placeholder="HH:MM" inputmode="text"></div><div style="flex:1;"><label data-id="154a" class="field-label">ATA</label><input data-id="154b" class="field-input sm" id="f-ata" data-key="ata" placeholder="HH:MM" inputmode="text"></div></div>
             <div data-id="155"><label data-id="156" class="field-label">Gate</label><input data-id="157" class="field-input sm" id="f-gate" data-key="gate" placeholder="67" inputmode="numeric"></div>
             <div data-id="158"><label data-id="159" class="field-label">Carousel</label><input data-id="160" class="field-input sm" id="f-carousel" data-key="carousel" placeholder="24" inputmode="numeric"></div>
             <div data-id="161"><label data-id="162" class="field-label">Weather</label><input data-id="163" class="field-input sm" id="f-weather" data-key="weather" placeholder="Fine"></div>
@@ -1646,7 +1646,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // STATE
     // ===========================
     var state = {
-      flight:'', date:'', regn:'', config:'', sta:'', eta:'', gate:'', carousel:'', weather:'', delayCode:'',
+      flight:'', date:'', regn:'', config:'', sta:'', eta:'', ata:'', gate:'', carousel:'', weather:'', delayCode:'',
       arr_cn:'', arr_ism:'',
       arr_pax_j:'', arr_pax_w:'', arr_pax_y:'', arr_pax_inf:'',
       arr_wchr_s:'', arr_wchr_s_details:'', arr_wchc:'', arr_maas:'', arr_meda:'', arr_umnr:'', arr_svip:'', arr_deaf:'', arr_blnd:'',
@@ -2130,7 +2130,7 @@ function renderPaxLoadTable() {
             '<div><div class="sum-label">Config</div><div class="sum-value">' + v('config') + '</div></div>' +
             '<div><div class="sum-label">Gate</div><div class="sum-value">' + v('gate') + '</div></div>' +
             '<div><div class="sum-label">Carousel</div><div class="sum-value">' + v('carousel') + '</div></div>' +
-            '<div><div class="sum-label">STA / ETA</div><div class="sum-value">' + v('sta') + ' / ' + v('eta') + '</div></div>' +
+            '<div><div class="sum-label">STA / ETA / ATA</div><div class="sum-value">' + v('sta') + ' / ' + v('eta') + ' / ' + v('ata') + '</div></div>' +
             '<div><div class="sum-label">Delay</div><div class="sum-value">' + v('delayCode') + '</div></div>' +
           '</div>' +
         '</div>' +
