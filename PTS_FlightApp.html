@@ -2169,8 +2169,6 @@ function renderPaxLoadTable() {
             '<div><div class="sum-label">Crew Fig</div><div class="sum-value">' + v('dep_crew_fig') + '</div></div>' + '<div><div class="sum-label">PX/DT Crew</div><div class="sum-value">' + v('dep_px_dt') + '</div></div>' +
           '</div>' +
           '<div class="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-4">' +
-            '<div><div class="sum-label">Cargo</div><div class="sum-value">' + v('dep_cargo_type') + ' \u2014 ' + v('dep_cargo_kg') + ' kg</div></div>' +
-            '<div><div class="sum-label">Total Fuel</div><div class="sum-value">' + v('dep_total_fuel') + ' t</div></div>' +
           '</div>' +
         '</div>' +
         '<div class="card">' +
@@ -2187,6 +2185,12 @@ function renderPaxLoadTable() {
             '<div><div class="sum-label">STRL</div><div class="sum-value">' + v('dep_strl') + '</div></div>' +
             '<div><div class="sum-label">WCH</div><div class="sum-value">' + v('dep_wch') + '</div></div>' +
             '<div><div class="sum-label">Carry-On Needed</div><div class="sum-value">' + v('dep_carry_on') + '</div></div>' +
+          '</div>' +
+          '<div class="grid grid-cols-4 gap-4 mt-3">' +
+            '<div><div class="sum-label">Cargo</div><div class="sum-value">' + v('dep_cargo_type') + ' — ' + v('dep_cargo_kg') + ' kg</div></div>' +
+            '<div><div class="sum-label">Pre Fuel (t)</div><div class="sum-value">' + v('dep_pre_fuel') + '</div></div>' +
+            '<div><div class="sum-label">Total Fuel (t)</div><div class="sum-value">' + v('dep_total_fuel') + '</div></div>' +
+            '<div><div class="sum-label">Actual Fuel (t)</div><div class="sum-value">' + v('dep_actual_fuel') + '</div></div>' +
           '</div>' +
         '</div>' +
         '<div class="card">' +
