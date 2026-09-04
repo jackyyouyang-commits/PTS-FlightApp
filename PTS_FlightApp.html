@@ -3368,7 +3368,9 @@ function renderPaxLoadTable() {
 
       // Active pax loading row (Rev2 > Rev1 > Final)
       function paxRow(label, jk, wk, yk, infk, totk){
-        var j=v(jk),w=v(wk),y=v(yk),inf=v(infk),tot=v(totk);
+        var j=numOrZero(s[jk]),w=numOrZero(s[wk]),y=numOrZero(s[yk]),inf=numOrZero(s[infk]);
+        var calcTotal = j+w+y;
+        var tot=s[totk]&&String(s[totk]).trim()?String(s[totk]):calcTotal;
         return '<tr><td class="lbl">'+label+'</td><td class="val">J:'+j+' W:'+w+' Y:'+y+' INF:'+inf+' Total:'+tot+'</td></tr>';
       }
 
