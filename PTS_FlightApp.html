@@ -2355,6 +2355,34 @@ function renderPaxLoadTable() {
         '</div>' +
         '<div class="card"><div class="section-hdr" style="margin-top:0;">Defects</div><div class="sum-value" style="margin-top:0;">'+(state.defects||'—')+'</div></div>' +
         '<div class="card"><div class="section-hdr" style="margin-top:0;">Remarks</div><div class="sum-value" style="margin-top:0;">'+(state.remarks||'—')+'</div></div>';
+        
+      // Add ITD Tag Card table if data exists
+      var itdTagCardVal = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
+      if(itdTagCardVal.trim()) {
+        var lines = itdTagCardVal.split('\n').filter(function(line) { return line.trim(); });
+        var allCells = lines.map(function(line) { return line.split('\t'); });
+        var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
+        var colWidths = new Array(numCols).fill(80);
+        allCells.forEach(function(row) {
+          row.forEach(function(cell, idx) {
+            var width = Math.max(80, (cell.trim()||'').length * 9 + 16);
+            colWidths[idx] = Math.max(colWidths[idx], width);
+          });
+        });
+        
+        var tableHTML = '<table style="width:auto;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
+        allCells.forEach(function(row, rowIdx) {
+          tableHTML += '<tr style="transition:background-color 0.3s ease;">';
+          row.forEach(function(cell, idx) {
+            var cellContent = cell.trim() || '&nbsp;';
+            tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;min-width:' + colWidths[idx] + 'px;text-align:left;">' + cellContent + '</td>';
+          });
+          tableHTML += '</tr>';
+        });
+        tableHTML += '</table>';
+        
+        c.innerHTML += '<div class="card"><div class="section-hdr" style="margin-top:0;">ITD Tag Card</div><div style="overflow-x:auto;max-height:400px;overflow-y:auto;">' + tableHTML + '</div></div>';
+      }
 
       refreshSummarySpans();
       refreshFinalLoading();
