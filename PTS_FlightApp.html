@@ -3397,7 +3397,9 @@ function renderPaxLoadTable() {
       var depShiftForEtd = computeDepTurnaroundShift();
       var depTargetsForEtd = computeActivityTargets(depActivities, 'dep_std', depShiftForEtd, depActual);
       var atdTableMin = (depTargetsForEtd && depTargetsForEtd[25] !== null && depTargetsForEtd[25] !== undefined) ? ((depTargetsForEtd[25] % 1440) + 1440) % 1440 : null;
-      if (atdTableMin !== null) etdMin = atdTableMin;
+      // Only override the ETD field with the ATD table target when compression pushed ATD
+      // beyond the scheduled STD (depShiftForEtd > 0). Otherwise a manual ETD stands.
+      if (atdTableMin !== null && depShiftForEtd > 0) etdMin = atdTableMin;
       
       // Calculate delay from precision timing schedule (if actual > target)
       var delayMinutes = 0;
@@ -3432,10 +3434,11 @@ function renderPaxLoadTable() {
       var adjustedEtaHKGStr = etaHKGStr;
       var blkMin = parseTime(state.dep_blk);
       if (blkMin === null) blkMin = parseTime(state.dep_ft);
-      // ATD (new ETD) source: logged actual once departed, else the live ATD table target
+      // ATD (new ETD) source: logged actual once departed, else the effective ETD (manual
+      // delay or the compressed ATD target) already resolved into etdMin.
       var atdMinForEta = null;
       if (depActual[25]) atdMinForEta = parseTime(depActual[25]);
-      else if (atdTableMin !== null && atdTableMin !== undefined) atdMinForEta = atdTableMin;
+      else if (etdMin !== null && etdMin !== undefined) atdMinForEta = etdMin;
       if (atdMinForEta !== null && blkMin !== null && fd) {
         try {
           var fmtYVR = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Vancouver', hour12:false, year:'numeric', month:'2-digit', day:'2-digit' });
@@ -3562,11 +3565,20 @@ function renderPaxLoadTable() {
         var countdownStr = 'ETD -' + fmtFromSec(diffSec);
         var delayStr = '';
 
-        // Scenario 1: ETD > STD to show Disruption: Delay
-        if (stdMin != null && etdMin != null && etdMin > stdMin) {
-          var delayMins = etdMin - stdMin;
-          var delayH = Math.floor(delayMins/60);
-          var delayM = delayMins % 60;
+        // Disruption: Delay whenever the new ATD target is later than the STD. The turnaround
+        // compression shift already measures how far the schedule pushed out (handles
+        // post-midnight ATD), and the field ETD > STD covers manual delays.
+        var atdLateBy = null;
+        if (depShiftForEtd > 0) {
+          atdLateBy = depShiftForEtd;
+        } else if (stdMin != null && etdMin != null) {
+          var ed = etdMin - stdMin;
+          if (ed < -720) ed += 1440; // post-midnight ETD
+          if (ed > 0) atdLateBy = ed;
+        }
+        if (atdLateBy !== null) {
+          var delayH = Math.floor(atdLateBy/60);
+          var delayM = atdLateBy % 60;
           delayStr = '<br><span style="font-size:0.75em;opacity:0.9;">Disruption: Delay +' + pad(delayH) + ':' + pad(delayM) + '</span>';
           el.style.color = '#FCA5A5';
         } else {
