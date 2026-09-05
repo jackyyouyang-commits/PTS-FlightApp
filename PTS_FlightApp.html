@@ -3617,10 +3617,10 @@ function renderPaxLoadTable() {
           gateLine = '<br><span style="font-size:0.75em;opacity:0.9;color:#fff;">Gate Close </span><span' + gcBlink + ' style="font-size:0.75em;opacity:0.9;color:' + gcColor + ';">' + gcPrefix + fmtFromSec(Math.abs(dGateSec)) + '</span>';
         }
 
-        // Boarding Closed once Last Pax Onboard (idx 20) is logged
+        // Boarding Closed once Last Pax Onboard (idx 20) is logged - gate close no longer shows
         var lastPaxLogged = depActual[20];
         if (lastPaxLogged) {
-          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Closed</span>' + gateLine + '</div>' + sep;
+          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Closed</span></div>' + sep;
           bl.style.color = '#FCA5A5';
           return;
         }
