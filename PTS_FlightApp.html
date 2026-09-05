@@ -1060,10 +1060,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
       </style>
     <script>
+    window.APP_VERSION = 'v1.0.12';
     (function(){
       var manifest = {
         name: "Flight PTS",
         short_name: "PTS",
+        version: window.APP_VERSION,
         display: "standalone",
         orientation: "any",
         background_color: "#1e3a5f",
@@ -1078,6 +1080,11 @@ document.addEventListener('DOMContentLoaded', function() {
       link.href = url;
       document.head.appendChild(link);
     })();
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('[data-app-version]').forEach(function(el) {
+        el.textContent = window.APP_VERSION || '';
+      });
+    });
     </script>
 </head>
 <body data-id="0">
@@ -1104,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div data-id="10" class="flex items-center gap-2 flex-shrink-0">
           <div data-id="11" class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(255,255,255,0.15);"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAiCAYAAABMfblJAAACi0lEQVR42r2Wv2sUQRiGn9mLmkREg4mYGKImGgOKxggBURtB7KIEOxtLRfwLLESwtBGstLCxEVGxUwtBU2gZCCpoIyk0EIORmAjm7h4LZ2FZLnp3ucsHy3zs7sw77zvfj0EdYg0tAYbUbQBqWAvAdqB/LRn+AHrV9WsFOAfsBoZCCDZb1gTYDBSAQ+rWZoMmwC+gBPQCI2p7MwMoAaaBNqAV2AnsCSHYTIazwBLQBXQAg2poFmgSQlgEvgGd8ekHhpslaxLH99EfBnYAp9XuGEBJMwA/ADPARqAb6AFOqR0hhHIjmSZqEkJYAKaADcAIsAU4DoynBaFRoFm5JoBNQB9wJBaDUeBoCMGG5md6TupNddG/9ll9pd5Vz2SYJo0ALMTxsLqkltRyBJ5Sn6hX1HXxv5ZGgj6IQMtxLKvz6qx6S+1LQVfFVk3UoPapC2oxwzJr0+pYZl5L3WebYXk5Lv47w7Kc28A9dVd2bl2MM6DPctKmVoqP6nf1htqTmR8i60L0Q7XSdqqf4sLFCtJm382pt9XRFdYMcd3C/9JknzqzAtNU6vxm3qpX1WNqV55h+Je0IYSSehB4DmwHikCllDD21Py3eeBrbA7G60xV5zmovsswrRS9WalX+ud6LUHUoT60OivmpH6hDtdc+qJ/MZa9fJ6WK7x7o47nN191uqQlTd2vfonpUawQUC/Vs/korQWsJeNfiAyXc7L9VO+rJyodSU3lLvoD6qMK5/VRvab25xjVBBRyrC7F5E5tSX2qjqutOdkLdZW26B9QJzJAkzGp9+Ylr7eOpvK1xmZsbMh31JO5zSRpvVxtXxxTX8dIO69uaQibbGmLC7QB54AB4HEIYbKCzOXVXpD/AKfv6s702tgRAAAAAElFTkSuQmCC" alt="" style="height:30px;width:auto;display:block;"></div>
           <div style="display:flex;flex-direction:column;line-height:1.2;">
-            <div style="font-size:16px;font-weight:600;opacity:0.75;color:#fff;letter-spacing:0.04em;white-space:nowrap;">Flight Info &amp; Precision Timing Schedule</div>
+            <div style="font-size:16px;font-weight:600;opacity:0.75;color:#fff;letter-spacing:0.04em;white-space:nowrap;">Flight Info &amp; Precision Timing Schedule <span data-app-version style="font-size:0.72em;font-weight:500;opacity:0.85;letter-spacing:0;"></span></div>
             <div id="hdr-flight-num" data-summary="flight" style="font-weight:500;letter-spacing:0.02em;"></div>
           </div>
         </div>
@@ -1126,7 +1133,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div data-id="38" class="flex items-center gap-2 flex-shrink-0">
             <div data-id="39" class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:rgba(255,255,255,0.15);"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAiCAYAAABMfblJAAACi0lEQVR42r2Wv2sUQRiGn9mLmkREg4mYGKImGgOKxggBURtB7KIEOxtLRfwLLESwtBGstLCxEVGxUwtBU2gZCCpoIyk0EIORmAjm7h4LZ2FZLnp3ucsHy3zs7sw77zvfj0EdYg0tAYbUbQBqWAvAdqB/LRn+AHrV9WsFOAfsBoZCCDZb1gTYDBSAQ+rWZoMmwC+gBPQCI2p7MwMoAaaBNqAV2AnsCSHYTIazwBLQBXQAg2poFmgSQlgEvgGd8ekHhpslaxLH99EfBnYAp9XuGEBJMwA/ADPARqAb6AFOqR0hhHIjmSZqEkJYAKaADcAIsAU4DoynBaFRoFm5JoBNQB9wJBaDUeBoCMGG5md6TupNddG/9ll9pd5Vz2SYJo0ALMTxsLqkltRyBJ5Sn6hX1HXxv5ZGgj6IQMtxLKvz6qx6S+1LQVfFVk3UoPapC2oxwzJr0+pYZl5L3WebYXk5Lv47w7Kc28A9dVd2bl2MM6DPctKmVoqP6nf1htqTmR8i60L0Q7XSdqqf4sLFCtJm382pt9XRFdYMcd3C/9JknzqzAtNU6vxm3qpX1WNqV55h+Je0IYSSehB4DmwHikCllDD21Py3eeBrbA7G60xV5zmovsswrRS9WalX+ud6LUHUoT60OivmpH6hDtdc+qJ/MZa9fJ6WK7x7o47nN191uqQlTd2vfonpUawQUC/Vs/korQWsJeNfiAyXc7L9VO+rJyodSU3lLvoD6qMK5/VRvab25xjVBBRyrC7F5E5tSX2qjqutOdkLdZW26B9QJzJAkzGp9+Ylr7eOpvK1xmZsbMh31JO5zSRpvVxtXxxTX8dIO69uaQibbGmLC7QB54AB4HEIYbKCzOXVXpD/AKfv6s702tgRAAAAAElFTkSuQmCC" alt="" style="height:24px;width:auto;display:block;"></div>
             <div style="display:flex;flex-direction:column;line-height:1.2;">
-              <div style="font-size:16px;font-weight:600;opacity:0.75;color:#fff;letter-spacing:0.03em;white-space:nowrap;">Flight Info &amp; Precision Timing Schedule</div>
+              <div style="font-size:16px;font-weight:600;opacity:0.75;color:#fff;letter-spacing:0.03em;white-space:nowrap;">Flight Info &amp; Precision Timing Schedule <span data-app-version style="font-size:0.72em;font-weight:500;opacity:0.85;letter-spacing:0;"></span></div>
               <div id="hdr-flight-num-m" data-summary="flight" style="font-weight:500;letter-spacing:0.02em;"></div>
             </div>
           </div>
