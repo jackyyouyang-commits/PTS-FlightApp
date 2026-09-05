@@ -3311,6 +3311,49 @@ function renderPaxLoadTable() {
       lastParsedResult = null;
     }
 
+    // Compute the live (drift/shift-adjusted) targets for one activity list without touching
+    // the DOM, mirroring renderActivityTable. Returns an array of absolute minute targets.
+    function computeActivityTargets(defs, baseTimeKey, shift, actualObj) {
+      var baseMin = parseTime(state[baseTimeKey]);
+      var out = [];
+      var prevOrigTarget = null;
+      var drift = 0;
+      var prevAbsTarget = null;
+      var dayOffset = 0;
+      var now0 = new Date();
+      var todayMid = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
+      var fDate = parseFlightDateStr(state.date);
+      var actualDayOffset = 0;
+      if (fDate) {
+        var fMid = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate()).getTime();
+        actualDayOffset = Math.round((todayMid - fMid) / 86400000);
+      }
+      for (var i = 0; i < defs.length; i++) {
+        var act = defs[i];
+        var origTarget = null;
+        if (act.offset !== null && baseMin !== null) {
+          origTarget = baseMin + act.offset + shift;
+          prevOrigTarget = origTarget;
+        } else if (act.offset === null && prevOrigTarget !== null) {
+          origTarget = prevOrigTarget;
+        }
+        if (prevAbsTarget !== null && origTarget !== null && origTarget < prevAbsTarget - 720) dayOffset += 1440;
+        var target = origTarget !== null ? origTarget + drift : null;
+        out.push(target);
+        if (target !== null) prevAbsTarget = target;
+        var logged = actualObj[i];
+        if (target !== null && logged) {
+          var am = parseTime(logged);
+          if (am !== null) {
+            var aAbs = am + actualDayOffset * 1440 + dayOffset;
+            while (aAbs - target < -360) aAbs += 1440;
+            if (origTarget !== null) drift = aAbs - actualDayOffset * 1440 - origTarget;
+          }
+        }
+      }
+      return out;
+    }
+
     // ===========================
     // ETD + BOARDING COUNTDOWN
     // ===========================
@@ -3349,6 +3392,11 @@ function renderPaxLoadTable() {
 
       var etdMin = parseTime(state.dep_etd); // minutes from midnight
       var stdMin = parseTime(state.dep_std);
+      // Live (drift/shift-adjusted) Departure PTS targets drive the ETD countdown (ATD idx 25).
+      var depShiftForEtd = computeDepTurnaroundShift();
+      var depTargetsForEtd = computeActivityTargets(depActivities, 'dep_std', depShiftForEtd, depActual);
+      var atdTableMin = (depTargetsForEtd && depTargetsForEtd[25] !== null && depTargetsForEtd[25] !== undefined) ? ((depTargetsForEtd[25] % 1440) + 1440) % 1440 : null;
+      if (atdTableMin !== null) etdMin = atdTableMin;
       
       // Calculate delay from precision timing schedule (if actual > target)
       var delayMinutes = 0;
@@ -3525,27 +3573,20 @@ function renderPaxLoadTable() {
         el.style.visibility = 'visible';
       });
 
-      // Boarding: compute target ms for boarding and gate close
-      var btMin = parseTime(state.dep_board_time);
-      var gctMin = parseTime(state.dep_gate_close);
-      var btTargetMs = null, gctTargetMs = null;
-      if (btMin != null) {
-        if (fd) { var fdMid2 = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate(),0,0,0,0); btTargetMs = fdMid2.getTime() + btMin*60*1000; }
-        else { var todayMid2 = new Date(now.getFullYear(), now.getMonth(), now.getDate(),0,0,0,0); btTargetMs = todayMid2.getTime() + btMin*60*1000; }
-      }
-      if (gctMin != null) {
-        if (fd) { var fdMid3 = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate(),0,0,0,0); gctTargetMs = fdMid3.getTime() + gctMin*60*1000; }
-        else { var todayMid3 = new Date(now.getFullYear(), now.getMonth(), now.getDate(),0,0,0,0); gctTargetMs = todayMid3.getTime() + gctMin*60*1000; }
-      }
-
-      // Boarding display is anchored to the Boarding Signal Released activity (idx 13).
-      // Use its actual time when logged, otherwise fall back to the Board Time field.
-      var bsrMin = depActual[13] ? parseTime(depActual[13]) : null;
-      var anchorMin = bsrMin !== null ? bsrMin : btMin;
-      var anchorTargetMs = null;
+      // Boarding & ETD are driven by the Departure PTS table's live (drift/shift-adjusted)
+      // targets: Boarding Signal Released (idx 13) and ATD (idx 25).
+      var depShiftNow = computeDepTurnaroundShift();
+      var depTargetsNow = computeActivityTargets(depActivities, 'dep_std', depShiftNow, depActual);
+      var anchorMin = depActual[13] ? parseTime(depActual[13]) : (depTargetsNow ? depTargetsNow[13] : null);
+      var gctMin2 = depTargetsNow && depTargetsNow[25] !== null && depTargetsNow[25] !== undefined ? (depTargetsNow[25] - 15) : null;
+      var anchorTargetMs = null, gctTargetMs = null;
       if (anchorMin != null) {
         if (fd) { var fdMidA = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate(),0,0,0,0); anchorTargetMs = fdMidA.getTime() + anchorMin*60*1000; }
         else { var todayMidA = new Date(now.getFullYear(), now.getMonth(), now.getDate(),0,0,0,0); anchorTargetMs = todayMidA.getTime() + anchorMin*60*1000; }
+      }
+      if (gctMin2 != null) {
+        if (fd) { var fdMid3 = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate(),0,0,0,0); gctTargetMs = fdMid3.getTime() + gctMin2*60*1000; }
+        else { var todayMid3 = new Date(now.getFullYear(), now.getMonth(), now.getDate(),0,0,0,0); gctTargetMs = todayMid3.getTime() + gctMin2*60*1000; }
       }
 
       ['boarding-countdown','boarding-countdown-m'].forEach(function(id) {
