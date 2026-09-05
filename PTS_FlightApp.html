@@ -1067,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       </style>
     <script>
-    window.APP_VERSION = 'v1.0.13';
+    window.APP_VERSION = 'v1.0.14';
     (function(){
       var manifest = {
         name: "Flight PTS",
@@ -2185,9 +2185,10 @@ document.addEventListener('DOMContentLoaded', function() {
       if (el) el.textContent = t;
     }
 
-    function renderActivityTable(tbodyId, defs, baseTimeKey, type, actualObj) {
+    function renderActivityTable(tbodyId, defs, baseTimeKey, type, actualObj, baseShift) {
       var tbody = document.getElementById(tbodyId);
       if (!tbody) return;
+      var shift = baseShift || 0; // turnaround compression shift (departure only)
       var baseMin = parseTime(state[baseTimeKey]);
       var html = '';
       var prevOrigTarget = null;
@@ -2196,7 +2197,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var act = defs[i];
         var origTarget = null;
         if (act.offset !== null && baseMin !== null) {
-          origTarget = baseMin + act.offset;
+          origTarget = baseMin + act.offset + shift;
           prevOrigTarget = origTarget;
         } else if (act.offset === null && prevOrigTarget !== null) {
           origTarget = prevOrigTarget;
@@ -2231,14 +2232,27 @@ document.addEventListener('DOMContentLoaded', function() {
             if (origTarget !== null) drift = actualMin - origTarget;
           }
         }
-        html += '<tr><td>' + act.name + '</td><td>' + targetStr + '</td><td>' + actualCell + '</td><td style="text-align:center;font-weight:600;color:#059669;">' + variance + '</td></tr>';
+        var targetTdStyle = (shift > 0 && target !== null) ? ' style="color:#D97706;font-weight:700;"' : '';
+        html += '<tr><td>' + act.name + '</td><td' + targetTdStyle + '>' + targetStr + '</td><td>' + actualCell + '</td><td style="text-align:center;font-weight:600;color:#059669;">' + variance + '</td></tr>';
       }
       tbody.innerHTML = html;
     }
 
+    // Standard turnaround is 95 min (ATA -> ETD). If the logged ATA leaves
+    // less than 95 min to ETD, shift all departure targets later by the shortfall.
+    function computeDepTurnaroundShift() {
+      var ataMin = arrActual[0] ? parseTime(arrActual[0]) : null;
+      var etdMin = parseTime(state.dep_etd);
+      if (etdMin === null) etdMin = parseTime(state.dep_std);
+      if (ataMin === null || etdMin === null) return 0;
+      var turn = etdMin - ataMin;
+      if (turn < 0) turn += 1440; // overnight wrap
+      return turn < 95 ? (95 - turn) : 0;
+    }
+
     function renderActivities() {
       renderActivityTable('arr-milestones-a1', arrActivities, 'eta', 'arr', arrActual);
-      renderActivityTable('dep-milestones-e5', depActivities, 'dep_std', 'dep', depActual);
+      renderActivityTable('dep-milestones-e5', depActivities, 'dep_std', 'dep', depActual, computeDepTurnaroundShift());
       attachActivityListeners();
       updateATAFromArrival();
       syncBaggageAutoFields();
@@ -4656,6 +4670,7 @@ function renderPaxLoadTable() {
         if (key === 'dep_std') { renderActivities(); updateETDCountdown(); }
         if (['dep_etd','dep_board_time','dep_eta_hkg','dep_sta_hkg'].indexOf(key) >= 0) {
           updateETDCountdown();
+          if (key === 'dep_etd') renderActivities();
         }
         refreshSummarySpans();
         refreshFinalLoading();
