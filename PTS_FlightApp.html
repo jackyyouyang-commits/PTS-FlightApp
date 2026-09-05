@@ -3464,10 +3464,9 @@ function renderPaxLoadTable() {
           function gp2(p,n){ for(var i=0;i<p.length;i++) if(p[i].type===n) return parseInt(p[i].value,10); return 0; }
           var arrHkgH = gp2(hp,'hour') % 24, arrHkgMi = gp2(hp,'minute');
           var arrHkgDateMs = Date.UTC(gp2(hp,'year'), gp2(hp,'month')-1, gp2(hp,'day'));
-          // STD date expressed in HKG calendar (compare arrival HKG date vs original STD date)
-          var sp = new Intl.DateTimeFormat('en-GB', { timeZone:'Asia/Hong_Kong', hour12:false, year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(stdUtcMs));
-          var stdHkgDateMs = Date.UTC(gp2(sp,'year'), gp2(sp,'month')-1, gp2(sp,'day'));
-          var dayChange = Math.round((arrHkgDateMs - stdHkgDateMs) / 86400000);
+          // Day change = arrival date minus the ORIGINAL STD calendar date (not the new ETD).
+          var stdOrigDateMs = Date.UTC(y0, mo0, d0);
+          var dayChange = Math.round((arrHkgDateMs - stdOrigDateMs) / 86400000);
           if (dayChange < 0) dayChange = 0;
           adjustedEtaHKGStr = pad(arrHkgH) + ':' + pad(arrHkgMi) + (dayChange > 0 ? ' +' + dayChange : '');
         } catch (e) { /* fall back to prior value */ }
