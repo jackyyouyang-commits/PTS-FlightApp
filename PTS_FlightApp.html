@@ -2328,6 +2328,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Standard turnaround is 95 min (ATA -> ETD). If the logged ATA leaves
     // less than 95 min to ETD, shift all departure targets later by the shortfall.
+    // ATA is anchored to the flight date vs today (same as the milestone tables), so a
+    // delayed next-day ATA (e.g. 01:32 logged on 05-Sep for an 04-Sep flight) is handled.
     function computeDepTurnaroundShift() {
       var ataMin = arrActual[0] ? parseTime(arrActual[0]) : null;
       var etdMin = parseTime(state.dep_etd);
@@ -2337,8 +2339,21 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       if (etdMin === null) etdMin = parseTime(state.dep_std);
       if (ataMin === null || etdMin === null) return 0;
-      var turn = etdMin - ataMin;
-      if (turn < 0) turn += 1440; // overnight wrap
+      // Days between the flight date and today push the ATA forward (next-day arrival)
+      var now0 = new Date();
+      var todayMid = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
+      var fDate = parseFlightDateStr(state.date);
+      var dayAdv = 0;
+      if (fDate) {
+        var fMid = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate()).getTime();
+        dayAdv = Math.round((todayMid - fMid) / 86400000);
+      }
+      var ataAbs = ataMin + dayAdv * 1440;
+      // ETD is scheduled on the flight date; roll it forward to sit after the ATA
+      var etdAbs = etdMin;
+      while (etdAbs - ataAbs < -720) etdAbs += 1440;
+      while (etdAbs - ataAbs >= 720) etdAbs -= 1440;
+      var turn = etdAbs - ataAbs;
       return turn < 95 ? (95 - turn) : 0;
     }
 
