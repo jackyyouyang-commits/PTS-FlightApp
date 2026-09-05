@@ -484,6 +484,9 @@ document.addEventListener('DOMContentLoaded', function() {
         input[data-key], textarea[data-key] {
           font-size: 14px !important;
         }
+        /* Stack the two PTS schedule tables vertically on phones */
+        .pts-schedule-split { flex-direction: column !important; }
+        .pts-schedule-split > div { flex: 1 1 auto !important; width: 100% !important; }
       }
 
       /* Capacity / pax tables — horizontal scroll on small screens */
@@ -1598,25 +1601,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- ========== TAB: PTS SCHEDULE ========== -->
       <div data-id="703" id="tab-pts-schedule" class="tab-content">
-        <div data-id="250" class="section-hdr" id="arrival-pts">Arrival Precision Timing Schedule</div>
-        <div data-id="251" class="card">
-          <p data-id="252" class="text-xs text-cx-grey italic mb-3">Targets auto-calculate from ETA. Tap to log actual time, Long press to reset, or edit time manually</p>
-          <div data-id="253" class="table-scroll-wrap">
-            <div class="table-scroll-wrap"><table data-id="254" class="ms-table" id="arr-ms-table">
-              <thead data-id="255"><tr data-id="256"><th data-id="257">Activity</th><th data-id="258">Target</th><th data-id="259">Actual</th><th style="text-align:center;">Variance</th></tr></thead>
-              <tbody data-id="260" id="arr-milestones-a1"></tbody>
-            </table></div>
+        <div class="pts-schedule-split" style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+          <div style="flex:1 1 340px;min-width:0;">
+            <div data-id="250" class="section-hdr" id="arrival-pts">Arrival Precision Timing Schedule</div>
+            <div data-id="251" class="card">
+              <p data-id="252" class="text-xs text-cx-grey italic mb-3">Targets auto-calculate from ETA. Tap to log actual time, Long press to reset, or edit time manually</p>
+              <div data-id="253" class="table-scroll-wrap">
+                <div class="table-scroll-wrap"><table data-id="254" class="ms-table" id="arr-ms-table">
+                  <thead data-id="255"><tr data-id="256"><th data-id="257">Activity</th><th data-id="258">Target</th><th data-id="259">Actual</th><th style="text-align:center;">Variance</th></tr></thead>
+                  <tbody data-id="260" id="arr-milestones-a1"></tbody>
+                </table></div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div data-id="489" class="section-hdr" id="departure-pts">Departure Precision Timing Schedule</div>
-        <div data-id="490" class="card">
-          <p data-id="491" class="text-xs text-cx-grey italic mb-3">Targets auto-calculate from ETD. Tap to log actual time, Long press to reset, or edit time manually</p>
-          <div data-id="492" class="table-scroll-wrap">
-            <div class="table-scroll-wrap"><table data-id="493" class="ms-table" id="dep-ms-table">
-              <thead data-id="494"><tr data-id="495"><th data-id="496">Activity</th><th data-id="497">Target</th><th data-id="498">Actual</th><th style="text-align:center;">Variance</th></tr></thead>
-              <tbody data-id="499" id="dep-milestones-e5"></tbody>
-            </table></div>
+          <div style="flex:1 1 340px;min-width:0;">
+            <div data-id="489" class="section-hdr" id="departure-pts">Departure Precision Timing Schedule</div>
+            <div data-id="490" class="card">
+              <p data-id="491" class="text-xs text-cx-grey italic mb-3">Targets auto-calculate from ETD. Tap to log actual time, Long press to reset, or edit time manually</p>
+              <div data-id="492" class="table-scroll-wrap">
+                <div class="table-scroll-wrap"><table data-id="493" class="ms-table" id="dep-ms-table">
+                  <thead data-id="494"><tr data-id="495"><th data-id="496">Activity</th><th data-id="497">Target</th><th data-id="498">Actual</th><th style="text-align:center;">Variance</th></tr></thead>
+                  <tbody data-id="499" id="dep-milestones-e5"></tbody>
+                </table></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
