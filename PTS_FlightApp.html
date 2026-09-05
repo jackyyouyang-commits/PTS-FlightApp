@@ -956,6 +956,58 @@ document.addEventListener('DOMContentLoaded', function() {
       button{min-height:36px;}
       #bottom-nav-k1>div>button.active,.bottom-tab.active{color:#005c5c!important;border-top:3px solid #005c5c!important;font-weight:700!important;background:rgba(0,92,92,0.07)!important;}
 
+      /* Phone browsers: keep the app inside the viewport and make menus swipe-scrollable */
+      @media(max-width:767px){
+        html,body,#app-shell,#app-header,#main-content-w3x4,#bottom-nav-k1{max-width:100vw!important;}
+        #app-header,#main-content-w3x4,#bottom-nav-k1,.tab-content{overflow-x:hidden!important;}
+
+        #hdr-mobile{max-width:100vw!important;overflow:hidden!important;}
+        #hdr-mobile>div{max-width:100vw!important;box-sizing:border-box!important;}
+        #hdr-mobile>div:first-child{align-items:flex-start!important;}
+        #hdr-mobile>div:first-child>div:first-child{min-width:0!important;flex:1 1 auto!important;overflow:hidden!important;}
+        #hdr-mobile>div:first-child>div:first-child>div:last-child{min-width:0!important;overflow:hidden!important;}
+        #hdr-mobile>div:first-child>div:first-child>div:last-child>div:first-child{
+          max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:14px!important;
+        }
+        #hdr-mobile>div:first-child>div:last-child{flex:0 0 auto!important;}
+        #hdr-mobile>div:nth-child(2){
+          justify-content:flex-start!important;overflow-x:auto!important;overflow-y:hidden!important;
+          -webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;touch-action:pan-x!important;
+        }
+        #hdr-mobile>div:nth-child(2)::-webkit-scrollbar{display:none!important;}
+        #gate-display-m{font-size:18px!important;flex:0 0 auto!important;}
+
+        #hdr-mobile>div[data-id="50"],
+        #tab-pts>.tab-content-menu,
+        #tab-pts>div:first-child{
+          max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;
+          -webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;touch-action:pan-x!important;
+          justify-content:flex-start!important;flex-wrap:nowrap!important;
+        }
+        #hdr-mobile>div[data-id="50"]::-webkit-scrollbar,
+        #tab-pts>div:first-child::-webkit-scrollbar{display:none!important;}
+        #hdr-mobile>div[data-id="50"] button,
+        #tab-pts>div:first-child button{flex:0 0 auto!important;min-width:max-content!important;}
+
+        #bottom-nav-k1{
+          overflow-x:auto!important;overflow-y:hidden!important;-webkit-overflow-scrolling:touch!important;
+          scrollbar-width:none!important;touch-action:pan-x!important;
+        }
+        #bottom-nav-k1::-webkit-scrollbar{display:none!important;}
+        #bottom-nav-k1>div{
+          width:max-content!important;min-width:max-content!important;max-width:none!important;
+          display:flex!important;flex-wrap:nowrap!important;overflow-x:visible!important;
+          touch-action:pan-x!important;
+        }
+        #bottom-nav-k1>div>button,.bottom-tab{
+          flex:0 0 92px!important;min-width:92px!important;max-width:92px!important;
+          overflow:hidden!important;text-align:center!important;touch-action:pan-x!important;
+        }
+        #bottom-nav-k1>div>button span,.bottom-tab span{
+          max-width:86px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;display:block!important;
+        }
+      }
+
       </style>
     <script>
     (function(){
