@@ -3430,8 +3430,8 @@ function renderPaxLoadTable() {
       // with the +1/+2 day auto-detected from the YVR->HKG time difference.
       var etaHKGStr = state.dep_eta_hkg ? state.dep_eta_hkg : '';
       var adjustedEtaHKGStr = etaHKGStr;
-      var ftMin = parseTime(state.dep_ft);
-      if (ftMin === null) ftMin = parseTime(state.dep_blk);
+      var ftMin = parseTime(state.dep_blk);
+      if (ftMin === null) ftMin = parseTime(state.dep_ft);
       var atdTargetForEta = null;
       if (depActual[25]) {
         // Use the logged ATD actual once the aircraft has departed
