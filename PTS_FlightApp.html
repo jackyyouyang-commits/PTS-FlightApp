@@ -397,6 +397,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       /* Blink countdown only (not ETA HKG) — hold visible, then disappear, repeat */
       .blink-countdown { display:inline-block; color:#FCA5A5; animation: blink-hold 3s steps(2, start) infinite; }
+      .pasted-image-gallery { display:flex; flex-wrap:wrap; gap:8px; padding:8px 12px; background:#F9FAFB; border-left:1px solid #E5E7EB; border-right:1px solid #E5E7EB; }
+      .pasted-image-gallery:empty { display:none; padding:0; border:none; }
+      .pasted-image-item { position:relative; display:inline-block; }
+      .pasted-image-item img { max-width:140px; max-height:140px; border-radius:6px; border:1px solid #D1D5DB; display:block; cursor:zoom-in; }
+      .pasted-image-item .pi-remove { position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%; background:#EF4444; color:#fff; border:none; font-size:12px; line-height:20px; text-align:center; cursor:pointer; padding:0; }
       @keyframes blink-hold { 0% { visibility: visible; } 50% { visibility: hidden; } }
       @media (prefers-reduced-motion: reduce) { .blink-countdown { animation: none !important; visibility: visible !important; } }
 
@@ -1056,11 +1061,13 @@ document.addEventListener('DOMContentLoaded', function() {
         #itd-search-input{width:100%!important;max-width:100%!important;flex:1 1 160px!important;min-width:0!important;}
         #itd-search-result{min-width:0!important;flex:1 1 100%!important;padding:0!important;overflow:hidden!important;text-overflow:ellipsis!important;}
         input,select,textarea,.field-input{max-width:100%!important;box-sizing:border-box!important;}
+        .pasted-image-gallery{width:100%!important;max-width:100%!important;box-sizing:border-box!important;}
+        .pasted-image-item img{max-width:100px!important;max-height:100px!important;}
       }
 
       </style>
     <script>
-    window.APP_VERSION = 'v1.0.12';
+    window.APP_VERSION = 'v1.0.13';
     (function(){
       var manifest = {
         name: "Flight PTS",
@@ -1404,6 +1411,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="grid grid-cols-2 gap-3">
             <div><label class="field-label">Doorside</label><textarea class="field-input sm autosize" id="f-arr_doorside" data-key="arr_doorside" placeholder="e.g. 01 WCH" data-autoresize="true"></textarea></div>
             <div><label class="field-label">Total Bags</label><input class="field-input sm" id="f-arr_total_bags" data-key="arr_total_bags" placeholder="0"></div>
+            <div><label class="field-label">First Bag <span style="font-weight:400;opacity:0.7;">(auto)</span></label><input class="field-input sm" id="f-arr_first_bag" data-key="arr_first_bag" placeholder="&mdash;" readonly style="background:#F3F4F6;cursor:not-allowed;"></div>
+            <div><label class="field-label">Last Bag <span style="font-weight:400;opacity:0.7;">(auto)</span></label><input class="field-input sm" id="f-arr_last_bag" data-key="arr_last_bag" placeholder="&mdash;" readonly style="background:#F3F4F6;cursor:not-allowed;"></div>
           </div>
         </div>
 
@@ -1780,6 +1789,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       if (typeof arrActual !== 'undefined') { for (var k in arrActual) { delete arrActual[k]; } }
       if (typeof depActual !== 'undefined') { for (var k in depActual) { delete depActual[k]; } }
+      if (typeof PASTE_IMAGE_IDS !== 'undefined') { PASTE_IMAGE_IDS.forEach(function(id){ pastedImages[id]=[]; renderPastedImageGallery(id); }); }
       ['renderActivities','renderPaxLoadTable','updateArrPaxTotal','renderSummary','updateETDCountdown'].forEach(function(fn) {
         if (typeof window[fn] === 'function') window[fn]();
       });
@@ -2180,16 +2190,18 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!tbody) return;
       var baseMin = parseTime(state[baseTimeKey]);
       var html = '';
-      var prevTarget = null;
+      var prevOrigTarget = null;
+      var drift = 0; // cumulative drift from most recently logged actual, applied to future un-logged targets
       for (var i = 0; i < defs.length; i++) {
         var act = defs[i];
-        var target = null;
+        var origTarget = null;
         if (act.offset !== null && baseMin !== null) {
-          target = baseMin + act.offset;
-          prevTarget = target;
-        } else if (act.offset === null && prevTarget !== null) {
-          target = prevTarget;
+          origTarget = baseMin + act.offset;
+          prevOrigTarget = origTarget;
+        } else if (act.offset === null && prevOrigTarget !== null) {
+          origTarget = prevOrigTarget;
         }
+        var target = origTarget !== null ? origTarget + drift : null;
         var targetStr = target !== null ? fmtMin(target) : '\u2014';
         var logged = actualObj[i];
         var actualCell = '';
@@ -2215,6 +2227,8 @@ document.addEventListener('DOMContentLoaded', function() {
             var h = Math.floor(absMin / 60);
             var m = absMin % 60;
             variance = sign + (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+            // Shift all subsequent un-logged targets by this activity's real drift
+            if (origTarget !== null) drift = actualMin - origTarget;
           }
         }
         html += '<tr><td>' + act.name + '</td><td>' + targetStr + '</td><td>' + actualCell + '</td><td style="text-align:center;font-weight:600;color:#059669;">' + variance + '</td></tr>';
@@ -2227,6 +2241,19 @@ document.addEventListener('DOMContentLoaded', function() {
       renderActivityTable('dep-milestones-e5', depActivities, 'dep_std', 'dep', depActual);
       attachActivityListeners();
       updateATAFromArrival();
+      syncBaggageAutoFields();
+    }
+
+    // First Bag / Last Bag auto-populate from logged actual times
+    // (First Bag on Carousel = arrActivities index 7, Last Bag on Carousel = index 11)
+    function syncBaggageAutoFields() {
+      // Prefer the logged activity actual time; fall back to any previously imported value
+      if (arrActual[7]) state.arr_first_bag = arrActual[7];
+      if (arrActual[11]) state.arr_last_bag = arrActual[11];
+      var fbEl = document.getElementById('f-arr_first_bag');
+      var lbEl = document.getElementById('f-arr_last_bag');
+      if (fbEl) fbEl.value = state.arr_first_bag || '';
+      if (lbEl) lbEl.value = state.arr_last_bag || '';
     }
 
     function updateATAFromArrival() {
@@ -2694,6 +2721,86 @@ function renderPaxLoadTable() {
     }
     var PTS_SAVE_KEY = 'pts_saved_state_v1';
 
+    // ===========================
+    // IMAGE PASTE SUPPORT (content boxes)
+    // ===========================
+    // Content boxes (e.g. Staff Acceptance, Departure Gen Dec) only accept text natively.
+    // This lets a user paste a screenshot (e.g. from Snipping Tool) into the same box;
+    // the image is captured as a data-URL and shown in a small gallery under the textarea,
+    // and travels with saveToLocal/generateShareCode just like the textarea's text.
+    var PASTE_IMAGE_IDS = ['staff-acc-textarea','arr-ptm-textarea','itd-tag-card-textarea','oir-textarea',
+      'dep-lir-textarea','crew-textarea','dep-crew-textarea','dep-gen-dec-textarea','agent-pos-textarea'];
+    var pastedImages = {}; // textareaId -> array of image data-URLs
+
+    function renderPastedImageGallery(id) {
+      var ta = document.getElementById(id);
+      if (!ta) return;
+      var gal = document.getElementById(id + '-gallery');
+      if (!gal) {
+        gal = document.createElement('div');
+        gal.className = 'pasted-image-gallery';
+        gal.id = id + '-gallery';
+        ta.insertAdjacentElement('afterend', gal);
+      }
+      var imgs = pastedImages[id] || [];
+      gal.innerHTML = imgs.map(function(src, idx) {
+        return '<span class="pasted-image-item"><img src="' + src + '" onclick="window.open(this.src,\'_blank\')">' +
+          '<button type="button" class="pi-remove" data-img-id="' + id + '" data-img-idx="' + idx + '" title="Remove image">&times;</button></span>';
+      }).join('');
+    }
+
+    function addPastedImage(id, dataUrl) {
+      if (!pastedImages[id]) pastedImages[id] = [];
+      pastedImages[id].push(dataUrl);
+      renderPastedImageGallery(id);
+    }
+
+    function removePastedImage(id, idx) {
+      if (pastedImages[id]) pastedImages[id].splice(idx, 1);
+      renderPastedImageGallery(id);
+    }
+
+    function clearPastedImages(id) {
+      pastedImages[id] = [];
+      renderPastedImageGallery(id);
+    }
+
+    function attachImagePasteSupport(id) {
+      var ta = document.getElementById(id);
+      if (!ta || ta._imagePasteAttached) return;
+      ta._imagePasteAttached = true;
+      ta.addEventListener('paste', function(e) {
+        var items = (e.clipboardData && e.clipboardData.items) || [];
+        var handled = false;
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].type && items[i].type.indexOf('image/') === 0) {
+            var file = items[i].getAsFile();
+            if (file) {
+              handled = true;
+              (function(fileId){
+                var reader = new FileReader();
+                reader.onload = function(ev) { addPastedImage(fileId, ev.target.result); };
+                reader.readAsDataURL(file);
+              })(id);
+            }
+          }
+        }
+        if (handled) e.preventDefault();
+      });
+    }
+
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest && e.target.closest('.pi-remove');
+      if (btn) { removePastedImage(btn.getAttribute('data-img-id'), parseInt(btn.getAttribute('data-img-idx'), 10)); }
+    });
+
+    function initImagePasteSupport() {
+      PASTE_IMAGE_IDS.forEach(function(id) {
+        attachImagePasteSupport(id);
+        renderPastedImageGallery(id);
+      });
+    }
+
     function saveToLocal() {
       try {
         var payload = { state: state, arrActual: arrActual, depActual: depActual, savedAt: new Date().toISOString() };
@@ -2705,6 +2812,9 @@ function renderPaxLoadTable() {
         payload._dep_lir   = (document.getElementById('dep-lir-textarea')||{}).value||'';
         payload._crew      = (document.getElementById('crew-textarea')||{}).value||'';
         payload._dep_crew  = (document.getElementById('dep-crew-textarea')||{}).value||'';
+        payload._dep_gen_dec = (document.getElementById('dep-gen-dec-textarea')||{}).value||'';
+        payload._agent_pos   = (document.getElementById('agent-pos-textarea')||{}).value||'';
+        payload._images = pastedImages;
         localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(payload));
         showToast('\u2705 Saved! Open this app on any device to restore.', 'green');
       } catch(e) {
@@ -2755,6 +2865,9 @@ function renderPaxLoadTable() {
         payload._dep_lir   = (document.getElementById('dep-lir-textarea')||{}).value||'';
         payload._crew      = (document.getElementById('crew-textarea')||{}).value||'';
         payload._dep_crew  = (document.getElementById('dep-crew-textarea')||{}).value||'';
+        payload._dep_gen_dec = (document.getElementById('dep-gen-dec-textarea')||{}).value||'';
+        payload._agent_pos   = (document.getElementById('agent-pos-textarea')||{}).value||'';
+        payload._images = pastedImages;
         var code = btoa(encodeURIComponent(JSON.stringify(payload)));
         var el = document.getElementById('share-code-output');
         if (el) el.value = code;
@@ -2780,12 +2893,14 @@ function renderPaxLoadTable() {
         (function(){
           var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm',
                    'oir-textarea':'_oir','itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir',
-                   'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew'};
+                   'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew',
+                   'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos'};
           Object.keys(m).forEach(function(id){
             var ta=document.getElementById(id);
             if(ta&&data[m[id]]) ta.value=data[m[id]];
           });
         })();
+        if (data._images) { pastedImages = data._images; PASTE_IMAGE_IDS.forEach(renderPastedImageGallery); }
         syncInputsFromState();
         renderActivities();
         renderPaxLoadTable();
@@ -3272,7 +3387,13 @@ function renderPaxLoadTable() {
           bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Closed</span></div>' + sep; bl.style.color = '#FCA5A5'; return;
         }
         if (dBoardSec <= 0) {
-          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span>';
+          // Check if Boarding Signal Released time was logged (index 13 in depActivities)
+          var boardSignalLogged = depActual[13];
+          if (!boardSignalLogged) {
+            bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Late Boarding</span><br><span class="blink-countdown" style="font-size:0.75em;opacity:0.9;color:#FCA5A5;">+' + fmtFromSec(Math.abs(dBoardSec)) + '</span>';
+          } else {
+            bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span>';
+          }
           // Only show gate close if within 15 minutes OR already past
           if (dGateSec !== null && (dGateSec <= 0 || dGateSec <= 900)) {
             var gateCloseColor = dGateSec < 0 ? '#FCA5A5' : '#fff';
@@ -3706,6 +3827,7 @@ function renderPaxLoadTable() {
       var preview = document.getElementById('oir-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_oir'); localStorage.removeItem('pts_oir_locked'); } catch(e) {}
       var badge = document.getElementById('oir-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('oir-textarea');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
@@ -3748,6 +3870,7 @@ function renderPaxLoadTable() {
       var preview = document.getElementById('crew-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_crew'); localStorage.removeItem('pts_crew_locked'); } catch(e) {}
       var badge = document.getElementById('crew-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('crew-textarea');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
@@ -3790,6 +3913,7 @@ function renderPaxLoadTable() {
       var preview = document.getElementById('dep-crew-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_dep_crew'); localStorage.removeItem('pts_dep_crew_locked'); } catch(e) {}
       var badge = document.getElementById('dep-crew-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('dep-crew-textarea');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
@@ -3832,6 +3956,7 @@ function renderPaxLoadTable() {
       var preview = document.getElementById('staff-acc-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_staff_acc'); localStorage.removeItem('pts_staff_acc_locked'); } catch(e) {}
       var badge = document.getElementById('staff-acc-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('staff-acc-textarea');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
@@ -3874,6 +3999,7 @@ function renderPaxLoadTable() {
       var preview = document.getElementById('arr-ptm-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_arr_ptm'); localStorage.removeItem('pts_arr_ptm_locked'); } catch(e) {}
       var badge = document.getElementById('arr-ptm-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('arr-ptm-textarea');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
@@ -3916,6 +4042,7 @@ function renderPaxLoadTable() {
       var preview = document.getElementById('dep-lir-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_dep_lir'); localStorage.removeItem('pts_dep_lir_locked'); } catch(e) {}
       var badge = document.getElementById('dep-lir-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('dep-lir-textarea');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
@@ -3926,6 +4053,7 @@ function renderPaxLoadTable() {
       var searchInput = document.getElementById('itd-search-input'); if(searchInput) { searchInput.value=''; }
       var searchResult = document.getElementById('itd-search-result'); if(searchResult) { searchResult.textContent='Ready to search...'; searchResult.style.color='#1f2937'; }
       try { localStorage.removeItem('pts_itd_tag_card'); } catch(e) {}
+      clearPastedImages('itd-tag-card-textarea');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
@@ -3934,6 +4062,7 @@ function renderPaxLoadTable() {
       var ta = document.getElementById('dep-gen-dec-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('dep-gen-dec-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_dep_gen_dec'); } catch(e) {}
+      clearPastedImages('dep-gen-dec-textarea');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
@@ -3942,6 +4071,7 @@ function renderPaxLoadTable() {
       var ta = document.getElementById('agent-pos-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('agent-pos-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_agent_pos'); } catch(e) {}
+      clearPastedImages('agent-pos-textarea');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
@@ -4545,12 +4675,14 @@ function renderPaxLoadTable() {
         (function(){
           var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm',
                    'oir-textarea':'_oir','itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir',
-                   'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew'};
+                   'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew',
+                   'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos'};
           Object.keys(m).forEach(function(id){
             var ta=document.getElementById(id);
             if(ta&&restored[m[id]]) ta.value=restored[m[id]];
           });
         })();
+        if (restored._images) pastedImages = restored._images;
         syncInputsFromState();
         renderActivities();
         renderPaxLoadTable();
@@ -4639,6 +4771,7 @@ function renderPaxLoadTable() {
 
       refreshSummarySpans();
       refreshFinalLoading();
+      initImagePasteSupport();
     }
 
     // ─── VIEWPORT HEIGHT (Android Chrome address bar) ───
