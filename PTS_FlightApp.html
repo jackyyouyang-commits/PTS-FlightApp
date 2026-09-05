@@ -3503,6 +3503,8 @@ function renderPaxLoadTable() {
       // Update ETD display
       ['etd-countdown','etd-countdown-m'].forEach(function(id) {
         var el = document.getElementById(id); if (!el) return;
+        // Once ATD (idx 25) is logged the aircraft has departed - stop the countdown
+        if (depActual && depActual[25]) { el.innerHTML = '<span style="color:#fff;">Departed</span>' + etaLine; el.style.color = '#fff'; return; }
         if (!etdTargetMs) { el.innerHTML = 'ETD --:--:--' + etaLine; el.style.color = '#fff'; return; }
         var diffSec = Math.round((etdTargetMs - nowMs)/1000);
 
@@ -3561,7 +3563,12 @@ function renderPaxLoadTable() {
           return;
         }
 
-        // Future target -> show countdown
+        // Future target -> if ATD is logged the aircraft has departed; otherwise count down
+        if (depActual && depActual[25]) {
+          el.innerHTML = '<span style="color:#fff;">Departed</span>' + etaLine;
+          el.style.color = '#fff';
+          return;
+        }
         var countdownStr = 'ETD -' + fmtFromSec(diffSec);
         var delayStr = '';
 
