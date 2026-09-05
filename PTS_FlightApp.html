@@ -3425,28 +3425,52 @@ function renderPaxLoadTable() {
         }
       } catch (e) { delayMinutes = 0; }
       
-      // Calculate adjusted ETA HKG from the ATD target (depActivities idx 25) + flight time.
-      // Flight time (FT, else BLK) is the scheduled YVR->HKG duration. ETA HKG = ATD + FT,
-      // with the +1/+2 day auto-detected from the YVR->HKG time difference.
+      // ETA HKG: take the ATD (new ETD) as a real YVR moment, add BLK (flight time), convert
+      // to HKG time for the arrival clock+date, then label the day change vs the ORIGINAL STD
+      // date (0 / +1 / +2). Uses proper timezone conversion (America/Vancouver -> Asia/Hong_Kong).
       var etaHKGStr = state.dep_eta_hkg ? state.dep_eta_hkg : '';
       var adjustedEtaHKGStr = etaHKGStr;
-      var ftMin = parseTime(state.dep_blk);
-      if (ftMin === null) ftMin = parseTime(state.dep_ft);
-      var atdTargetForEta = null;
-      if (depActual[25]) {
-        // Use the logged ATD actual once the aircraft has departed
-        atdTargetForEta = parseTime(depActual[25]);
-      } else if (atdTableMin !== null && atdTableMin !== undefined) {
-        atdTargetForEta = atdTableMin;
-      }
-      if (atdTargetForEta !== null && ftMin !== null) {
-        var etaTotal = atdTargetForEta + ftMin;
-        var etaClock = ((etaTotal % 1440) + 1440) % 1440;
-        adjustedEtaHKGStr = pad(Math.floor(etaClock / 60)) + ':' + pad(etaClock % 60);
-        // Day base: STD evening + ATD before noon means the departure rolled into the next day
-        var depDayBase = (stdMin !== null && stdMin >= 720 && atdTargetForEta < 720) ? 1 : 0;
-        var etaDayOff = computeEtaHkgDayOffset(atdTargetForEta, etaTotal, depDayBase);
-        if (etaDayOff > 0) adjustedEtaHKGStr += ' +' + etaDayOff;
+      var blkMin = parseTime(state.dep_blk);
+      if (blkMin === null) blkMin = parseTime(state.dep_ft);
+      // ATD (new ETD) source: logged actual once departed, else the live ATD table target
+      var atdMinForEta = null;
+      if (depActual[25]) atdMinForEta = parseTime(depActual[25]);
+      else if (atdTableMin !== null && atdTableMin !== undefined) atdMinForEta = atdTableMin;
+      if (atdMinForEta !== null && blkMin !== null && fd) {
+        try {
+          var fmtYVR = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Vancouver', hour12:false, year:'numeric', month:'2-digit', day:'2-digit' });
+          var fmtHKG = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Hong_Kong', hour12:false, hour:'2-digit', minute:'2-digit', year:'numeric', month:'2-digit', day:'2-digit' });
+          // Build a UTC ms for a YVR local wall-clock time: find offset by probing.
+          function yvrWallToUtcMs(y, mo, d, h, mi) {
+            // guess UTC = wall + 7/8h; refine using the formatter's parts
+            var guess = Date.UTC(y, mo, d, h, mi);
+            var parts = new Intl.DateTimeFormat('en-US', { timeZone:'America/Vancouver', hour12:false, year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit', second:'2-digit' }).formatToParts(new Date(guess));
+            function gp(p,n){ for(var i=0;i<p.length;i++) if(p[i].type===n) return parseInt(p[i].value,10); return 0; }
+            var backY=gp(parts,'year'), backMo=gp(parts,'month')-1, backD=gp(parts,'day'), backH=gp(parts,'hour')%24, backMi=gp(parts,'minute');
+            var backUtc = Date.UTC(backY, backMo, backD, backH, backMi);
+            return guess + (guess - backUtc); // add the offset
+          }
+          var y0 = fd.getFullYear(), mo0 = fd.getMonth(), d0 = fd.getDate();
+          // Original STD instant (departure day reference)
+          var stdUtcMs = yvrWallToUtcMs(y0, mo0, d0, Math.floor(stdMin/60), stdMin % 60);
+          // ATD instant: start at STD instant, then add whole days until the ATD clock is
+          // reached at/after STD (ATD is always >= STD for a departure), then it may differ.
+          var atdUtcMs = yvrWallToUtcMs(y0, mo0, d0, Math.floor(atdMinForEta/60), atdMinForEta % 60);
+          while (atdUtcMs < stdUtcMs - 6*3600*1000) atdUtcMs += 86400000; // ATD next day if before STD
+          // Arrival instant (UTC) = ATD + block time
+          var arrUtcMs = atdUtcMs + blkMin * 60000;
+          // Arrival HKG wall clock + date
+          var hp = new Intl.DateTimeFormat('en-GB', { timeZone:'Asia/Hong_Kong', hour12:false, hour:'2-digit', minute:'2-digit', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(arrUtcMs));
+          function gp2(p,n){ for(var i=0;i<p.length;i++) if(p[i].type===n) return parseInt(p[i].value,10); return 0; }
+          var arrHkgH = gp2(hp,'hour') % 24, arrHkgMi = gp2(hp,'minute');
+          var arrHkgDateMs = Date.UTC(gp2(hp,'year'), gp2(hp,'month')-1, gp2(hp,'day'));
+          // STD date expressed in HKG calendar (compare arrival HKG date vs original STD date)
+          var sp = new Intl.DateTimeFormat('en-GB', { timeZone:'Asia/Hong_Kong', hour12:false, year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(stdUtcMs));
+          var stdHkgDateMs = Date.UTC(gp2(sp,'year'), gp2(sp,'month')-1, gp2(sp,'day'));
+          var dayChange = Math.round((arrHkgDateMs - stdHkgDateMs) / 86400000);
+          if (dayChange < 0) dayChange = 0;
+          adjustedEtaHKGStr = pad(arrHkgH) + ':' + pad(arrHkgMi) + (dayChange > 0 ? ' +' + dayChange : '');
+        } catch (e) { /* fall back to prior value */ }
       }
 
       var staHKG = parseHKGTime(state.dep_sta_hkg);
