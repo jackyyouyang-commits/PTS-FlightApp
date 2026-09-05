@@ -1067,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       </style>
     <script>
-    window.APP_VERSION = 'v1.0.14';
+    window.APP_VERSION = 'v1.0.15';
     (function(){
       var manifest = {
         name: "Flight PTS",
@@ -2232,7 +2232,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (origTarget !== null) drift = actualMin - origTarget;
           }
         }
-        var targetTdStyle = (shift > 0 && target !== null) ? ' style="color:#D97706;font-weight:700;"' : '';
+        var targetTdStyle = (shift > 0 && target !== null) ? ' style="color:#DC2626;font-weight:700;"' : '';
         html += '<tr><td>' + act.name + '</td><td' + targetTdStyle + '>' + targetStr + '</td><td>' + actualCell + '</td><td style="text-align:center;font-weight:600;color:#059669;">' + variance + '</td></tr>';
       }
       tbody.innerHTML = html;
