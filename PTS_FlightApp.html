@@ -2431,60 +2431,59 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function attachActivityListeners() {
-      // Edit (pencil) button — prompt for manual time
+      // Edit (pencil) button — inline time input (prompt() is blocked on iPad/iOS)
       document.querySelectorAll('.act-edit-btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
           var type = btn.dataset.msType;
           var idx  = parseInt(btn.dataset.msIdx);
           var cur  = (type === 'arr') ? (arrActual[idx]||'') : (depActual[idx]||'');
-          var val  = prompt('Enter actual time (HHMM, HH:MM, or HH:MM:SS):', cur);
-          if (val === null) return;
-          val = val.trim();
-          if (val === '') { resetTime(type, idx); return; }
 
           function normalizeTime(input) {
             input = input.trim();
-            // already colon-formatted
             if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(input)) return input;
-            // only digits entered, try to infer
             if (!/^\d+$/.test(input)) return null;
             var d = input;
-            if (d.length <= 2) {
-              // hours only -> HH:00
-              return pad(parseInt(d,10)) + ':00';
-            }
+            if (d.length <= 2) return pad(parseInt(d,10)) + ':00';
             if (d.length === 3 || d.length === 4) {
-              // HHMM or HMM
-              var h = d.slice(0, d.length-2);
-              var m = d.slice(-2);
+              var h = d.slice(0, d.length-2); var m = d.slice(-2);
               return pad(parseInt(h,10)) + ':' + pad(parseInt(m,10));
             }
             if (d.length === 5 || d.length === 6) {
-              // HHMMSS or HMMSS
-              var h2 = d.slice(0, d.length-4);
-              var m2 = d.slice(-4, d.length-2);
-              var s2 = d.slice(-2);
+              var h2 = d.slice(0, d.length-4); var m2 = d.slice(-4, d.length-2); var s2 = d.slice(-2);
               return pad(parseInt(h2,10)) + ':' + pad(parseInt(m2,10)) + ':' + pad(parseInt(s2,10));
             }
             return null;
           }
-
-          var n = normalizeTime(val);
-          if (n) {
+          function commit(n) {
+            if (!n) { showToast('Enter time as HHMM, HH:MM or HH:MM:SS', 'red'); return; }
             var parts = n.split(':');
-            var hh = parseInt(parts[0],10); var mm = parseInt(parts[1],10); var ss = parts[2] ? parseInt(parts[2],10) : null;
+            var hh = parseInt(parts[0],10), mm = parseInt(parts[1],10), ss = parts[2] ? parseInt(parts[2],10) : null;
             if (hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59 && (ss === null || (ss >= 0 && ss <= 59))) {
-              if (type === 'arr') arrActual[idx] = n;
-              else depActual[idx] = n;
-              renderActivities();
-              updateETDCountdown();
-            } else {
-              alert('Entered time is out of range (HH 0-23, MM/SS 0-59)');
-            }
-          } else {
-            alert('Please enter time as HHMM (e.g. 0204), HH:MM, or HH:MM:SS');
+              if (type === 'arr') arrActual[idx] = n; else depActual[idx] = n;
+              renderActivities(); updateETDCountdown();
+            } else { showToast('Time out of range (HH 0-23, MM/SS 0-59)', 'red'); }
           }
+
+          // Replace the button cell with an inline input + confirm/cancel
+          var cell = btn.parentNode;
+          if (!cell || cell.querySelector('.act-inline-input')) return;
+          var wrap = document.createElement('span');
+          wrap.style.cssText = 'display:inline-flex;align-items:center;gap:4px;';
+          wrap.innerHTML = '<input type="text" class="act-inline-input" value="' + cur + '" placeholder="HH:MM" style="width:70px;padding:4px 6px;font-size:13px;font-family:monospace;border:1px solid #005C5C;border-radius:4px;" />' +
+            '<button type="button" class="act-inline-ok" style="background:#1a6e4e;color:#fff;border:none;border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer;">✓</button>' +
+            '<button type="button" class="act-inline-x" style="background:#6B7280;color:#fff;border:none;border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer;">✕</button>';
+          cell.innerHTML = '';
+          cell.appendChild(wrap);
+          var input = wrap.querySelector('.act-inline-input');
+          input.focus(); input.select();
+          function finish(save) {
+            if (save) { var v = input.value.trim(); if (v === '') { resetTime(type, idx); return; } commit(normalizeTime(v)); }
+            else renderActivities();
+          }
+          wrap.querySelector('.act-inline-ok').addEventListener('click', function(ev){ ev.stopPropagation(); finish(true); });
+          wrap.querySelector('.act-inline-x').addEventListener('click', function(ev){ ev.stopPropagation(); finish(false); });
+          input.addEventListener('keydown', function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); finish(true); } else if (ev.key === 'Escape') { finish(false); } });
         });
       });
       // Delete (×) button
