@@ -3643,8 +3643,8 @@ function renderPaxLoadTable() {
         // Past boarding (signal-released) time
         if (dBoardSec <= 0) {
           if (!boardSignalLogged) {
-            // Past the Boarding Signal Released time with no actual -> Late Boarding subline
-            bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span><br><span style="font-size:0.75em;opacity:0.9;color:#fff;">Late Boarding </span><span class="blink-countdown" style="font-size:0.75em;opacity:0.9;color:#FCA5A5;">+' + fmtFromSec(Math.abs(dBoardSec)) + '</span>' + gateLine + '</div>' + sep;
+            // Past the target with no actual -> keep 'Boarding Soon' + Late Boarding count-up
+            bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Soon</span><br><span style="font-size:0.75em;opacity:0.9;color:#fff;">Late Boarding </span><span class="blink-countdown" style="font-size:0.75em;opacity:0.9;color:#FCA5A5;">+' + fmtFromSec(Math.abs(dBoardSec)) + '</span>' + gateLine + '</div>' + sep;
           } else {
             bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span>' + gateLine + '</div>' + sep;
           }
