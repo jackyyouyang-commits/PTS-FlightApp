@@ -1997,6 +1997,27 @@ document.addEventListener('DOMContentLoaded', function() {
       return parseInt(m[1],10)*60 + parseInt(m[2],10);
     }
 
+    // Detect the ETA HKG day offset (+1 or +2) from the YVR->HKG time difference.
+    // HKG is 15h ahead of YVR during Pacific Daylight Time, 16h during Standard Time.
+    // depMin = departure (local YVR) min-from-midnight; etaClockMin = HKG arrival clock (0..1439).
+    // HKG's clock rolls past midnight when (dep clock + HKG lead) >= 1440, and rolls a second
+    // time if the HKG arrival itself also crosses another midnight. Base offset is 0 or 1
+    // (never 2 for a sub-24h flight), clamped to >= 0.
+    function computeEtaHkgDayOffset(depMin, etaClockMin) {
+      var now = new Date();
+      var yr = now.getFullYear();
+      // US/Canada DST: 2nd Sunday of March to 1st Sunday of November
+      function nthSunday(y, month, n) { var d = new Date(y, month, 1); var s = 0; while (true) { if (d.getDay() === 0) { s++; if (s === n) return d; } d.setDate(d.getDate() + 1); } return d; }
+      var dstStart = nthSunday(yr, 2, 2);   // 2nd Sunday March
+      var dstEnd = nthSunday(yr, 10, 1);    // 1st Sunday November
+      var isDST = now >= dstStart && now < dstEnd;
+      var hkgLead = isDST ? 15 * 60 : 16 * 60; // minutes HKG is ahead of YVR
+      // Normalize eta into 0..1439 first
+      var eta = ((etaClockMin % 1440) + 1440) % 1440;
+      var off = Math.floor((depMin + hkgLead) / 1440) + (eta + hkgLead >= 2880 ? 1 : 0);
+      return off > 2 ? 2 : (off < 0 ? 0 : off);
+    }
+
     // ===========================
     // TOAST
     // ===========================
@@ -3321,6 +3342,8 @@ function renderPaxLoadTable() {
       // ETA HKG shifts by the ATD (depActivities index 25) variance:
       // ATD +20 min late -> ETA HKG +20; ATD -20 min early -> ETA HKG -20.
       // Computed from the baseline (scheduled) ETA HKG each render, so it never accumulates.
+      // Day offset (+1/+2) is auto-detected: ATD is local (YVR) and ETA HKG is HKG time,
+      // which is 15 or 16 hours ahead of YVR depending on daylight saving.
       if (depActual[25]) {
         var atdTargetMin = parseTime(state.dep_etd);
         if (atdTargetMin === null) atdTargetMin = stdMin;
@@ -3330,11 +3353,11 @@ function renderPaxLoadTable() {
           var etaBaseParts = etaHKGStr.split(':');
           if (etaBaseParts.length >= 2) {
             var etaBaseTotal = parseInt(etaBaseParts[0], 10) * 60 + parseInt(etaBaseParts[1], 10) + atdVariance;
-            var hadPlus1 = etaHKGStr.includes('+1');
             var ebHours = Math.floor(etaBaseTotal / 60);
             var ebMins = ((etaBaseTotal % 60) + 60) % 60;
             adjustedEtaHKGStr = pad(((ebHours % 24) + 24) % 24) + ':' + pad(ebMins);
-            if (hadPlus1 || ebHours >= 24) adjustedEtaHKGStr += ' +1';
+            var etaDayOffset = computeEtaHkgDayOffset(atdActualMin, etaBaseTotal);
+            if (etaDayOffset > 0) adjustedEtaHKGStr += ' +' + etaDayOffset;
           }
         }
       }
@@ -3453,31 +3476,40 @@ function renderPaxLoadTable() {
         else { var todayMid3 = new Date(now.getFullYear(), now.getMonth(), now.getDate(),0,0,0,0); gctTargetMs = todayMid3.getTime() + gctMin*60*1000; }
       }
 
+      // Boarding display is anchored to the Boarding Signal Released activity (idx 13).
+      // Use its actual time when logged, otherwise fall back to the Board Time field.
+      var bsrMin = depActual[13] ? parseTime(depActual[13]) : null;
+      var anchorMin = bsrMin !== null ? bsrMin : btMin;
+      var anchorTargetMs = null;
+      if (anchorMin != null) {
+        if (fd) { var fdMidA = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate(),0,0,0,0); anchorTargetMs = fdMidA.getTime() + anchorMin*60*1000; }
+        else { var todayMidA = new Date(now.getFullYear(), now.getMonth(), now.getDate(),0,0,0,0); anchorTargetMs = todayMidA.getTime() + anchorMin*60*1000; }
+      }
+
       ['boarding-countdown','boarding-countdown-m'].forEach(function(id) {
         var bl = document.getElementById(id); if (!bl) return;
         bl.style.display = 'inline-block';
         bl.style.lineHeight = '1.2';
         bl.style.minHeight = '28px';
         bl.style.verticalAlign = 'middle';
-        var gateNum = state.gate && String(state.gate).trim() !== '' ? state.gate : '--';
         var isMobile = id.includes('-m');
         var sepMargin = isMobile ? '4px' : '10px';
         var sep = '<span style="width:1px;height:28px;background:rgba(255,255,255,0.3);display:inline-block;margin:0 ' + sepMargin + ';vertical-align:middle;flex-shrink:0;font-size:0;"></span>';
-        
-        if (!btTargetMs) { bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;">--:--:--</span></div>' + sep; bl.style.color = '#fff'; return; }
-        var dBoardSec = Math.round((btTargetMs - nowMs)/1000);
+
+        if (!anchorTargetMs) { bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;">--:--:--</span></div>' + sep; bl.style.color = '#fff'; return; }
+        var dBoardSec = Math.round((anchorTargetMs - nowMs)/1000);
         var dGateSec = gctTargetMs ? Math.round((gctTargetMs - nowMs)/1000) : null;
 
-        // Build the Gate Close subline (used in multiple boarding states)
+        // Gate Close subline: only from 5 min before gate close onward
         var gateLine = '';
-        if (dGateSec !== null && dGateSec <= 900) {
+        if (dGateSec !== null && dGateSec <= 300) {
           var gcColor, gcPrefix, gcBlink = '';
           if (dGateSec <= 0) { gcColor = '#FCA5A5'; gcPrefix = '+'; }
           else { gcColor = '#FFD700'; gcPrefix = '-'; gcBlink = ' class="blink-countdown"'; }
           gateLine = '<br><span style="font-size:0.75em;opacity:0.9;color:#fff;">Gate Close </span><span' + gcBlink + ' style="font-size:0.75em;opacity:0.9;color:' + gcColor + ';">' + gcPrefix + fmtFromSec(Math.abs(dGateSec)) + '</span>';
         }
 
-        // Check if Last Pax Onboard time was logged (index 20 in depActivities) -> Boarding Closed
+        // Boarding Closed once Last Pax Onboard (idx 20) is logged
         var lastPaxLogged = depActual[20];
         if (lastPaxLogged) {
           bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Closed</span>' + gateLine + '</div>' + sep;
@@ -3485,12 +3517,13 @@ function renderPaxLoadTable() {
           return;
         }
 
-        // Boarding time has passed
+        // "Boarding" main status shows only once Boarding Signal Released is actually logged
+        var boardSignalLogged = depActual[13];
+
+        // Past boarding (signal-released) time
         if (dBoardSec <= 0) {
-          // Check if Boarding Signal Released time was logged (index 13 in depActivities)
-          var boardSignalLogged = depActual[13];
           if (!boardSignalLogged) {
-            // Late Boarding shown as a subline exactly like Gate Close
+            // Past the Boarding Signal Released time with no actual -> Late Boarding subline
             bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span><br><span style="font-size:0.75em;opacity:0.9;color:#fff;">Late Boarding </span><span class="blink-countdown" style="font-size:0.75em;opacity:0.9;color:#FCA5A5;">+' + fmtFromSec(Math.abs(dBoardSec)) + '</span>' + gateLine + '</div>' + sep;
           } else {
             bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span>' + gateLine + '</div>' + sep;
@@ -3499,14 +3532,14 @@ function renderPaxLoadTable() {
           return;
         }
 
-        // Check if within 10 minutes before boarding time - show "Boarding Soon"
+        // Within 10 min before the Boarding Signal Released time -> Boarding Soon
         if (dBoardSec > 0 && dBoardSec <= 600) {
           bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Soon</span>' + gateLine + '</div>' + sep;
           bl.style.color = '#fff';
           return;
         }
 
-        // More than 10 min before boarding time - countdown to the board time
+        // More than 10 min before boarding - countdown to the board time
         bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding </span><span style="color:#fff;font-size:1em;">-' + fmtFromSec(dBoardSec) + '</span></div>' + sep;
         bl.style.color = '#fff';
       });
