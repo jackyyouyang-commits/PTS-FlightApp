@@ -3993,9 +3993,11 @@ function renderPaxLoadTable() {
           }
           
           if (location) {
-            resultDiv.textContent = '📍 ' + location;
+            // Enhance with the loading position from the Arrival Offload tab (e.g. "32R - AKE40093CX")
+            var oirPos = findOirPositionForContainer(location);
+            resultDiv.textContent = '📍 ' + (oirPos ? oirPos + ' - ' + location : location);
             resultDiv.style.color = '#059669';
-            console.log('Result:', location, 'at row', rowIndex);
+            console.log('Result:', (oirPos ? oirPos + ' - ' : '') + location, 'at row', rowIndex);
             
             // Clear previous highlighting
             if (preview) {
@@ -4042,6 +4044,29 @@ function renderPaxLoadTable() {
           row.style.backgroundColor = '';
         });
       }
+    }
+
+    // Look up a ULD/container code in the Arrival Offload text and return its loading
+    // position (the token immediately before the container, e.g. "32R" in "32R AKE40093CX").
+    function findOirPositionForContainer(container) {
+      var oir = document.getElementById('oir-textarea');
+      if (!oir || !oir.value || !container) return '';
+      var cont = String(container).trim().toUpperCase();
+      if (!cont) return '';
+      var lines = oir.value.split('\n');
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        if (line.toUpperCase().indexOf(cont) < 0) continue;
+        // Split on whitespace and pipe separators
+        var tokens = line.split(/[\s|]+/).filter(function(t){ return t; });
+        for (var j = 0; j < tokens.length; j++) {
+          if (tokens[j].toUpperCase() === cont) {
+            // The position is the token right before the container
+            if (j > 0) return tokens[j-1].trim();
+          }
+        }
+      }
+      return '';
     }
 
     // ===========================
