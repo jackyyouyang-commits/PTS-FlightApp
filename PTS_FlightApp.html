@@ -3995,7 +3995,7 @@ function renderPaxLoadTable() {
           if (location) {
             // Enhance with the loading position from the Arrival Offload tab (e.g. "32R - AKE40093CX")
             var oirPos = findOirPositionForContainer(location);
-            resultDiv.textContent = '📍 ' + (oirPos ? oirPos + ' - ' + location : location);
+            resultDiv.textContent = '📦 ' + (oirPos ? oirPos + ' - ' + location : location);
             resultDiv.style.color = '#059669';
             console.log('Result:', (oirPos ? oirPos + ' - ' : '') + location, 'at row', rowIndex);
             
