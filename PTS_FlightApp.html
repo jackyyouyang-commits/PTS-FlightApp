@@ -154,6 +154,12 @@ document.addEventListener('DOMContentLoaded', function() {
       .section-hdr.green { background: var(--cx-green); }
       .section-hdr.amber { background: var(--cx-amber); color: #78350F; }
 
+      /* PTS Schedule tab — double-size headers and table text */
+      #tab-pts-schedule .section-hdr { font-size: 1.4rem; padding: 8px 12px; }
+      #tab-pts-schedule .ms-table th { font-size: 1.4rem; padding: 14px 16px; }
+      #tab-pts-schedule .ms-table td { font-size: 28px; padding: 16px 18px; }
+      #tab-pts-schedule .card p.text-xs { font-size: 1rem; }
+
       .card {
         background: #fff; border-radius: 12px;
         box-shadow: 0 2px 12px rgba(0,0,0,0.08);
@@ -915,6 +921,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .pax-table td{font-size:12px!important;}
         .pax-table input{min-height:34px!important;font-size:14px!important;}
         .ms-table td,.ms-table th{padding:6px 8px!important;font-size:12px!important;}
+        #tab-pts-schedule .section-hdr{font-size:1.2rem!important;padding:8px 12px!important;}
+        #tab-pts-schedule .ms-table th{font-size:1.1rem!important;padding:10px 12px!important;}
+        #tab-pts-schedule .ms-table td{font-size:24px!important;padding:10px 12px!important;}
       }
 
       /* ── S25 portrait ≤430px ── */
@@ -928,6 +937,9 @@ document.addEventListener('DOMContentLoaded', function() {
         #bottom-nav-k1>div>button,.bottom-tab{min-width:46px!important;font-size:8.5px!important;padding:4px 2px!important;}
         .tab-content>div{padding:6px!important;}
         .section-hdr { font-size: 0.95rem !important; margin-bottom: 8px !important; }
+        #tab-pts-schedule .section-hdr { font-size: 1.1rem !important; padding: 8px 12px !important; }
+        #tab-pts-schedule .ms-table th { font-size: 1rem !important; padding: 8px 10px !important; }
+        #tab-pts-schedule .ms-table td { font-size: 22px !important; padding: 8px 10px !important; }
         .card { padding: 8px !important; margin-bottom: 6px !important; }
         .grid { gap: 4px !important; }
         .sum-label { font-size: 0.6rem !important; margin-bottom: 2px !important; }
