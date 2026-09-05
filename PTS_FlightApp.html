@@ -2258,16 +2258,16 @@ document.addEventListener('DOMContentLoaded', function() {
       var drift = 0; // cumulative drift from most recently logged actual, applied to future un-logged targets
       var prevAbsTarget = null; // for detecting the schedule crossing midnight
       var dayOffset = 0; // becomes 1440 once the schedule passes midnight (next-day activities)
-      // If the flight date is before the current (header) date, the whole schedule is in the
-      // past and an actual entered as a small early-morning time is that flight's next day.
+      // Anchor targets to the flight date and the logged actual to the current date, so the
+      // difference between the Flight Information date and today's date drives the variance
+      // (e.g. flight 04-Sep target 12:37, actual logged 01:32 on 05-Sep -> +12:55).
       var now0 = new Date();
       var todayMid = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
       var fDate = parseFlightDateStr(state.date);
-      var flightPastDays = 0;
+      var actualDayOffset = 0; // days from the flight date to today
       if (fDate) {
         var fMid = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate()).getTime();
-        flightPastDays = Math.round((todayMid - fMid) / 86400000);
-        if (flightPastDays < 0) flightPastDays = 0;
+        actualDayOffset = Math.round((todayMid - fMid) / 86400000);
       }
       for (var i = 0; i < defs.length; i++) {
         var act = defs[i];
@@ -2302,13 +2302,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (target !== null && logged) {
           var actualMin = parseTime(logged);
           if (actualMin !== null) {
-            // PTS activities only ever run on time or LATE (operational delays push times
-            // forward, never hours early). So treat an actual that would be more than 6h
-            // "early" as next-day (rolled forward past midnight). This makes e.g. a 01:10
-            // actual against a 12:37 midday target read as +12:33 (delayed to next day).
-            var baseAbs = flightPastDays * 1440;
-            var actualAbs = actualMin + baseAbs + dayOffset;
-            var targetAbs = target + baseAbs;
+            // Anchor the target to the flight date (plus any schedule midnight rollover) and
+            // the actual to today's date. PTS activities run on time or late (operational
+            // delays push forward, never hours early), so roll the actual forward by a day
+            // whenever it would land more than 6h before its target.
+            var targetAbs = target; // flight-date-based minutes (may exceed 1440 via offsets)
+            var actualAbs = actualMin + actualDayOffset * 1440 + dayOffset;
             while (actualAbs - targetAbs < -360) actualAbs += 1440;
             var diffMin = actualAbs - targetAbs;
             var sign = diffMin >= 0 ? '+' : '-';
@@ -2317,7 +2316,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var m = absMin % 60;
             variance = sign + (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
             // Shift all subsequent un-logged targets by this activity's real drift
-            if (origTarget !== null) drift = actualAbs - baseAbs - origTarget;
+            if (origTarget !== null) drift = actualAbs - actualDayOffset * 1440 - origTarget;
           }
         }
         var targetTdStyle = (shift > 0 && target !== null) ? ' style="color:#DC2626;font-weight:700;"' : '';
