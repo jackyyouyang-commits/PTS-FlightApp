@@ -1067,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       </style>
     <script>
-    window.APP_VERSION = 'v1.0.15';
+    window.APP_VERSION = 'v1.0.16';
     (function(){
       var manifest = {
         name: "Flight PTS",
@@ -2187,10 +2187,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderActivityTable(tbodyId, defs, baseTimeKey, type, actualObj, baseShift) {
       var tbody = document.getElementById(tbodyId);
-      if (!tbody) return;
+      if (!tbody) return null;
       var shift = baseShift || 0; // turnaround compression shift (departure only)
       var baseMin = parseTime(state[baseTimeKey]);
       var html = '';
+      var targetsOut = [];
       var prevOrigTarget = null;
       var drift = 0; // cumulative drift from most recently logged actual, applied to future un-logged targets
       for (var i = 0; i < defs.length; i++) {
@@ -2203,6 +2204,7 @@ document.addEventListener('DOMContentLoaded', function() {
           origTarget = prevOrigTarget;
         }
         var target = origTarget !== null ? origTarget + drift : null;
+        targetsOut.push(target);
         var targetStr = target !== null ? fmtMin(target) : '\u2014';
         var logged = actualObj[i];
         var actualCell = '';
@@ -2236,6 +2238,7 @@ document.addEventListener('DOMContentLoaded', function() {
         html += '<tr><td>' + act.name + '</td><td' + targetTdStyle + '>' + targetStr + '</td><td>' + actualCell + '</td><td style="text-align:center;font-weight:600;color:#059669;">' + variance + '</td></tr>';
       }
       tbody.innerHTML = html;
+      return targetsOut;
     }
 
     // Standard turnaround is 95 min (ATA -> ETD). If the logged ATA leaves
@@ -2243,6 +2246,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function computeDepTurnaroundShift() {
       var ataMin = arrActual[0] ? parseTime(arrActual[0]) : null;
       var etdMin = parseTime(state.dep_etd);
+      // Ignore an auto-adjusted ETD (set from a prior compression) to avoid a feedback loop
+      if (etdMin !== null && _autoDepTimes.etd && state.dep_etd === _autoDepTimes.etd) {
+        etdMin = parseTime(state.dep_std);
+      }
       if (etdMin === null) etdMin = parseTime(state.dep_std);
       if (ataMin === null || etdMin === null) return 0;
       var turn = etdMin - ataMin;
@@ -2250,12 +2257,48 @@ document.addEventListener('DOMContentLoaded', function() {
       return turn < 95 ? (95 - turn) : 0;
     }
 
+    // Track last auto-computed values so manual user edits are not overwritten
+    var _autoDepTimes = { etd: null, board: null, dct: null, gateclose: null };
+
+    // Auto-populate ETD / Board Time / DCT / Gate Close from the (possibly
+    // compressed) departure targets, based on the 95-min turnaround.
+    // depTargets indices: 13 Boarding Signal Released, 23 Last Pax Door Closed, 25 ATD.
+    function syncDepAutoTimeFields(depTargets, shift) {
+      if (!depTargets) return;
+      function applyField(key, elId, autoKey, minutes, force) {
+        if (minutes === null || minutes === undefined) return;
+        var v = fmtMin(minutes);
+        var el = document.getElementById(elId);
+        var cur = el ? el.value : (state[key] || '');
+        if (force || !cur || cur === _autoDepTimes[autoKey]) {
+          state[key] = v;
+          if (el) el.value = v;
+        }
+        _autoDepTimes[autoKey] = v;
+      }
+      var atdTarget = depTargets[25];
+      if (shift > 0 && atdTarget !== null && atdTarget !== undefined) {
+        // ATD becomes the new ETD when the schedule is compressed (force overwrite)
+        applyField('dep_etd', 'f-dep_etd', 'etd', atdTarget, true);
+      } else {
+        _autoDepTimes.etd = null;
+      }
+      applyField('dep_board_time', 'f-dep_board_time', 'board', depTargets[13], false);
+      applyField('dep_dct', 'f-dep_dct', 'dct', depTargets[23], false);
+      if (atdTarget !== null && atdTarget !== undefined) {
+        applyField('dep_gate_close', 'f-dep_gate_close', 'gateclose', atdTarget - 15, false);
+      }
+    }
+
     function renderActivities() {
       renderActivityTable('arr-milestones-a1', arrActivities, 'eta', 'arr', arrActual);
-      renderActivityTable('dep-milestones-e5', depActivities, 'dep_std', 'dep', depActual, computeDepTurnaroundShift());
+      var depShift = computeDepTurnaroundShift();
+      var depTargets = renderActivityTable('dep-milestones-e5', depActivities, 'dep_std', 'dep', depActual, depShift);
       attachActivityListeners();
       updateATAFromArrival();
       syncBaggageAutoFields();
+      syncDepAutoTimeFields(depTargets, depShift);
+      if (typeof updateETDCountdown === 'function') updateETDCountdown();
     }
 
     // First Bag / Last Bag auto-populate from logged actual times
