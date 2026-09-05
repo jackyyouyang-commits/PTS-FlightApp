@@ -2302,15 +2302,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (target !== null && logged) {
           var actualMin = parseTime(logged);
           if (actualMin !== null) {
-            // Anchor both target & actual to the flight date, then roll the actual forward
-            // day-by-day until it sits within +/-12h AFTER the target (it can't be more than
-            // ~12h early). This lets the flight-date-vs-today difference push an early-morning
-            // actual into the flight's following day (e.g. ETA 12:37, actual 01:10 -> +12:33).
+            // PTS activities only ever run on time or LATE (operational delays push times
+            // forward, never hours early). So treat an actual that would be more than 6h
+            // "early" as next-day (rolled forward past midnight). This makes e.g. a 01:10
+            // actual against a 12:37 midday target read as +12:33 (delayed to next day).
             var baseAbs = flightPastDays * 1440;
             var actualAbs = actualMin + baseAbs + dayOffset;
             var targetAbs = target + baseAbs;
-            while (actualAbs - targetAbs < -720) actualAbs += 1440;
-            while (actualAbs - targetAbs > 720) actualAbs -= 1440;
+            while (actualAbs - targetAbs < -360) actualAbs += 1440;
             var diffMin = actualAbs - targetAbs;
             var sign = diffMin >= 0 ? '+' : '-';
             var absMin = Math.abs(diffMin);
