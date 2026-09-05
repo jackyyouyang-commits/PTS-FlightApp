@@ -34,7 +34,8 @@ window.lucide = {
       'clipboard-check': 'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 14l2 2 4-4M9 4h6a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v0a1 1 0 0 1 1-1z',
       'file-text': 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8',
       'users': 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
-      'clipboard-copy': 'M20 8v14H8V8h12zM16 8V4H4v12h4M16 4l4 4'
+      'clipboard-copy': 'M20 8v14H8V8h12zM16 8V4H4v12h4M16 4l4 4',
+      'timer': 'M12 22a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v4l3 2M9 2h6'
     };
     document.querySelectorAll('[data-lucide]').forEach(function(el) {
       var name = el.getAttribute('data-lucide');
@@ -1067,7 +1068,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       </style>
     <script>
-    window.APP_VERSION = 'v1.0.16';
+    window.APP_VERSION = 'v1.0.17';
     (function(){
       var manifest = {
         name: "Flight PTS",
@@ -1268,6 +1269,10 @@ document.addEventListener('DOMContentLoaded', function() {
           <i data-id="568" data-lucide="plane" class="w-5 h-5"></i>
           <span data-id="569" class="text-[11px] font-semibold">PTS</span>
         </button>
+        <button data-id="700" class="bottom-tab" data-tab="pts-schedule">
+          <i data-id="701" data-lucide="timer" class="w-5 h-5"></i>
+          <span data-id="702" class="text-[11px] font-semibold">PTS Schedule</span>
+        </button>
         <button data-id="576" class="bottom-tab" data-tab="summary">
          <i data-id="577" data-lucide="clipboard-list" class="w-5 h-5"></i>
          <span data-id="578" class="text-[11px] font-semibold">Summary</span>
@@ -1316,8 +1321,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Navigation Menu for Precision Timing Schedules + Action Buttons -->
         <div style="position:sticky;top:0;z-index:10;background:#005C5C;border-bottom:2px solid #004545;padding:12px 16px;display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center;min-height:48px;box-shadow:0 2px 4px rgba(0,0,0,0.1);width:100%;box-sizing:border-box;">
           <!-- Navigation buttons -->
-          <button onclick="document.getElementById('arrival-pts').scrollIntoView({behavior:'smooth'});" style="flex-shrink:0;padding:8px 14px;background:#00838F;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;">⏱️ Arrival</button>
-          <button onclick="document.getElementById('departure-pts').scrollIntoView({behavior:'smooth'});" style="flex-shrink:0;padding:8px 14px;background:#00838F;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;">⏱️ Departure</button>
+          <button onclick="switchToTab('pts-schedule');setTimeout(function(){document.getElementById('arrival-pts').scrollIntoView({behavior:'smooth'});},60);" style="flex-shrink:0;padding:8px 14px;background:#00838F;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;">⏱️ Arrival</button>
+          <button onclick="switchToTab('pts-schedule');setTimeout(function(){document.getElementById('departure-pts').scrollIntoView({behavior:'smooth'});},60);" style="flex-shrink:0;padding:8px 14px;background:#00838F;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;">⏱️ Departure</button>
           
           <!-- Divider -->
           <div style="width:1px;height:24px;background:rgba(255,255,255,0.3);flex-shrink:0;"></div>
@@ -1413,17 +1418,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <div><label class="field-label">Total Bags</label><input class="field-input sm" id="f-arr_total_bags" data-key="arr_total_bags" placeholder="0"></div>
             <div><label class="field-label">First Bag <span style="font-weight:400;opacity:0.7;">(auto)</span></label><input class="field-input sm" id="f-arr_first_bag" data-key="arr_first_bag" placeholder="&mdash;" readonly style="background:#F3F4F6;cursor:not-allowed;"></div>
             <div><label class="field-label">Last Bag <span style="font-weight:400;opacity:0.7;">(auto)</span></label><input class="field-input sm" id="f-arr_last_bag" data-key="arr_last_bag" placeholder="&mdash;" readonly style="background:#F3F4F6;cursor:not-allowed;"></div>
-          </div>
-        </div>
-
-        <div data-id="250" class="section-hdr" id="arrival-pts">Arrival Precision Timing Schedule</div>
-        <div data-id="251" class="card">
-          <p data-id="252" class="text-xs text-cx-grey italic mb-3">Targets auto-calculate from ETA. Tap to log actual time, Long press to reset, or edit time manually</p>
-          <div data-id="253" class="table-scroll-wrap">
-            <div class="table-scroll-wrap"><table data-id="254" class="ms-table" id="arr-ms-table">
-              <thead data-id="255"><tr data-id="256"><th data-id="257">Activity</th><th data-id="258">Target</th><th data-id="259">Actual</th><th style="text-align:center;">Variance</th></tr></thead>
-              <tbody data-id="260" id="arr-milestones-a1"></tbody>
-            </table></div>
           </div>
         </div>
 
@@ -1591,6 +1585,30 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
+        <div data-id="500" class="section-hdr">Remarks</div>
+        <div data-id="501" class="card">
+          <textarea data-id="502" class="field-input autosize" id="f-remarks" data-key="remarks" data-autoresize="true" placeholder="Enter any remarks..." rows="2" style="min-height:60px;"></textarea>
+        </div>
+
+        <div data-id="503" class="section-hdr" style="background:#EF4444;">Notices</div>
+        <div data-id="504" class="notice-card">⚠️ Verify Locks Raised Before Close!!!</div>
+        <div data-id="505" class="notice-card">⚠️ Re-confirm Final Pax Figure with ISM!!!</div>
+
+      </div>
+
+      <!-- ========== TAB: PTS SCHEDULE ========== -->
+      <div data-id="703" id="tab-pts-schedule" class="tab-content">
+        <div data-id="250" class="section-hdr" id="arrival-pts">Arrival Precision Timing Schedule</div>
+        <div data-id="251" class="card">
+          <p data-id="252" class="text-xs text-cx-grey italic mb-3">Targets auto-calculate from ETA. Tap to log actual time, Long press to reset, or edit time manually</p>
+          <div data-id="253" class="table-scroll-wrap">
+            <div class="table-scroll-wrap"><table data-id="254" class="ms-table" id="arr-ms-table">
+              <thead data-id="255"><tr data-id="256"><th data-id="257">Activity</th><th data-id="258">Target</th><th data-id="259">Actual</th><th style="text-align:center;">Variance</th></tr></thead>
+              <tbody data-id="260" id="arr-milestones-a1"></tbody>
+            </table></div>
+          </div>
+        </div>
+
         <div data-id="489" class="section-hdr" id="departure-pts">Departure Precision Timing Schedule</div>
         <div data-id="490" class="card">
           <p data-id="491" class="text-xs text-cx-grey italic mb-3">Targets auto-calculate from ETD. Tap to log actual time, Long press to reset, or edit time manually</p>
@@ -1601,16 +1619,6 @@ document.addEventListener('DOMContentLoaded', function() {
             </table></div>
           </div>
         </div>
-
-        <div data-id="500" class="section-hdr">Remarks</div>
-        <div data-id="501" class="card">
-          <textarea data-id="502" class="field-input autosize" id="f-remarks" data-key="remarks" data-autoresize="true" placeholder="Enter any remarks..." rows="2" style="min-height:60px;"></textarea>
-        </div>
-
-        <div data-id="503" class="section-hdr" style="background:#EF4444;">Notices</div>
-        <div data-id="504" class="notice-card">⚠️ Verify Locks Raised Before Close!!!</div>
-        <div data-id="505" class="notice-card">⚠️ Re-confirm Final Pax Figure with ISM!!!</div>
-
       </div>
 
       <!-- ========== TAB 2: SUMMARY ========== -->
