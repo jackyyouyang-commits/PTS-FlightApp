@@ -3055,7 +3055,11 @@ function renderPaxLoadTable() {
                    'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos'};
           Object.keys(m).forEach(function(id){
             var ta=document.getElementById(id);
-            if(ta&&data[m[id]]) ta.value=data[m[id]];
+            if(ta&&data[m[id]]) {
+              ta.value=data[m[id]];
+              // Rebuild the Excel table preview so imported content shows as a table, not plain text
+              try { processPastedData(ta, ta.value); } catch(e) {}
+            }
           });
         })();
         if (data._images) { pastedImages = data._images; PASTE_IMAGE_IDS.forEach(renderPastedImageGallery); }
