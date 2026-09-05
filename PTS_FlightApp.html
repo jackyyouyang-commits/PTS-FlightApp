@@ -2023,24 +2023,23 @@ document.addEventListener('DOMContentLoaded', function() {
       return null;
     }
 
-    // Detect the ETA HKG day offset (+1 or +2) from the YVR->HKG time difference.
-    // HKG is 15h ahead of YVR during Pacific Daylight Time, 16h during Standard Time.
-    // depMin = departure (local YVR) min-from-midnight; etaClockMin = HKG arrival clock (0..1439).
-    // HKG's clock rolls past midnight when (dep clock + HKG lead) >= 1440, and rolls a second
-    // time if the HKG arrival itself also crosses another midnight. Base offset is 0 or 1
-    // (never 2 for a sub-24h flight), clamped to >= 0.
-    function computeEtaHkgDayOffset(depMin, etaClockMin) {
+    // Detect the ETA HKG day offset (+1/+2) from the YVR->HKG time difference.
+    // HKG is 15h ahead of YVR during PDT, 16h during PST. The offset is how many times the
+    // HKG clock crosses midnight relative to the YVR departure calendar day:
+    // floor((depMin + hkgLead)/1440)  -> HKG date at the moment of departure
+    // plus 1 more if the arrival itself crosses another HKG midnight.
+    // depDayBase = extra days the departure is already past the flight's calendar day
+    // (e.g. a next-day 03:36 ATD for a 23:00 flight -> depDayBase 1), so the +1 shows correctly.
+    function computeEtaHkgDayOffset(depMin, etaClockMin, depDayBase) {
       var now = new Date();
       var yr = now.getFullYear();
-      // US/Canada DST: 2nd Sunday of March to 1st Sunday of November
       function nthSunday(y, month, n) { var d = new Date(y, month, 1); var s = 0; while (true) { if (d.getDay() === 0) { s++; if (s === n) return d; } d.setDate(d.getDate() + 1); } return d; }
       var dstStart = nthSunday(yr, 2, 2);   // 2nd Sunday March
       var dstEnd = nthSunday(yr, 10, 1);    // 1st Sunday November
       var isDST = now >= dstStart && now < dstEnd;
       var hkgLead = isDST ? 15 * 60 : 16 * 60; // minutes HKG is ahead of YVR
-      // Normalize eta into 0..1439 first
       var eta = ((etaClockMin % 1440) + 1440) % 1440;
-      var off = Math.floor((depMin + hkgLead) / 1440) + (eta + hkgLead >= 2880 ? 1 : 0);
+      var off = (depDayBase || 0) + Math.floor((depMin + hkgLead) / 1440) + (eta + hkgLead >= 2880 ? 1 : 0);
       return off > 2 ? 2 : (off < 0 ? 0 : off);
     }
 
@@ -3426,55 +3425,32 @@ function renderPaxLoadTable() {
         }
       } catch (e) { delayMinutes = 0; }
       
-      // Calculate adjusted ETA HKG with delay
-      var etaHKG = parseHKGTime(state.dep_eta_hkg);
+      // Calculate adjusted ETA HKG from the ATD target (depActivities idx 25) + flight time.
+      // Flight time (FT, else BLK) is the scheduled YVR->HKG duration. ETA HKG = ATD + FT,
+      // with the +1/+2 day auto-detected from the YVR->HKG time difference.
       var etaHKGStr = state.dep_eta_hkg ? state.dep_eta_hkg : '';
       var adjustedEtaHKGStr = etaHKGStr;
-      
-      if (delayMinutes > 0 && etaHKGStr) {
-        // Parse ETA HKG and add delay
-        var etaHKGParts = etaHKGStr.split(':');
-        if (etaHKGParts.length >= 2) {
-          var etaHKGHours = parseInt(etaHKGParts[0], 10);
-          var etaHKGMins = parseInt(etaHKGParts[1], 10);
-          var totalMins = etaHKGHours * 60 + etaHKGMins + delayMinutes;
-          var adjHours = Math.floor(totalMins / 60) % 24;
-          var adjMins = totalMins % 60;
-          adjustedEtaHKGStr = pad(adjHours) + ':' + pad(adjMins);
-          if (etaHKGStr.includes('+1')) {
-            // Preserve +1 day indicator if present
-            adjHours = Math.floor(totalMins / 60);
-            if (adjHours >= 24) {
-              adjustedEtaHKGStr = pad(adjHours - 24) + ':' + pad(adjMins) + ' +1';
-            }
-          }
-        }
-      }
-
-      // ETA HKG shifts by the ATD (depActivities index 25) variance:
-      // ATD +20 min late -> ETA HKG +20; ATD -20 min early -> ETA HKG -20.
-      // Computed from the baseline (scheduled) ETA HKG each render, so it never accumulates.
-      // Day offset (+1/+2) is auto-detected: ATD is local (YVR) and ETA HKG is HKG time,
-      // which is 15 or 16 hours ahead of YVR depending on daylight saving.
+      var ftMin = parseTime(state.dep_ft);
+      if (ftMin === null) ftMin = parseTime(state.dep_blk);
+      var atdTargetForEta = null;
       if (depActual[25]) {
-        var atdTargetMin = parseTime(state.dep_etd);
-        if (atdTargetMin === null) atdTargetMin = stdMin;
-        var atdActualMin = parseTime(depActual[25]);
-        if (atdActualMin !== null && atdTargetMin !== null && etaHKGStr) {
-          var atdVariance = atdActualMin - atdTargetMin;
-          var etaBaseParts = etaHKGStr.split(':');
-          if (etaBaseParts.length >= 2) {
-            var etaBaseTotal = parseInt(etaBaseParts[0], 10) * 60 + parseInt(etaBaseParts[1], 10) + atdVariance;
-            var ebHours = Math.floor(etaBaseTotal / 60);
-            var ebMins = ((etaBaseTotal % 60) + 60) % 60;
-            adjustedEtaHKGStr = pad(((ebHours % 24) + 24) % 24) + ':' + pad(ebMins);
-            var etaDayOffset = computeEtaHkgDayOffset(atdActualMin, etaBaseTotal);
-            if (etaDayOffset > 0) adjustedEtaHKGStr += ' +' + etaDayOffset;
-          }
-        }
+        // Use the logged ATD actual once the aircraft has departed
+        atdTargetForEta = parseTime(depActual[25]);
+      } else if (atdTableMin !== null && atdTableMin !== undefined) {
+        atdTargetForEta = atdTableMin;
+      }
+      if (atdTargetForEta !== null && ftMin !== null) {
+        var etaTotal = atdTargetForEta + ftMin;
+        var etaClock = ((etaTotal % 1440) + 1440) % 1440;
+        adjustedEtaHKGStr = pad(Math.floor(etaClock / 60)) + ':' + pad(etaClock % 60);
+        // Day base: STD evening + ATD before noon means the departure rolled into the next day
+        var depDayBase = (stdMin !== null && stdMin >= 720 && atdTargetForEta < 720) ? 1 : 0;
+        var etaDayOff = computeEtaHkgDayOffset(atdTargetForEta, etaTotal, depDayBase);
+        if (etaDayOff > 0) adjustedEtaHKGStr += ' +' + etaDayOff;
       }
 
       var staHKG = parseHKGTime(state.dep_sta_hkg);
+      var etaHKG = parseHKGTime(adjustedEtaHKGStr);
       var etaTimeColor = (etaHKG !== null && staHKG !== null && etaHKG > staHKG) ? '#FCA5A5' : '#ffffff';
       var etaLine = adjustedEtaHKGStr ? '<br><span style="font-size:0.72em;font-weight:500;color:#ffffff;">ETA HKG </span><span style="font-size:0.72em;font-weight:600;color:' + etaTimeColor + ';">' + adjustedEtaHKGStr + '</span>' : '';
 
