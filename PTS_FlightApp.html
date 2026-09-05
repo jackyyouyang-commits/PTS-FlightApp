@@ -1997,6 +1997,30 @@ document.addEventListener('DOMContentLoaded', function() {
       return parseInt(m[1],10)*60 + parseInt(m[2],10);
     }
 
+    // Parse the Flight Information date field (e.g. "03 May 2026", "03/05/2026")
+    function parseFlightDateStr(s) {
+      if (!s) return null;
+      var t = String(s).trim();
+      var m = /^(\d{1,2})\s*[-\/]?\s*([A-Za-z]{3,9})(?:[\s\-\/]+(\d{4}))?$/.exec(t);
+      if (m) {
+        var day = parseInt(m[1],10);
+        var monMap = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+        var mon = monMap[m[2].substr(0,3).toLowerCase()] || 0;
+        var yr = m[3] ? parseInt(m[3],10) : (new Date()).getFullYear();
+        return new Date(yr, mon, day);
+      }
+      var p = Date.parse(t);
+      if (!isNaN(p)) return new Date(p);
+      var n = /^(\d{1,2})[-\/](\d{1,2})(?:[-\/](\d{4}))?$/.exec(t);
+      if (n) {
+        var dayN = parseInt(n[1],10);
+        var monN = parseInt(n[2],10) - 1;
+        var yrN = n[3] ? parseInt(n[3],10) : (new Date()).getFullYear();
+        return new Date(yrN, monN, dayN);
+      }
+      return null;
+    }
+
     // Detect the ETA HKG day offset (+1 or +2) from the YVR->HKG time difference.
     // HKG is 15h ahead of YVR during Pacific Daylight Time, 16h during Standard Time.
     // depMin = departure (local YVR) min-from-midnight; etaClockMin = HKG arrival clock (0..1439).
@@ -2234,6 +2258,17 @@ document.addEventListener('DOMContentLoaded', function() {
       var drift = 0; // cumulative drift from most recently logged actual, applied to future un-logged targets
       var prevAbsTarget = null; // for detecting the schedule crossing midnight
       var dayOffset = 0; // becomes 1440 once the schedule passes midnight (next-day activities)
+      // If the flight date is before the current (header) date, the whole schedule is in the
+      // past and an actual entered as a small early-morning time is that flight's next day.
+      var now0 = new Date();
+      var todayMid = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
+      var fDate = parseFlightDateStr(state.date);
+      var flightPastDays = 0;
+      if (fDate) {
+        var fMid = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate()).getTime();
+        flightPastDays = Math.round((todayMid - fMid) / 86400000);
+        if (flightPastDays < 0) flightPastDays = 0;
+      }
       for (var i = 0; i < defs.length; i++) {
         var act = defs[i];
         var origTarget = null;
@@ -2267,20 +2302,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (target !== null && logged) {
           var actualMin = parseTime(logged);
           if (actualMin !== null) {
-            // Midnight wrap: place the actual on the schedule's current day (dayOffset),
-            // then nudge by +/-1440 so it lands within +/-12h of the target.
-            actualMin += dayOffset;
-            var rawDiff = actualMin - target;
-            if (rawDiff > 720) actualMin -= 1440;
-            else if (rawDiff < -720) actualMin += 1440;
-            var diffMin = actualMin - target;
+            // Anchor both target & actual to the flight date, then roll the actual forward
+            // day-by-day until it sits within +/-12h AFTER the target (it can't be more than
+            // ~12h early). This lets the flight-date-vs-today difference push an early-morning
+            // actual into the flight's following day (e.g. ETA 12:37, actual 01:10 -> +12:33).
+            var baseAbs = flightPastDays * 1440;
+            var actualAbs = actualMin + baseAbs + dayOffset;
+            var targetAbs = target + baseAbs;
+            while (actualAbs - targetAbs < -720) actualAbs += 1440;
+            while (actualAbs - targetAbs > 720) actualAbs -= 1440;
+            var diffMin = actualAbs - targetAbs;
             var sign = diffMin >= 0 ? '+' : '-';
             var absMin = Math.abs(diffMin);
             var h = Math.floor(absMin / 60);
             var m = absMin % 60;
             variance = sign + (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
             // Shift all subsequent un-logged targets by this activity's real drift
-            if (origTarget !== null) drift = actualMin - origTarget;
+            if (origTarget !== null) drift = actualAbs - baseAbs - origTarget;
           }
         }
         var targetTdStyle = (shift > 0 && target !== null) ? ' style="color:#DC2626;font-weight:700;"' : '';
