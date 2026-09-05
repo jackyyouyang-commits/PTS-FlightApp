@@ -3492,6 +3492,10 @@ function renderPaxLoadTable() {
           var todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0,0);
           etdTargetMs = todayMid.getTime() + etdMin*60*1000;
         }
+        // A compressed/late ATD can roll past midnight (e.g. ATD 03:36 for a flight whose
+        // schedule started the prior evening). If the ATD table target is in use and anchoring
+        // to the flight day puts it >12h in the past, roll it forward a day.
+        if (atdTableMin !== null && (nowMs - etdTargetMs) > 12*3600*1000) etdTargetMs += 86400000;
       }
 
       // Update ETD display
