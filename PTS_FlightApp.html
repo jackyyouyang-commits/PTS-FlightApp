@@ -2304,14 +2304,14 @@ document.addEventListener('DOMContentLoaded', function() {
           var actualMin = parseTime(logged);
           if (actualMin !== null) {
             // Anchor the target to the flight date (plus any schedule midnight rollover) and
-            // the actual to today's date via actualDayOffset. The date difference alone decides
-            // same-day vs next-day; only when there's no usable flight date do we fall back to
-            // rolling a >6h-early actual forward past midnight (overnight heuristic).
+            // the actual to today's date via actualDayOffset. When the flight date is already
+            // in the past (actualDayOffset > 0), the date anchor alone places the actual on the
+            // correct day - the schedule's internal midnight rollover (dayOffset) must NOT be
+            // added again, or a post-drift activity (e.g. Chocks On 03:35 after a 03:34 target)
+            // would be read as next-day (+24h). The >6h-early roll-forward only applies when
+            // there is no date anchor at all.
             var targetAbs = target; // flight-date-based minutes (may exceed 1440 via offsets)
-            var actualAbs = actualMin + actualDayOffset * 1440 + dayOffset;
-            // Roll a >6h-early actual forward past midnight (operational delays push times
-            // later, never many hours early). With a flight date the date anchor already
-            // handles next-day; without one this catches overnight delays.
+            var actualAbs = actualMin + actualDayOffset * 1440 + (actualDayOffset > 0 ? 0 : dayOffset);
             if (actualDayOffset === 0 && dayOffset === 0) {
               while (actualAbs - targetAbs < -360) actualAbs += 1440;
             }
