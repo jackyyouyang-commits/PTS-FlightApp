@@ -1071,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       </style>
     <script>
-    window.APP_VERSION = 'v1.0.17';
+    window.APP_VERSION = 'v1.0.18';
     (function(){
       var manifest = {
         name: "Flight PTS",
@@ -1272,7 +1272,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div data-id="566" style="display:flex;flex-direction:row;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
         <button data-id="567" class="bottom-tab active" data-tab="pts">
           <i data-id="568" data-lucide="plane" class="w-5 h-5"></i>
-          <span data-id="569" class="text-[11px] font-semibold">PTS</span>
+          <span data-id="569" class="text-[11px] font-semibold">Flight Info</span>
         </button>
         <button data-id="700" class="bottom-tab" data-tab="pts-schedule">
           <i data-id="701" data-lucide="timer" class="w-5 h-5"></i>
@@ -1515,7 +1515,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         <div data-id="373" class="section-hdr">Defects</div>
         <div data-id="374" class="card">
-          <textarea data-id="375" class="field-input" id="f-defects" data-key="defects" placeholder="e.g. 11K Armrest Inop (SL) / 31C Legrest Inop (SL)" rows="4" style="min-height:100px;"></textarea>
+          <textarea data-id="375" class="field-input autosize" id="f-defects" data-key="defects" data-autoresize="true" placeholder="e.g. 11K Armrest Inop (SL) / 31C Legrest Inop (SL)" rows="2" style="min-height:60px;"></textarea>
         </div>
 
         <div data-id="376" class="section-hdr">Catering Order</div>
@@ -2321,7 +2321,8 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         }
         var targetTdStyle = (shift > 0 && target !== null) ? ' style="color:#DC2626;font-weight:700;"' : '';
-        html += '<tr><td>' + act.name + '</td><td' + targetTdStyle + '>' + targetStr + '</td><td>' + actualCell + '</td><td style="text-align:center;font-weight:600;color:#059669;">' + variance + '</td></tr>';
+        var varianceColor = (variance.charAt(0) === '+') ? '#DC2626' : '#059669';
+        html += '<tr><td>' + act.name + '</td><td' + targetTdStyle + '>' + targetStr + '</td><td>' + actualCell + '</td><td style="text-align:center;font-weight:600;color:' + varianceColor + ';">' + variance + '</td></tr>';
       }
       tbody.innerHTML = html;
       return targetsOut;
@@ -2593,7 +2594,7 @@ function renderPaxLoadTable() {
             '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
               ['WCHR/S:'+(state.arr_wchr_s||0),'WCHC:'+(state.arr_wchc||0),'MAAS:'+(state.arr_maas||0),'MEDA:'+(state.arr_meda||0),'UMNR:'+(state.arr_umnr||0),'SVIP:'+(state.arr_svip||0),'DEAF:'+(state.arr_deaf||0),'BLND:'+(state.arr_blnd||0)].map(function(s) {
                 var val = parseInt(s.split(':')[1]); var bg = val ? 'bg-cx-teal text-white' : 'bg-gray-100 text-gray-500'; var display = val ? val : '-';
-                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:'+ (val ? 'white' : '#111827')+';">'+display+'</div><div style="font-size:0.7rem;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+s.split(':')[0]+'</div></div>';
+                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;min-width:70px;text-align:center;flex-shrink:0;height:auto;overflow:visible;"><div style="font-size:0.95rem;font-weight:600;color:'+ (val ? 'white' : '#111827')+';white-space:normal;overflow:visible;word-break:break-word;">'+display+'</div><div style="font-size:0.7rem;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+s.split(':')[0]+'</div></div>';
               }).join('') +
             '</div>' +
           '</div>' +
@@ -2646,47 +2647,19 @@ function renderPaxLoadTable() {
             '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
               ['INF OCC:'+(state.dep_inf_occ||0),'WCHR/S:'+(state.dep_wchr_s||0),'WCHC:'+(state.dep_wchc||0),'MAAS:'+(state.dep_maas||0),'UMNR:'+(state.dep_umnr||0),'SVIP:'+(state.dep_svip||0),'MEDA:'+(state.dep_meda||0),'DEAF:'+(state.dep_deaf||0),'BLND:'+(state.dep_blnd||0),'CHD:'+(state.dep_chd||0)].map(function(s) {
                 var val = parseInt(s.split(':')[1]); var display = val ? val : '-';
-                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:'+ (val ? 'white' : '#111827')+';">'+display+'</div><div style="font-size:0.7rem;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+s.split(':')[0]+'</div></div>';
+                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;min-width:70px;text-align:center;flex-shrink:0;height:auto;overflow:visible;"><div style="font-size:0.95rem;font-weight:600;color:'+ (val ? 'white' : '#111827')+';white-space:normal;overflow:visible;word-break:break-word;">'+display+'</div><div style="font-size:0.7rem;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+s.split(':')[0]+'</div></div>';
               }).join('') +
             '</div>' +
           '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">' +
             ['DM/Emer:'+(state.dep_dm_e||''),'GO/Saph:'+(state.dep_go_s||''),'SL/Ruby:'+(state.dep_sl_r||''),'IC:'+(state.dep_ic||''),'OC:'+(state.dep_oc||''),'HKG:'+(state.dep_hkg||''),'CIS:'+(state.dep_cis||'')].map(function(s) {
               var val = s.split(':')[1]; var display = val && String(val).trim() ? val : '-';
-              return '<div style="background:'+( val && String(val).trim() ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val && String(val).trim() ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:'+ (val && String(val).trim() ? 'white' : '#111827')+';">'+display+'</div><div style="font-size:0.7rem;color:'+(val && String(val).trim() ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+s.split(':')[0]+'</div></div>';
+              return '<div style="background:'+( val && String(val).trim() ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val && String(val).trim() ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;min-width:70px;text-align:center;flex-shrink:0;height:auto;overflow:visible;"><div style="font-size:0.95rem;font-weight:600;color:'+ (val && String(val).trim() ? 'white' : '#111827')+';white-space:normal;overflow:visible;word-break:break-word;">'+display+'</div><div style="font-size:0.7rem;color:'+(val && String(val).trim() ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+s.split(':')[0]+'</div></div>';
             }).join('') +
           '</div>' +
         '</div>' +
-        '<div class="card"><div class="section-hdr" style="margin-top:0;">Defects</div><div class="sum-value" style="margin-top:0;">'+(state.defects||'—')+'</div></div>' +
-        '<div class="card"><div class="section-hdr" style="margin-top:0;">Remarks</div><div class="sum-value" style="margin-top:0;">'+(state.remarks||'—')+'</div></div>';
-        
-      // Add ITD Tag Card table if data exists
-      var itdTagCardVal = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
-      if(itdTagCardVal.trim()) {
-        var lines = itdTagCardVal.split('\n').filter(function(line) { return line.trim(); });
-        var allCells = lines.map(function(line) { return line.split('\t'); });
-        var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
-        var colWidths = new Array(numCols).fill(80);
-        allCells.forEach(function(row) {
-          row.forEach(function(cell, idx) {
-            var width = Math.max(80, (cell.trim()||'').length * 9 + 16);
-            colWidths[idx] = Math.max(colWidths[idx], width);
-          });
-        });
-        
-        var tableHTML = '<table style="width:auto;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
-        allCells.forEach(function(row, rowIdx) {
-          tableHTML += '<tr style="transition:background-color 0.3s ease;">';
-          row.forEach(function(cell, idx) {
-            var cellContent = cell.trim() || '&nbsp;';
-            tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;min-width:' + colWidths[idx] + 'px;text-align:left;">' + cellContent + '</td>';
-          });
-          tableHTML += '</tr>';
-        });
-        tableHTML += '</table>';
-        
-        c.innerHTML += '<div class="card"><div class="section-hdr" style="margin-top:0;">ITD Tag Card</div><div style="overflow-x:auto;max-height:400px;overflow-y:auto;">' + tableHTML + '</div></div>';
-      }
+        '<div class="card"><div class="section-hdr" style="margin-top:0;">Defects</div><div class="sum-value" style="margin-top:0;white-space:pre-wrap;">'+(state.defects||'—')+'</div></div>' +
+        '<div class="card"><div class="section-hdr" style="margin-top:0;">Remarks</div><div class="sum-value" style="margin-top:0;white-space:pre-wrap;">'+(state.remarks||'—')+'</div></div>';
 
       refreshSummarySpans();
       refreshFinalLoading();
