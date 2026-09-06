@@ -1123,6 +1123,17 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     </div>
 
+    <!-- SAVE SUCCESS MODAL -->
+    <div id="save-success-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
+        <div style="font-size:15px;font-weight:700;color:#1a6e4e;">Save Successful</div>
+        <div style="margin-top:14px;color:#374151;font-size:13px;">Open this app on any device to restore.</div>
+        <div style="margin-top:18px;display:flex;gap:12px;justify-content:center;">
+          <button id="save-success-ok" style="background:#1a6e4e;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">OK</button>
+        </div>
+      </div>
+    </div>
+
     <div data-id="7" id="app-shell">
 
     <!-- HEADER -->
@@ -2961,7 +2972,8 @@ function renderPaxLoadTable() {
         payload._agent_pos   = (document.getElementById('agent-pos-textarea')||{}).value||'';
         payload._images = pastedImages;
         localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(payload));
-        showToast('\u2705 Saved! Open this app on any device to restore.', 'green');
+        var saveModal = document.getElementById('save-success-modal');
+        if (saveModal) saveModal.style.display = 'flex';
       } catch(e) {
         showToast('Save failed: ' + e.message, 'red');
       }
@@ -4677,6 +4689,10 @@ function renderPaxLoadTable() {
       // Clear confirm
       safeOn('clear-confirm-yes', doClearAll);
       safeOn('clear-confirm-no',  cancelClear);
+      safeOn('save-success-ok', function() {
+        var m = document.getElementById('save-success-modal');
+        if (m) m.style.display = 'none';
+      });
 
       // Import modal
       safeOn('modal-close-m3n4',  function(){ var m=document.getElementById('import-modal-k1l2'); if(m) m.style.display='none'; });
