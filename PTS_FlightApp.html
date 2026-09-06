@@ -3891,6 +3891,22 @@ function renderPaxLoadTable() {
         }
       } catch (e) { delayMinutes = 0; }
 
+      // Live disruption: even with no actual logged yet, once real "now" has passed the
+      // scheduled STD (flight Date + STD time combined), the flight is already late - so
+      // the badge should show a continuously growing delay, not wait for an actual entry.
+      try {
+        var atdAlreadyLogged = depActual && depActual[25];
+        if (!atdAlreadyLogged && stdMin != null) {
+          var stdFdMid = fd ? new Date(fd.getFullYear(), fd.getMonth(), fd.getDate(), 0,0,0,0)
+                            : new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0,0);
+          var stdTargetMsLive = stdFdMid.getTime() + stdMin*60*1000;
+          if (nowMs > stdTargetMsLive) {
+            var liveDelayMinutes = Math.floor((nowMs - stdTargetMsLive) / 60000);
+            if (liveDelayMinutes > delayMinutes) delayMinutes = liveDelayMinutes;
+          }
+        }
+      } catch (e) { /* keep prior delayMinutes */ }
+
       // STD field disruption badge - flags whenever a logged actual (ultimately ATD) runs later
       // than the scheduled STD, independent of the ETD countdown display above.
       var stdDisruptionEl = document.getElementById('dep-std-disruption');
