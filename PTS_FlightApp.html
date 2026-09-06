@@ -4413,6 +4413,7 @@ function renderPaxLoadTable() {
       var depLirContent   = taVal('dep-lir-textarea');
       var crewArrContent  = taVal('crew-textarea');
       var crewDepContent  = taVal('dep-crew-textarea');
+      var depGenDecContent = taVal('dep-gen-dec-textarea');
       var agentPosContent = taVal('agent-pos-textarea');
 
       var css = [
@@ -4546,6 +4547,8 @@ function renderPaxLoadTable() {
           row('STRL',v('dep_strl'))+row('WCH',v('dep_wch'))+row('Carry-On',v('dep_carry_on'))
         ),
         section('Defects', row('Defects',v('defects'))),
+        section('Remarks', row('Remarks', (v('remarks')!=='—' ? String(s.remarks).replace(/</g,'&lt;').replace(/\n/g,'<br>') : '—'))),
+        section('Catering Order', row('Catering Order', (v('catering_order')!=='—' ? String(s.catering_order).replace(/</g,'&lt;').replace(/\n/g,'<br>') : '—'))),
         section('Capacity',
           row('CAP','J: '+v('cap_j')+' / W: '+v('cap_w')+' / Y: '+v('cap_y'))+
           row('Avail','J: '+v('avail_j')+' / W: '+v('avail_w')+' / Y: '+v('avail_y'))+
@@ -4586,8 +4589,11 @@ function renderPaxLoadTable() {
         // ── Page 7: Arrival Crew List ──
         '<div class="page-break">'+preSection('Arrival Crew List', crewArrContent)+'</div>',
 
+        // ── Page 7b: Departure Crew List ──
+        '<div class="page-break">'+preSection('Departure Crew List', crewDepContent)+'</div>',
+
         // ── Page 8: Departure Gen Dec ──
-        '<div class="page-break">'+preSection('Departure Gen Dec', crewDepContent)+'</div>',
+        '<div class="page-break">'+preSection('Departure Gen Dec', depGenDecContent)+'</div>',
 
         // ── Page 9: Agent Positions & Roster ──
         '<div class="page-break">'+preSection('Agent Positions & Roster', agentPosContent)+'</div>'
