@@ -5053,7 +5053,8 @@ function renderPaxLoadTable() {
       var crewArrContent  = taVal('crew-textarea');
       var crewDepContent  = taVal('dep-crew-textarea');
       var depGenDecContent = taVal('dep-gen-dec-textarea');
-      var agentPosContent = taVal('agent-pos-textarea');
+      var agentPosHasPdf = (typeof agentPosPdfData !== 'undefined' && !!agentPosPdfData);
+      var agentPosContent = agentPosHasPdf ? '(Imported PDF attached — see following page(s))' : taVal('agent-pos-textarea');
 
       var css = [
         '*{box-sizing:border-box;margin:0;padding:0;}',
@@ -5291,6 +5292,52 @@ function renderPaxLoadTable() {
       }
     }
 
+    // Lazily loads PDF.js (only needed if the Agent Positions tab has an imported PDF to
+    // embed in the report) so the app doesn't pay for it on every load.
+    function ensurePdfJsLoaded() {
+      if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+      if (window._pdfJsLoadPromise) return window._pdfJsLoadPromise;
+      window._pdfJsLoadPromise = new Promise(function(resolve, reject) {
+        var script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        script.onload = function() {
+          try {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            resolve(window.pdfjsLib);
+          } catch(e) { reject(e); }
+        };
+        script.onerror = function() { reject(new Error('Failed to load PDF.js')); };
+        document.head.appendChild(script);
+      });
+      return window._pdfJsLoadPromise;
+    }
+
+    // Rasterizes every page of the imported Agent Positions PDF (a data: URL) into JPEG
+    // images so they can be embedded into the generated report PDF like any other page.
+    function renderPdfDataUrlToImages(dataUrl) {
+      return ensurePdfJsLoaded().then(function(pdfjsLib) {
+        var base64 = dataUrl.split(',')[1];
+        var binary = atob(base64);
+        var bytes = new Uint8Array(binary.length);
+        for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return pdfjsLib.getDocument({ data: bytes }).promise.then(function(pdfDoc) {
+          var pagePromises = [];
+          for (var p = 1; p <= pdfDoc.numPages; p++) {
+            pagePromises.push(pdfDoc.getPage(p).then(function(page) {
+              var viewport = page.getViewport({ scale: 2 });
+              var canvas = document.createElement('canvas');
+              canvas.width = viewport.width;
+              canvas.height = viewport.height;
+              return page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise.then(function() {
+                return { dataUrl: canvas.toDataURL('image/jpeg', 0.95), width: canvas.width, height: canvas.height };
+              });
+            }));
+          }
+          return Promise.all(pagePromises);
+        });
+      });
+    }
+
     // Renders the report container to a canvas and saves it as a downloadable multi-page PDF.
     // jsPDF/html2canvas are loaded once in this (parent) document. `win` is the document that
     // owns the report DOM (the popup window, or the main window when the popup was blocked);
@@ -5372,7 +5419,27 @@ function renderPaxLoadTable() {
         });
       }
 
+      // If the Agent Positions tab has an imported PDF, rasterize its pages and append them
+      // as extra pages at the end of the report, each fitted/centered onto its own letter page.
+      function appendAgentPosPdfPages() {
+        if (typeof agentPosPdfData === 'undefined' || !agentPosPdfData) return Promise.resolve();
+        return renderPdfDataUrlToImages(agentPosPdfData).then(function(pages) {
+          pages.forEach(function(pg) {
+            pdf.addPage();
+            var imgW = usableWidth, imgH = pg.height * imgW / pg.width;
+            if (imgH > usableHeight) { imgH = usableHeight; imgW = pg.width * imgH / pg.height; }
+            var xOff = margin + (usableWidth - imgW) / 2;
+            pdf.addImage(pg.dataUrl, 'JPEG', xOff, margin, imgW, imgH);
+          });
+        }).catch(function(err) {
+          console.error('Failed to embed Agent Positions PDF in report:', err);
+          showToast('Could not embed Agent Positions PDF: ' + err.message, 'red');
+        });
+      }
+
       renderBlock(0).then(function() {
+        return appendAgentPosPdfPages();
+      }).then(function() {
         var flightPart = (state && state.flight) ? '_' + state.flight.replace(/[^A-Za-z0-9]/g, '') : '';
         pdf.save('PTS_Report' + flightPart + '.pdf');
         if (btn) { btn.textContent = origLabel; btn.disabled = false; }
