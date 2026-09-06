@@ -1569,6 +1569,16 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </div>
     </div>
 
+    <!-- RESTORE SUCCESS MODAL -->
+    <div id="restore-success-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
+        <div id="restore-success-text" style="font-size:15px;font-weight:700;color:#1a6e4e;">Flight Information successfully restored</div>
+        <div style="margin-top:18px;display:flex;gap:12px;justify-content:center;">
+          <button id="restore-success-ok" style="background:#1a6e4e;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">OK</button>
+        </div>
+      </div>
+    </div>
+
     <div data-id="7" id="app-shell">
 
     <!-- HEADER -->
@@ -5242,6 +5252,10 @@ function renderPaxLoadTable() {
         var m = document.getElementById('share-code-missing-modal');
         if (m) m.style.display = 'none';
       });
+      safeOn('restore-success-ok', function() {
+        var m = document.getElementById('restore-success-modal');
+        if (m) m.style.display = 'none';
+      });
 
       // Import modal
       safeOn('modal-close-m3n4',  function(){ var m=document.getElementById('import-modal-k1l2'); if(m) m.style.display='none'; });
@@ -5543,7 +5557,12 @@ function renderPaxLoadTable() {
         } else if (state._locked) {
           setTimeout(lockFields, 100);
         }
-        showToast('\u2705 Restored saved data from ' + new Date(restored.savedAt).toLocaleString(), 'green');
+        (function(){
+          var m = document.getElementById('restore-success-modal');
+          var t = document.getElementById('restore-success-text');
+          if (t) t.textContent = 'Flight Information successfully restored from ' + new Date(restored.savedAt).toLocaleString();
+          if (m) m.style.display = 'flex';
+        })();
       } else {
         renderAll();
        // ensure autosize textareas (e.g., Doorside) start as single-line if empty
