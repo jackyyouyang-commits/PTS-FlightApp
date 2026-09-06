@@ -5098,34 +5098,78 @@ function renderPaxLoadTable() {
         showToast('PDF library failed to load', 'red');
         return;
       }
-      var captureRoot = rootEl || win.document.body;
-      var btn = win.document.getElementById('pts-download-pdf-btn');
+      var doc = win.document;
+      var captureRoot = rootEl || doc.body;
+      var btn = doc.getElementById('pts-download-pdf-btn');
       var origLabel = btn ? btn.textContent : '';
       if (btn) { btn.textContent = 'Generating PDF...'; btn.disabled = true; }
-      html2canvas(captureRoot, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        ignoreElements: function(el) {
-          return el.classList && (el.classList.contains('no-print'));
-        }
-      }).then(function(canvas) {
-        var jsPDF = window.jspdf.jsPDF;
-        var pdf = new jsPDF('p', 'pt', 'a4');
-        var pageWidth = pdf.internal.pageSize.getWidth();
-        var pageHeight = pdf.internal.pageSize.getHeight();
-        var imgWidth = pageWidth;
-        var imgHeight = canvas.height * imgWidth / canvas.width;
-        var heightLeft = imgHeight;
-        var position = 0;
-        var imgData = canvas.toDataURL('image/jpeg', 0.92);
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        while (heightLeft > 0) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
-        }
+
+      var jsPDF = window.jspdf.jsPDF;
+      var pdf = new jsPDF('p', 'pt', 'letter'); // US Letter, per user request
+      var pageWidth = pdf.internal.pageSize.getWidth();
+      var pageHeight = pdf.internal.pageSize.getHeight();
+      var margin = 28;
+      var usableWidth = pageWidth - margin * 2;
+      var usableHeight = pageHeight - margin * 2;
+
+      // Render each top-level block (h1, subtitle, each .section/.page-break) as its own
+      // canvas and pack them onto pages ourselves, instead of screenshotting the whole
+      // report into one tall image and slicing it by raw pixel height. Slicing by pixels
+      // cuts straight through tables/text wherever a page boundary happens to land; packing
+      // whole blocks guarantees a page break only ever falls between sections, never inside
+      // one, and .page-break sections (Staff Acceptance, crew lists, etc.) always start a
+      // fresh page as originally intended for print.
+      var blocks = Array.prototype.filter.call(captureRoot.children, function(el) {
+        if (!el || el.nodeType !== 1) return false;
+        var tag = el.tagName;
+        if (tag === 'STYLE' || tag === 'SCRIPT') return false;
+        if (el.classList && el.classList.contains('no-print')) return false;
+        return true;
+      });
+      if (blocks.length === 0) blocks = [captureRoot];
+
+      var y = margin;
+      var startedFirstPage = false;
+
+      function renderBlock(idx) {
+        if (idx >= blocks.length) return Promise.resolve();
+        var block = blocks[idx];
+        return html2canvas(block, { scale: 2, backgroundColor: '#ffffff' }).then(function(canvas) {
+          if (canvas.width === 0 || canvas.height === 0) return renderBlock(idx + 1);
+          var imgWidth = usableWidth;
+          var imgHeight = canvas.height * imgWidth / canvas.width;
+          var forceNewPage = block.classList && block.classList.contains('page-break');
+
+          if (startedFirstPage && (forceNewPage || y + imgHeight > margin + usableHeight)) {
+            pdf.addPage();
+            y = margin;
+          }
+          startedFirstPage = true;
+
+          var imgData = canvas.toDataURL('image/jpeg', 0.95);
+          if (imgHeight <= usableHeight) {
+            pdf.addImage(imgData, 'JPEG', margin, y, imgWidth, imgHeight);
+            y += imgHeight + 8;
+          } else {
+            // A single block (e.g. a very long pasted list) is taller than one page on its
+            // own — slice just this block across as many pages as it needs.
+            var heightLeft = imgHeight;
+            var position = y;
+            pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+            heightLeft -= (margin + usableHeight - y);
+            while (heightLeft > 0) {
+              pdf.addPage();
+              position -= usableHeight;
+              pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+              heightLeft -= usableHeight;
+            }
+            y = margin + usableHeight + 1; // force next block onto a fresh page
+          }
+          return renderBlock(idx + 1);
+        });
+      }
+
+      renderBlock(0).then(function() {
         var flightPart = (state && state.flight) ? '_' + state.flight.replace(/[^A-Za-z0-9]/g, '') : '';
         pdf.save('PTS_Report' + flightPart + '.pdf');
         if (btn) { btn.textContent = origLabel; btn.disabled = false; }
