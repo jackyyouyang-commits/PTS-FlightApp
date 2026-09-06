@@ -4940,6 +4940,8 @@ function renderPaxLoadTable() {
     // AGENT POSITIONS - IMPORT PDF
     // ===========================
     var agentPosPdfData = null; // data URL of the imported PDF, persisted via saveToLocal/restoreFromLocal
+    var agentPosPdfImages = []; // rasterized page images ({dataUrl,width,height}) of agentPosPdfData, used to embed the PDF's actual pages inside the report's content box
+    var agentPosPdfRenderPromise = null; // in-flight/most-recent render, so report generation can wait for it if needed
 
     function openAgentPosPdfPicker() {
       var input = document.getElementById('agent-pos-pdf-input');
@@ -4954,10 +4956,21 @@ function renderPaxLoadTable() {
       if (viewer) { viewer.src = dataUrl; viewer.style.display = ''; }
       if (ta) ta.style.display = 'none';
       if (removeBtn) removeBtn.style.display = '';
+      // Pre-render the PDF's pages to images now so they're ready by the time a report is
+      // generated (openSendModal also awaits this promise as a safety net if it's still running).
+      agentPosPdfImages = [];
+      agentPosPdfRenderPromise = renderPdfDataUrlToImages(dataUrl).then(function(pages) {
+        agentPosPdfImages = pages.map(function(p) { return p.dataUrl; });
+      }).catch(function(err) {
+        console.error('Failed to render imported Agent Positions PDF for report:', err);
+        agentPosPdfImages = [];
+      });
     }
 
     function removeAgentPosPdf() {
       agentPosPdfData = null;
+      agentPosPdfImages = [];
+      agentPosPdfRenderPromise = null;
       var ta = document.getElementById('agent-pos-textarea');
       var viewer = document.getElementById('agent-pos-pdf-viewer');
       var removeBtn = document.getElementById('agent-pos-remove-pdf-btn');
@@ -5054,10 +5067,12 @@ function renderPaxLoadTable() {
       var crewDepContent  = taVal('dep-crew-textarea');
       var depGenDecContent = taVal('dep-gen-dec-textarea');
       var agentPosHasPdf = (typeof agentPosPdfData !== 'undefined' && !!agentPosPdfData);
-      // When a PDF is imported, leave the text body empty — its actual pages are rendered
-      // directly into the report (as full-page images) right after this section's header,
-      // instead of a placeholder note.
       var agentPosContent = agentPosHasPdf ? '' : taVal('agent-pos-textarea');
+      // When a PDF is imported, embed its actual rendered pages as images directly inside
+      // the section's content box (stacked full-width), instead of a placeholder note.
+      var agentPosImagesHtml = (typeof agentPosPdfImages !== 'undefined' ? agentPosPdfImages : [])
+        .map(function(src) { return '<img src="'+src+'" style="width:100%;display:block;margin-bottom:8px;">'; })
+        .join('');
 
       var css = [
         '*{box-sizing:border-box;margin:0;padding:0;}',
@@ -5243,16 +5258,24 @@ function renderPaxLoadTable() {
         '<div class="page-break">'+preSection('Departure Gen Dec', depGenDecContent)+'</div>',
 
         // === Page 9: Agent Positions & Roster ===
-        // Tagged with id="agent-pos-pdf-block" so downloadPtsPdf() can splice the imported
-        // PDF's rendered pages in right after this section's header, instead of appending
-        // them at the very end of the report behind a placeholder note.
-        '<div class="page-break" id="agent-pos-pdf-block">'+preSection('Agent Positions & Roster', agentPosContent)+'</div>'
+        '<div class="page-break">'+(agentPosHasPdf ? htmlSection('Agent Positions & Roster', agentPosImagesHtml || '<div class="pre-content">Loading imported PDF preview…</div>') : preSection('Agent Positions & Roster', agentPosContent))+'</div>'
       ].join('\n');
 
       return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PTS Report '+(s.flight||'')+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
     }
 
     function openSendModal() {
+      // If a PDF was just imported and its pages are still being rendered to images, wait
+      // for that to finish first so the report embeds the real pages, not the "Loading..."
+      // placeholder.
+      if (typeof agentPosPdfRenderPromise !== 'undefined' && agentPosPdfRenderPromise) {
+        agentPosPdfRenderPromise.then(doOpenSendModal, doOpenSendModal);
+        return;
+      }
+      doOpenSendModal();
+    }
+
+    function doOpenSendModal() {
       // Open a new window/tab with the full HTML print report
       var reportHtml = buildPrintReport();
       var w = window.open('', '_blank', 'width=860,height=900,scrollbars=yes,resizable=yes');
@@ -5421,32 +5444,7 @@ function renderPaxLoadTable() {
             }
             y = margin + usableHeight + 1; // force next block onto a fresh page
           }
-          // If this is the Agent Positions section and it has an imported PDF, splice the
-          // PDF's rasterized pages in immediately after its header — right here in the
-          // report — instead of appending them at the very end.
-          if (block.id === 'agent-pos-pdf-block' && typeof agentPosPdfData !== 'undefined' && agentPosPdfData) {
-            return appendAgentPosPdfPages().then(function() { return renderBlock(idx + 1); });
-          }
           return renderBlock(idx + 1);
-        });
-      }
-
-      // Rasterizes every page of the imported Agent Positions PDF and adds each as its own
-      // fresh, fitted/centered letter-size page in the report, right where it's spliced in.
-      function appendAgentPosPdfPages() {
-        if (typeof agentPosPdfData === 'undefined' || !agentPosPdfData) return Promise.resolve();
-        return renderPdfDataUrlToImages(agentPosPdfData).then(function(pages) {
-          pages.forEach(function(pg) {
-            pdf.addPage();
-            var imgW = usableWidth, imgH = pg.height * imgW / pg.width;
-            if (imgH > usableHeight) { imgH = usableHeight; imgW = pg.width * imgH / pg.height; }
-            var xOff = margin + (usableWidth - imgW) / 2;
-            pdf.addImage(pg.dataUrl, 'JPEG', xOff, margin, imgW, imgH);
-          });
-          y = margin + usableHeight + 1; // force next block onto a fresh page
-        }).catch(function(err) {
-          console.error('Failed to embed Agent Positions PDF in report:', err);
-          showToast('Could not embed Agent Positions PDF: ' + err.message, 'red');
         });
       }
 
