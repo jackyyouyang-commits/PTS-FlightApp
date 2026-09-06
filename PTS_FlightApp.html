@@ -1897,7 +1897,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <div data-id="262" class="section-hdr">Departure Flight Info</div>
         <div data-id="263" class="card">
           <div data-id="264" class="grid grid-cols-3 gap-3">
-            <div data-id="265"><label data-id="266" class="field-label">STD</label><input data-id="267" class="field-input sm" id="f-dep_std" data-key="dep_std" placeholder="HH:MM"></div>
+            <div data-id="265"><label data-id="266" class="field-label">STD</label><input data-id="267" class="field-input sm" id="f-dep_std" data-key="dep_std" placeholder="HH:MM"><div id="dep-std-disruption" style="display:none;font-size:0.7rem;font-weight:700;color:#DC2626;margin-top:2px;"></div></div>
             <div data-id="268"><label data-id="269" class="field-label">ETD</label><input data-id="270" class="field-input sm" id="f-dep_etd" data-key="dep_etd" placeholder="HH:MM"></div>
             <div data-id="271"><label data-id="272" class="field-label">Delay</label><input data-id="273" class="field-input sm" id="f-dep_delay" data-key="dep_delay" placeholder="HH:MM"></div>
           </div>
@@ -3874,6 +3874,20 @@ function renderPaxLoadTable() {
           }
         }
       } catch (e) { delayMinutes = 0; }
+
+      // STD field disruption badge - flags whenever a logged actual (ultimately ATD) runs later
+      // than the scheduled STD, independent of the ETD countdown display above.
+      var stdDisruptionEl = document.getElementById('dep-std-disruption');
+      if (stdDisruptionEl) {
+        if (delayMinutes > 0) {
+          var stdDelayH = Math.floor(delayMinutes/60);
+          var stdDelayM = delayMinutes % 60;
+          stdDisruptionEl.textContent = 'Disruption: Delay +' + pad(stdDelayH) + ':' + pad(stdDelayM);
+          stdDisruptionEl.style.display = 'block';
+        } else {
+          stdDisruptionEl.style.display = 'none';
+        }
+      }
       
       // ETA HKG: take the ATD (new ETD) as a real YVR moment, add BLK (flight time), convert
       // to HKG time for the arrival clock+date, then label the day change vs the ORIGINAL STD
