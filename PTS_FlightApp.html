@@ -4191,6 +4191,10 @@ function renderPaxLoadTable() {
       if (textMobEl) textMobEl.textContent = 'Edit Off';
       var textNavEl = document.getElementById('edit-mode-text-nav');
       if (textNavEl) textNavEl.textContent = 'Edit Off';
+      ['btn-edit-mode', 'btn-edit-mode-mob', 'btn-edit-mode-nav'].forEach(function(id) {
+        var b = document.getElementById(id);
+        if (b) b.style.background = 'var(--cx-green)';
+      });
       wireLockBadgeButtons();
       wireEditModeButtons();
       state._locked = true;
@@ -4209,6 +4213,10 @@ function renderPaxLoadTable() {
       if (textMobEl) textMobEl.textContent = 'Edit On';
       var textNavEl = document.getElementById('edit-mode-text-nav');
       if (textNavEl) textNavEl.textContent = 'Edit On';
+      ['btn-edit-mode', 'btn-edit-mode-mob', 'btn-edit-mode-nav'].forEach(function(id) {
+        var b = document.getElementById(id);
+        if (b) b.style.background = 'var(--cx-red)';
+      });
       wireLockBadgeButtons();
       wireEditModeButtons();
       state._locked = false;
