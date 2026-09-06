@@ -13,7 +13,7 @@
     <title>Flight Details and Precision Timing Schedule</title>
     <!-- Google Fonts removed for offline use -->
 <script>
-// Lucide offline stub ??replaces CDN icons with simple SVG equivalents
+// Lucide offline stub - replaces CDN icons with simple SVG equivalents
 window.lucide = {
   createIcons: function() {
     var icons = {
@@ -98,14 +98,14 @@ document.addEventListener('DOMContentLoaded', function() {
         overflow: hidden;
       }
 
-      /* Sticky header ??compact */
+      /* Sticky header - compact */
       #app-header {
         flex-shrink: 0;
         position: relative;
         z-index: 20;
       }
 
-      /* Content area ??fills remaining height, scrolls vertically */
+      /* Content area - fills remaining height, scrolls vertically */
       #main-content-w3x4 {
         flex: 1 1 0;
         overflow-y: auto;
@@ -397,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
         color: #111827 !important;
       }
 
-      /* Blink countdown only (not ETA HKG) ??hold visible, then disappear, repeat */
+      /* Blink countdown only (not ETA HKG) - hold visible, then disappear, repeat */
       .blink-countdown { display:inline-block; color:#FCA5A5; animation: blink-hold 3s steps(2, start) infinite; }
       .pasted-image-gallery { display:flex; flex-wrap:wrap; gap:8px; padding:8px 12px; background:#F9FAFB; border-left:1px solid #E5E7EB; border-right:1px solid #E5E7EB; }
       .pasted-image-gallery:empty { display:none; padding:0; border:none; }
@@ -490,7 +490,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .pts-schedule-split > div { flex: 1 1 auto !important; width: 100% !important; }
       }
 
-      /* Capacity / pax tables ??horizontal scroll on small screens */
+      /* Capacity / pax tables - horizontal scroll on small screens */
       .table-scroll-wrap {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
@@ -507,7 +507,7 @@ document.addEventListener('DOMContentLoaded', function() {
         min-width: unset !important;
       }
 
-      /* GROUP 3B: Input fields ??comfortable touch height */
+      /* GROUP 3B: Input fields - comfortable touch height */
       input[data-key], select[data-key] {
         min-height: 38px;
         font-size: 14px;
@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
         touch-action: manipulation;
       }
 
-      /* GROUP 3D: Header countdown ??scale gracefully in landscape */
+      /* GROUP 3D: Header countdown - scale gracefully in landscape */
       #etd-countdown, #boarding-countdown {
         font-size: clamp(0.85rem, 2.5vw, 1.5rem);
         word-break: break-all;
@@ -666,7 +666,7 @@ document.addEventListener('DOMContentLoaded', function() {
 .min-w-\[44px\] { min-width: 44px !important; }
 .max-h-\[200px\] { max-height: 200px !important; }
 
-/* Spacing ??padding */
+/* Spacing - padding */
 .p-2    { padding: 0.5rem !important; }
 .p-3    { padding: 0.75rem !important; }
 .px-1\.5 { padding-left: 0.375rem !important; padding-right: 0.375rem !important; }
@@ -683,7 +683,7 @@ document.addEventListener('DOMContentLoaded', function() {
 .pb-1   { padding-bottom: 0.25rem !important; }
 .pb-2   { padding-bottom: 0.5rem !important; }
 
-/* Spacing ??margin */
+/* Spacing - margin */
 .mb-2   { margin-bottom: 0.5rem !important; }
 .mb-3   { margin-bottom: 0.75rem !important; }
 .mb-4   { margin-bottom: 1rem !important; }
@@ -737,7 +737,7 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Transitions */
 .transition-colors { transition-property: color, background-color, border-color !important; transition-duration: 150ms !important; }
 
-/* Colours ??backgrounds */
+/* Colours - backgrounds */
 .bg-white      { background-color: #ffffff !important; }
 .bg-cx-bg      { background-color: var(--cx-bg) !important; }
 .bg-cx-teal    { background-color: var(--cx-teal) !important; }
@@ -746,7 +746,7 @@ document.addEventListener('DOMContentLoaded', function() {
 .bg-yellow-50  { background-color: #fefce8 !important; }
 .bg-white\/20 { background-color: rgba(255,255,255,0.2) !important; }
 
-/* Colours ??text */
+/* Colours - text */
 .text-white         { color: #ffffff !important; }
 .text-cx-teal       { color: var(--cx-teal) !important; }
 .text-cx-teal-dark  { color: var(--cx-teal-dark) !important; }
@@ -758,7 +758,7 @@ document.addEventListener('DOMContentLoaded', function() {
 .text-yellow-900    { color: #713f12 !important; }
 .text-red-200       { color: #fecaca !important; }
 
-/* Colours ??borders */
+/* Colours - borders */
 .border-cx-teal     { border-color: var(--cx-teal) !important; }
 .border-gray-200    { border-color: #e5e7eb !important; }
 .border-blue-400    { border-color: #60a5fa !important; }
@@ -1266,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <h2 data-id="123" class="text-lg font-bold text-cx-teal-dark">Share Code</h2>
           <button data-id="124" id="share-modal-close" class="p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"><i data-id="125" data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
         </div>
-        <p data-id="126" class="text-sm text-cx-grey mb-3">Copy this code and send it to a colleague. They can import it via the Import ??Paste Code button.</p>
+        <p data-id="126" class="text-sm text-cx-grey mb-3">Copy this code and send it to a colleague. They can import it via the Import - Paste Code button.</p>
         <textarea data-id="127" id="share-code-output" class="field-input" readonly style="min-height:140px;font-size:11px;font-family:monospace;word-break:break-all;resize:vertical;"></textarea>
         <div data-id="128" class="flex justify-end gap-3 mt-4">
           <button data-id="129" id="share-copy-btn" class="flex items-center gap-2 px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark transition-colors">
@@ -1422,8 +1422,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div data-id="226"><label data-id="227" class="field-label">INTL CNX</label><input data-id="228" class="field-input sm" id="f-intl_cnx" data-key="intl_cnx" placeholder="Flight info or NIL"></div>
           <div data-id="229"><label data-id="230" class="field-label">US CNX</label><input data-id="231" class="field-input sm" id="f-us_cnx" data-key="us_cnx" placeholder="Flight info or NIL"></div>
           <div data-id="232"><label data-id="233" class="field-label">WS CNX / ITD Bags</label><input data-id="234" class="field-input sm" id="f-ws_cnx" data-key="ws_cnx" placeholder="Flight info or NIL"></div>
-          <div data-id="235"><label data-id="236" class="field-label">WS WCH / MAAS</label><input data-id="237" class="field-input sm" id="f-ws_wch" data-key="ws_wch" placeholder="??></div>
-          <div data-id="238"><label data-id="239" class="field-label">AC WCH / MAAS</label><input data-id="240" class="field-input sm" id="f-ac_wch" data-key="ac_wch" placeholder="??></div>
+          <div data-id="235"><label data-id="236" class="field-label">WS WCH / MAAS</label><input data-id="237" class="field-input sm" id="f-ws_wch" data-key="ws_wch" placeholder="0"></div>
+          <div data-id="238"><label data-id="239" class="field-label">AC WCH / MAAS</label><input data-id="240" class="field-input sm" id="f-ac_wch" data-key="ac_wch" placeholder="0"></div>
         </div>
 
         <div data-id="241" class="section-hdr">Baggage</div>
@@ -1443,16 +1443,16 @@ document.addEventListener('DOMContentLoaded', function() {
           <div data-id="264" class="grid grid-cols-3 gap-3">
             <div data-id="265"><label data-id="266" class="field-label">STD</label><input data-id="267" class="field-input sm" id="f-dep_std" data-key="dep_std" placeholder="HH:MM"></div>
             <div data-id="268"><label data-id="269" class="field-label">ETD</label><input data-id="270" class="field-input sm" id="f-dep_etd" data-key="dep_etd" placeholder="HH:MM"></div>
-            <div data-id="271"><label data-id="272" class="field-label">Delay</label><input data-id="273" class="field-input sm" id="f-dep_delay" data-key="dep_delay" placeholder="??></div>
+            <div data-id="271"><label data-id="272" class="field-label">Delay</label><input data-id="273" class="field-input sm" id="f-dep_delay" data-key="dep_delay" placeholder="HH:MM"></div>
           </div>
           <div data-id="274" class="grid grid-cols-3 gap-3 mt-3">
             <div data-id="275"><label data-id="276" class="field-label">Board Time</label><input data-id="277" class="field-input sm" id="f-dep_board_time" data-key="dep_board_time" placeholder="HH:MM"></div>
-            <div data-id="278"><label data-id="279" class="field-label">DCT</label><input data-id="280" class="field-input sm" id="f-dep_dct" data-key="dep_dct" placeholder="??></div>
+            <div data-id="278"><label data-id="279" class="field-label">DCT</label><input data-id="280" class="field-input sm" id="f-dep_dct" data-key="dep_dct" placeholder="HH:MM"></div>
             <div data-id="281"><label data-id="282" class="field-label">Gate Close</label><input data-id="283" class="field-input sm" id="f-dep_gate_close" data-key="dep_gate_close" placeholder="HH:MM"></div>
           </div>
           <div data-id="284" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
             <div data-id="285"><label data-id="286" class="field-label">FT</label><input data-id="287" class="field-input sm" id="f-dep_ft" data-key="dep_ft" placeholder="HH:MM"></div>
-            <div data-id="288"><label data-id="289" class="field-label">BLK</label><input data-id="290" class="field-input sm" id="f-dep_blk" data-key="dep_blk" placeholder="??></div>
+            <div data-id="288"><label data-id="289" class="field-label">BLK</label><input data-id="290" class="field-input sm" id="f-dep_blk" data-key="dep_blk" placeholder="HH:MM"></div>
             <div data-id="291"><label data-id="292" class="field-label">ETA HKG</label><input data-id="293" class="field-input sm" id="f-dep_eta_hkg" data-key="dep_eta_hkg" placeholder="HH:MM"></div>
             <div data-id="294"><label data-id="295" class="field-label">STA HKG</label><input data-id="296" class="field-input sm" id="f-dep_sta_hkg" data-key="dep_sta_hkg" placeholder="HH:MM"></div>
           </div>
@@ -1552,8 +1552,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <div data-id="401" class="section-hdr">Passenger Info</div>
         <div data-id="402" class="card">
           <div data-id="403" class="grid grid-cols-2 gap-3">
-            <div data-id="404"><label data-id="405" class="field-label">IN/DMP</label><input data-id="406" class="field-input sm" id="f-dep_in_dmp" data-key="dep_in_dmp" placeholder="??></div>
-            <div data-id="407"><label data-id="408" class="field-label">INF</label><input data-id="409" class="field-input sm" id="f-dep_inf" data-key="dep_inf" placeholder="??></div>
+            <div data-id="404"><label data-id="405" class="field-label">IN/DMP</label><input data-id="406" class="field-input sm" id="f-dep_in_dmp" data-key="dep_in_dmp" placeholder="0"></div>
+            <div data-id="407"><label data-id="408" class="field-label">INF</label><input data-id="409" class="field-input sm" id="f-dep_inf" data-key="dep_inf" placeholder="0"></div>
           </div>
           <div data-id="410" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
             <div data-id="411"><label data-id="412" class="field-label">DM/Emer</label><input data-id="413" class="field-input sm" id="f-dep_dm_e" data-key="dep_dm_e" placeholder="0"></div>
@@ -1564,8 +1564,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div data-id="423" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
             <div data-id="424"><label data-id="425" class="field-label">IC</label><input data-id="426" class="field-input sm" id="f-dep_ic" data-key="dep_ic" inputmode="numeric" placeholder="0"></div>
             <div data-id="427"><label data-id="428" class="field-label">OC</label><input data-id="429" class="field-input sm" id="f-dep_oc" data-key="dep_oc" inputmode="numeric" placeholder="0"></div>
-            <div data-id="430"><label data-id="431" class="field-label">JOIN</label><input data-id="432" class="field-input sm" id="f-dep_join" data-key="dep_join" placeholder="??></div>
-            <div data-id="433"><label data-id="434" class="field-label">HKG</label><input data-id="435" class="field-input sm" id="f-dep_hkg" data-key="dep_hkg" placeholder="??></div>
+            <div data-id="430"><label data-id="431" class="field-label">JOIN</label><input data-id="432" class="field-input sm" id="f-dep_join" data-key="dep_join" placeholder="0"></div>
+            <div data-id="433"><label data-id="434" class="field-label">HKG</label><input data-id="435" class="field-input sm" id="f-dep_hkg" data-key="dep_hkg" placeholder="0"></div>
           </div>
         </div>
 
@@ -1577,7 +1577,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div data-id="445"><label data-id="446" class="field-label">STRL</label><input data-id="447" class="field-input sm" id="f-dep_strl" data-key="dep_strl" placeholder="*"></div>
             <div data-id="448"><label data-id="449" class="field-label">WCH</label><input data-id="450" class="field-input sm" id="f-dep_wch" data-key="dep_wch" placeholder="*"></div>
           </div>
-          <div data-id="451" class="mt-3"><label data-id="452" class="field-label">Carry-On Needed</label><input data-id="453" class="field-input sm" id="f-dep_carry_on" data-key="dep_carry_on" placeholder="??></div>
+          <div data-id="451" class="mt-3"><label data-id="452" class="field-label">Carry-On Needed</label><input data-id="453" class="field-input sm" id="f-dep_carry_on" data-key="dep_carry_on" placeholder="*"></div>
         </div>
 
         <div data-id="454" class="section-hdr">Special Handling</div>
@@ -1656,7 +1656,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <textarea data-id="511" id="staff-acc-textarea" placeholder="Paste Staff Acceptance content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="512" class="panel-footer">
-            <button data-id="513" id="staff-acc-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">?? Paste from Excel</button>
+            <button data-id="513" id="staff-acc-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
             <button data-id="513a" id="staff-acc-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
             <button data-id="514" id="staff-acc-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -1672,7 +1672,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <textarea data-id="520" id="arr-ptm-textarea" placeholder="Paste Arrival PTM content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="521" class="panel-footer">
-            <button data-id="521a" id="arr-ptm-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">?? Paste from Excel</button>
+            <button data-id="521a" id="arr-ptm-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
             <button data-id="522" id="arr-ptm-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
             <button data-id="523" id="arr-ptm-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -1689,12 +1689,12 @@ document.addEventListener('DOMContentLoaded', function() {
           <!-- Search Box with Clear Button -->
           <div style="display:flex;gap:8px;padding:12px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;align-items:center;">
             <input id="itd-search-input" type="text" placeholder="Tag #..." style="width:240px;padding:8px 12px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;font-family:monospace;"/>
-            <button id="itd-clear-search-btn" style="background:#6B7280;color:#fff;border:none;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">??Clear Search</button>
+            <button id="itd-clear-search-btn" style="background:#6B7280;color:#fff;border:none;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Clear Search</button>
             <div id="itd-search-result" style="padding:0 12px;font-size:20px;font-weight:700;color:#1f2937;min-width:150px;text-align:left;">Ready to search...</div>
           </div>
           <textarea data-id="620" id="itd-tag-card-textarea" placeholder="Paste ITD Tag Card content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="621" class="panel-footer">
-            <button data-id="621a" id="itd-tag-card-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">?? Paste from Excel</button>
+            <button data-id="621a" id="itd-tag-card-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
             <button data-id="622" id="itd-tag-card-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
             <button data-id="623" id="itd-tag-card-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -1710,7 +1710,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <textarea data-id="531" id="oir-textarea" placeholder="Paste Arrival Offload content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="532" class="panel-footer">
-            <button data-id="532a" id="oir-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">?? Paste from Excel</button>
+            <button data-id="532a" id="oir-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
             <button data-id="533" id="oir-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
             <button data-id="534" id="oir-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -1726,7 +1726,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <textarea data-id="540" id="dep-lir-textarea" placeholder="Paste Departure Onload content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="541" class="panel-footer">
-            <button data-id="541a" id="dep-lir-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">?? Paste from Excel</button>
+            <button data-id="541a" id="dep-lir-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
             <button data-id="542" id="dep-lir-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
             <button data-id="543" id="dep-lir-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -1744,7 +1744,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <textarea data-id="550" id="crew-textarea" placeholder="Paste Arrival Crew List here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
             <div data-id="551" class="panel-footer">
-              <button data-id="551a" id="crew-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">?? Paste from Excel</button>
+              <button data-id="551a" id="crew-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
               <button data-id="552" id="crew-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
               <button data-id="553" id="crew-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
             </div>
@@ -1761,7 +1761,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <textarea data-id="599" id="dep-gen-dec-textarea" placeholder="Paste Departure Gen Dec content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="600" class="panel-footer">
-            <button data-id="600a" id="dep-gen-dec-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">?? Paste from Excel</button>
+            <button data-id="600a" id="dep-gen-dec-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
             <button data-id="601" id="dep-gen-dec-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
             <button data-id="602" id="dep-gen-dec-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -1777,7 +1777,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <textarea data-id="608" id="agent-pos-textarea" placeholder="Paste Agent Positions content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="609" class="panel-footer">
-            <button data-id="609a" id="agent-pos-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">?? Paste from Excel</button>
+            <button data-id="609a" id="agent-pos-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
             <button data-id="610" id="agent-pos-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
             <button data-id="611" id="agent-pos-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -2441,7 +2441,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function attachActivityListeners() {
-      // Edit (pencil) button ??inline time input (prompt() is blocked on iPad/iOS)
+      // Edit (pencil) button - inline time input (prompt() is blocked on iPad/iOS)
       document.querySelectorAll('.act-edit-btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
@@ -2481,8 +2481,8 @@ document.addEventListener('DOMContentLoaded', function() {
           var wrap = document.createElement('span');
           wrap.style.cssText = 'display:inline-flex;align-items:center;gap:4px;';
           wrap.innerHTML = '<input type="text" class="act-inline-input" value="' + cur + '" placeholder="HH:MM" style="width:70px;padding:4px 6px;font-size:13px;font-family:monospace;border:1px solid #005C5C;border-radius:4px;" />' +
-            '<button type="button" class="act-inline-ok" style="background:#1a6e4e;color:#fff;border:none;border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer;">??/button>' +
-            '<button type="button" class="act-inline-x" style="background:#6B7280;color:#fff;border:none;border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer;">??/button>';
+            '<button type="button" class="act-inline-ok" style="background:#1a6e4e;color:#fff;border:none;border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer;">OK</button>' +
+            '<button type="button" class="act-inline-x" style="background:#6B7280;color:#fff;border:none;border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer;">X</button>';
           cell.innerHTML = '';
           cell.appendChild(wrap);
           var input = wrap.querySelector('.act-inline-input');
@@ -2628,7 +2628,7 @@ function renderPaxLoadTable() {
         '<div class="card">' +
           '<div class="section-hdr" style="margin-top:0;">Weight Fuel Cargo and Baggage Details</div>' +
           '<div class="grid grid-cols-4 gap-4">' +
-            '<div><div class="sum-label">Cargo</div><div class="sum-value">' + v('dep_cargo_type') + ' ??' + v('dep_cargo_kg') + ' kg</div></div>' +
+            '<div><div class="sum-label">Cargo</div><div class="sum-value">' + v('dep_cargo_type') + ' - ' + v('dep_cargo_kg') + ' kg</div></div>' +
             '<div><div class="sum-label">Pre Fuel (t)</div><div class="sum-value">' + v('dep_pre_fuel') + '</div></div>' +
             '<div><div class="sum-label">Total Fuel (t)</div><div class="sum-value">' + v('dep_total_fuel') + '</div></div>' +
             '<div><div class="sum-label">Actual Fuel (t)</div><div class="sum-value">' + v('dep_actual_fuel') + '</div></div>' +
@@ -2833,12 +2833,12 @@ function renderPaxLoadTable() {
       if(depLirVal.trim()) lines.push(depLirVal.trim());
       lines.push('');
 
-      sec('CREW LIST ??ARRIVAL');
+      sec('CREW LIST - ARRIVAL');
       var crewArrVal = (document.getElementById('crew-textarea')||{}).value||'';
       if(crewArrVal.trim()) lines.push(crewArrVal.trim());
       lines.push('');
 
-      sec('CREW LIST ??DEPARTURE');
+      sec('CREW LIST - DEPARTURE');
       var crewDepVal = (document.getElementById('dep-crew-textarea')||{}).value||'';
       if(crewDepVal.trim()) lines.push(crewDepVal.trim());
       lines.push('');
@@ -4495,7 +4495,7 @@ function renderPaxLoadTable() {
         '<div class="no-print" style="margin-bottom:20px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">',
         '  <button onclick="window.print()">Save as PDF / Print</button>',
         '  <button class="eml" onclick="emailTextReport()">Email as Text</button>',
-        '  <button class="sec" onclick="window.close()">??Close</button>',
+        '  <button class="sec" onclick="window.close()">Close</button>',
         '</div>',
         '<div id="pdf-email-guide" style="display:none;background:#fef9c3;border:1px solid #fde047;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:12px;line-height:1.7;">',
         '  <strong>To email this report as a PDF:</strong><br>',
@@ -4627,7 +4627,7 @@ function renderPaxLoadTable() {
         var sm = document.getElementById('send-modal');
         var st = document.getElementById('send-modal-title');
         var sp = document.getElementById('send-report-pre');
-        if (st) st.textContent = 'Send Report' + (state.flight ? ' ??' + state.flight : '');
+        if (st) st.textContent = 'Send Report' + (state.flight ? ' - ' + state.flight : '');
         try { if (sp) sp.innerHTML = buildReportHTML(); } catch(e) {}
         if (sm) sm.style.display = 'flex';
       }
