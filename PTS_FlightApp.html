@@ -5054,7 +5054,10 @@ function renderPaxLoadTable() {
       var crewDepContent  = taVal('dep-crew-textarea');
       var depGenDecContent = taVal('dep-gen-dec-textarea');
       var agentPosHasPdf = (typeof agentPosPdfData !== 'undefined' && !!agentPosPdfData);
-      var agentPosContent = agentPosHasPdf ? '(Imported PDF attached — see following page(s))' : taVal('agent-pos-textarea');
+      // When a PDF is imported, leave the text body empty — its actual pages are rendered
+      // directly into the report (as full-page images) right after this section's header,
+      // instead of a placeholder note.
+      var agentPosContent = agentPosHasPdf ? '' : taVal('agent-pos-textarea');
 
       var css = [
         '*{box-sizing:border-box;margin:0;padding:0;}',
@@ -5240,7 +5243,10 @@ function renderPaxLoadTable() {
         '<div class="page-break">'+preSection('Departure Gen Dec', depGenDecContent)+'</div>',
 
         // === Page 9: Agent Positions & Roster ===
-        '<div class="page-break">'+preSection('Agent Positions & Roster', agentPosContent)+'</div>'
+        // Tagged with id="agent-pos-pdf-block" so downloadPtsPdf() can splice the imported
+        // PDF's rendered pages in right after this section's header, instead of appending
+        // them at the very end of the report behind a placeholder note.
+        '<div class="page-break" id="agent-pos-pdf-block">'+preSection('Agent Positions & Roster', agentPosContent)+'</div>'
       ].join('\n');
 
       return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PTS Report '+(s.flight||'')+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
@@ -5415,12 +5421,18 @@ function renderPaxLoadTable() {
             }
             y = margin + usableHeight + 1; // force next block onto a fresh page
           }
+          // If this is the Agent Positions section and it has an imported PDF, splice the
+          // PDF's rasterized pages in immediately after its header — right here in the
+          // report — instead of appending them at the very end.
+          if (block.id === 'agent-pos-pdf-block' && typeof agentPosPdfData !== 'undefined' && agentPosPdfData) {
+            return appendAgentPosPdfPages().then(function() { return renderBlock(idx + 1); });
+          }
           return renderBlock(idx + 1);
         });
       }
 
-      // If the Agent Positions tab has an imported PDF, rasterize its pages and append them
-      // as extra pages at the end of the report, each fitted/centered onto its own letter page.
+      // Rasterizes every page of the imported Agent Positions PDF and adds each as its own
+      // fresh, fitted/centered letter-size page in the report, right where it's spliced in.
       function appendAgentPosPdfPages() {
         if (typeof agentPosPdfData === 'undefined' || !agentPosPdfData) return Promise.resolve();
         return renderPdfDataUrlToImages(agentPosPdfData).then(function(pages) {
@@ -5431,6 +5443,7 @@ function renderPaxLoadTable() {
             var xOff = margin + (usableWidth - imgW) / 2;
             pdf.addImage(pg.dataUrl, 'JPEG', xOff, margin, imgW, imgH);
           });
+          y = margin + usableHeight + 1; // force next block onto a fresh page
         }).catch(function(err) {
           console.error('Failed to embed Agent Positions PDF in report:', err);
           showToast('Could not embed Agent Positions PDF: ' + err.message, 'red');
@@ -5438,8 +5451,6 @@ function renderPaxLoadTable() {
       }
 
       renderBlock(0).then(function() {
-        return appendAgentPosPdfPages();
-      }).then(function() {
         var flightPart = (state && state.flight) ? '_' + state.flight.replace(/[^A-Za-z0-9]/g, '') : '';
         pdf.save('PTS_Report' + flightPart + '.pdf');
         if (btn) { btn.textContent = origLabel; btn.disabled = false; }
