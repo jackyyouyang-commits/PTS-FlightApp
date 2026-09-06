@@ -3858,19 +3858,14 @@ function renderPaxLoadTable() {
       var now = new Date();
       var nowMs = now.getTime();
 
-      // Flight cancelled: short-circuit both ETD and Boarding widgets to a red "Cancelled" state.
+      // Flight cancelled: short-circuit the ETD widget to a red "Cancelled" state.
+      // Boarding status is left to its normal logic.
       if (state._flightCancelled) {
         ['etd-countdown', 'etd-countdown-m'].forEach(function(id) {
           var el = document.getElementById(id); if (!el) return;
           el.style.visibility = 'visible';
           el.style.color = '#EF4444';
           el.innerHTML = '<span style="color:#EF4444;font-weight:700;">Cancelled</span>';
-        });
-        ['boarding-countdown', 'boarding-countdown-m'].forEach(function(id) {
-          var bl = document.getElementById(id); if (!bl) return;
-          bl.style.display = 'inline-block';
-          bl.style.color = '#EF4444';
-          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#EF4444;font-weight:700;">No Boarding</span></div>';
         });
         return;
       }
