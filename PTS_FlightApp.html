@@ -9,6 +9,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e3a5f">
     <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjM2IiBmaWxsPSIjMWUzYTVmIi8+PHRleHQgeD0iNTAlIiB5PSI1NSUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iODQiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZmlsbD0iI2ZmZiI+8J+UizwvdGV4dD48L3N2Zz4=">
+    <link rel="manifest" href="manifest.webmanifest">
     <title>Flight Details and Precision Timing Schedule</title>
     <!-- Google Fonts removed for offline use -->
 <script>
@@ -1080,7 +1081,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       </style>
     <script>
-    window.APP_VERSION = 'v1.0.18';
+    window.APP_VERSION = 'v1.0.19';
     (function(){
       var manifest = {
         name: "Flight PTS",
@@ -5071,6 +5072,13 @@ function renderPaxLoadTable() {
     }
     init();
     wireNavTabs();
+
+    // Register service worker for PWA install / offline use
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').catch(function() {});
+      });
+    }
 
     </script>
 </body>
