@@ -3853,24 +3853,38 @@ function renderPaxLoadTable() {
       var delayMinutes = 0;
       try {
         if (typeof depActual !== 'undefined') {
-          var maxActualMin = null;
+          // Real elapsed delay: cross-check the flight's scheduled date (fd) against today's
+          // real calendar date. Actual times logged (e.g. ATD) carry no date of their own, so
+          // if several real days have passed since the scheduled STD, that day gap must be
+          // added on top of the clock-time difference (e.g. a flight from 04SEP still showing
+          // an ATD logged on 06SEP is +48h late, not just a same-day clock delta).
+          var daysSinceFlight = 0;
+          if (fd) {
+            var fdMidMs = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate()).getTime();
+            var todayMidMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            daysSinceFlight = Math.round((todayMidMs - fdMidMs) / 86400000);
+            if (daysSinceFlight < 0) daysSinceFlight = 0;
+          }
+          var maxActualAbsMin = null;
           for (var daKey in depActual) { 
             if (depActual[daKey]) { 
               var actualTime = parseTime(depActual[daKey]);
               if (actualTime != null) {
-                // If actual time is much earlier than STD (e.g., 01:53 vs 14:55), assume it's next day
-                if (stdMin != null && actualTime < stdMin - 120) {
-                  actualTime += 24*60; // add 24 hours in minutes
+                var actualAbsMin = daysSinceFlight * 1440 + actualTime;
+                if (daysSinceFlight === 0 && stdMin != null && actualTime < stdMin - 120) {
+                  // No date field to anchor to - fall back to the same-day "assume next day"
+                  // heuristic used elsewhere when the actual clock time wraps past midnight.
+                  actualAbsMin += 24*60;
                 }
-                if (maxActualMin == null || actualTime > maxActualMin) {
-                  maxActualMin = actualTime;
+                if (maxActualAbsMin == null || actualAbsMin > maxActualAbsMin) {
+                  maxActualAbsMin = actualAbsMin;
                 }
               }
             }
           }
           // If actual > STD target, calculate delay
-          if (maxActualMin != null && stdMin != null && maxActualMin > stdMin) {
-            delayMinutes = maxActualMin - stdMin;
+          if (maxActualAbsMin != null && stdMin != null && maxActualAbsMin > stdMin) {
+            delayMinutes = maxActualAbsMin - stdMin;
           }
         }
       } catch (e) { delayMinutes = 0; }
