@@ -5070,20 +5070,39 @@ function renderPaxLoadTable() {
         if (st) st.textContent = 'Send Report' + (state.flight ? ' - ' + state.flight : '');
         try { if (sp) sp.innerHTML = buildReportHTML(); } catch(e) {}
         if (sm) sm.style.display = 'flex';
+        // Popup was blocked, so wire the report's own "Download PDF" button (rendered
+        // inline inside #send-report-pre) to capture just that container, not the
+        // whole app page behind the modal.
+        window.generatePDF = function(){ downloadPtsPdf(window, sp); };
+        window.emailTextReport = function(){
+          var subj=encodeURIComponent(((sp && sp.querySelector('h1')||{}).textContent||'PTS Report').trim());
+          var lines=[];
+          (sp ? sp.querySelectorAll('h2') : []).forEach(function(h){
+            lines.push('\n=== '+h.textContent.trim()+' ===');
+            var n=h.nextElementSibling;
+            if(n&&n.tagName==='TABLE'){n.querySelectorAll('tr').forEach(function(tr){var tds=tr.querySelectorAll('td');if(tds.length>=2)lines.push('  '+tds[0].textContent.trim()+': '+tds[1].textContent.trim());});}
+            else if(n&&n.classList&&n.classList.contains('pre-content')){lines.push(n.textContent.trim());}
+          });
+          window.location.href='mailto:?subject='+subj+'&body='+encodeURIComponent(lines.join('\n'));
+        };
       }
     }
 
-    // Renders the report window's body to a canvas and saves it as a downloadable multi-page PDF.
-    // jsPDF/html2canvas are loaded once in this (parent) document and applied to the popup's DOM.
-    function downloadPtsPdf(win) {
+    // Renders the report container to a canvas and saves it as a downloadable multi-page PDF.
+    // jsPDF/html2canvas are loaded once in this (parent) document. `win` is the document that
+    // owns the report DOM (the popup window, or the main window when the popup was blocked);
+    // `rootEl` optionally scopes the capture to a specific element instead of the whole body
+    // (needed for the in-page fallback, so we don't screenshot the entire app behind the modal).
+    function downloadPtsPdf(win, rootEl) {
       if (!win || !win.document || typeof html2canvas !== 'function' || !window.jspdf) {
         showToast('PDF library failed to load', 'red');
         return;
       }
+      var captureRoot = rootEl || win.document.body;
       var btn = win.document.getElementById('pts-download-pdf-btn');
       var origLabel = btn ? btn.textContent : '';
       if (btn) { btn.textContent = 'Generating PDF...'; btn.disabled = true; }
-      html2canvas(win.document.body, {
+      html2canvas(captureRoot, {
         scale: 2,
         backgroundColor: '#ffffff',
         ignoreElements: function(el) {
