@@ -3859,7 +3859,7 @@ function renderPaxLoadTable() {
       var nowMs = now.getTime();
 
       // Flight cancelled: short-circuit the ETD widget to a red "Cancelled" state.
-      // Boarding status is left to its normal logic.
+      // Boarding status/gate rendering below still runs normally.
       if (state._flightCancelled) {
         ['etd-countdown', 'etd-countdown-m'].forEach(function(id) {
           var el = document.getElementById(id); if (!el) return;
@@ -3867,8 +3867,7 @@ function renderPaxLoadTable() {
           el.style.color = '#EF4444';
           el.innerHTML = '<span style="color:#EF4444;font-weight:700;">Cancelled</span>';
         });
-        return;
-      }
+      } else {
 
       // Parse flight date (if present)
       var fd = null;
@@ -4162,6 +4161,7 @@ function renderPaxLoadTable() {
         // ensure visible (in case earlier blinking set visibility)
         el.style.visibility = 'visible';
       });
+      } // end else (!state._flightCancelled)
 
       // Boarding & ETD are driven by the Departure PTS table's live (drift/shift-adjusted)
       // targets: Boarding Signal Released (idx 13) and ATD (idx 25).
