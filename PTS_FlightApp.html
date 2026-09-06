@@ -3998,12 +3998,20 @@ function renderPaxLoadTable() {
         // to the flight day puts it >12h in the past, roll it forward a day.
         if (atdTableMin !== null && (nowMs - etdTargetMs) > 12*3600*1000) etdTargetMs += 86400000;
       }
+      // Shared disruption string built from the date-aware delayMinutes computed above, so
+      // the header ETD/Departed widget and the STD field badge always agree.
+      var headerDisruptionStr = '';
+      if (delayMinutes > 0) {
+        var hdDelayH = Math.floor(delayMinutes/60);
+        var hdDelayM = delayMinutes % 60;
+        headerDisruptionStr = '<br><span style="font-size:0.75em;opacity:0.9;">Disruption: Delay +' + pad(hdDelayH) + ':' + pad(hdDelayM) + '</span>';
+      }
 
       // Update ETD display
       ['etd-countdown','etd-countdown-m'].forEach(function(id) {
         var el = document.getElementById(id); if (!el) return;
         // Once ATD (idx 25) is logged the aircraft has departed - stop the countdown
-        if (depActual && depActual[25]) { el.innerHTML = '<span style="color:#fff;">Departed</span>' + etaLine; el.style.color = '#fff'; return; }
+        if (depActual && depActual[25]) { el.innerHTML = '<span style="color:#fff;">Departed</span>' + headerDisruptionStr + etaLine; el.style.color = '#fff'; return; }
         if (!etdTargetMs) { el.innerHTML = 'ETD --:--:--' + etaLine; el.style.color = '#fff'; return; }
         var diffSec = Math.round((etdTargetMs - nowMs)/1000);
 
