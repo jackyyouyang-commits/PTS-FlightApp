@@ -9,6 +9,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e3a5f">
     <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjM2IiBmaWxsPSIjMWUzYTVmIi8+PHRleHQgeD0iNTAlIiB5PSI1NSUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iODQiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZmlsbD0iI2ZmZiI+8J+UizwvdGV4dD48L3N2Zz4=">
+    <link rel="manifest" href="manifest.webmanifest">
     <title>Flight Details and Precision Timing Schedule</title>
     <!-- Google Fonts removed for offline use -->
 <script>
@@ -34,7 +35,8 @@ window.lucide = {
       'clipboard-check': 'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 14l2 2 4-4M9 4h6a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v0a1 1 0 0 1 1-1z',
       'file-text': 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8',
       'users': 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
-      'clipboard-copy': 'M20 8v14H8V8h12zM16 8V4H4v12h4M16 4l4 4'
+      'clipboard-copy': 'M20 8v14H8V8h12zM16 8V4H4v12h4M16 4l4 4',
+      'timer': 'M12 22a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v4l3 2M9 2h6'
     };
     document.querySelectorAll('[data-lucide]').forEach(function(el) {
       var name = el.getAttribute('data-lucide');
@@ -106,9 +108,12 @@ document.addEventListener('DOMContentLoaded', function() {
       /* Content area — fills remaining height, scrolls vertically */
       #main-content-w3x4 {
         flex: 1 1 0;
-        overflow: hidden;
+        overflow-y: auto;
+        overflow-x: hidden;
         min-height: 0;
         position: relative;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
       }
 
       /* Tab nav pinned to bottom */
@@ -135,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       #bottom-nav-k1 > div::-webkit-scrollbar { display: none; }
 
-      .tab-content { display: none; width: 100%; box-sizing: border-box; }
+      .tab-content { display: none; width: 100%; box-sizing: border-box; padding: 12px; }
       .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
       /* For textarea tabs, use flex */
       .tab-content.active.tab-flex-panel { display: flex; flex-direction: column; overflow: hidden; }
@@ -173,6 +178,16 @@ document.addEventListener('DOMContentLoaded', function() {
       .field-input:focus { border-color: var(--cx-teal); box-shadow: 0 0 0 3px rgba(0,92,92,0.12); }
       .field-input::placeholder { color: #9CA3AF; }
       .field-input.sm { min-height: 40px; padding: 8px 10px; font-size: 15px; }
+      .locked-input {
+        background: #F3F4F6 !important;
+        border-color: #D1D5DB !important;
+        color: #6B7280 !important;
+        cursor: not-allowed !important;
+      }
+      .locked-input:focus {
+        border-color: #D1D5DB !important;
+        box-shadow: none !important;
+      }
 
       .spax-badge-input {
         width: 64px; min-height: 44px; text-align: center;
@@ -222,12 +237,12 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       .act-edit-btn {
-        background: #F59E0B; color: #fff; border: none; border-radius: 50%;
+        background: var(--cx-green); color: #fff; border: none; border-radius: 50%;
         width: 26px; height: 26px; font-size: 14px; cursor: pointer;
         display: inline-flex; align-items: center; justify-content: center;
         padding: 0; line-height: 1; flex-shrink: 0;
       }
-      .act-edit-btn:hover { background: #D97706; }
+      .act-edit-btn:hover { background: #14573d; }
       .act-del-btn {
         background: #EF4444; color: #fff; border: none; border-radius: 50%;
         width: 26px; height: 26px; font-size: 18px; cursor: pointer;
@@ -285,6 +300,43 @@ document.addEventListener('DOMContentLoaded', function() {
         max-height: 90vh; overflow-y: auto; padding: 24px;
         box-shadow: 0 24px 48px rgba(0,0,0,0.2);
       }
+      /* Make all buttons in modals smaller */
+      .modal-card button {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+        min-height: 32px !important;
+      }
+      .modal-overlay button {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+        min-height: 32px !important;
+      }
+      /* Override inline px/py classes */
+      .modal-card .px-4,
+      .modal-card .px-5,
+      .modal-card .py-2,
+      .modal-card .py-3 { 
+        padding-left: 12px !important; 
+        padding-right: 12px !important;
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+      }
+      .modal-overlay .px-4,
+      .modal-overlay .px-5,
+      .modal-overlay .py-2,
+      .modal-overlay .py-3 { 
+        padding-left: 12px !important; 
+        padding-right: 12px !important;
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+      }
+      /* Close buttons stay small */
+      .modal-card button[id*="close"],
+      .modal-overlay button[id*="close"] {
+        padding: 4px !important;
+        min-height: 28px !important;
+        min-width: 28px !important;
+      }
 
       textarea.field-input { resize: none; overflow: hidden; }
 
@@ -309,10 +361,10 @@ document.addEventListener('DOMContentLoaded', function() {
       .pax-table input:focus { border-color: var(--cx-teal); box-shadow: 0 0 0 2px rgba(0,92,92,0.1); }
       .pax-no-indicator { font-size: 15px !important; }
       .pax-no-indicator::after { content: none !important; display: none !important; }
-      .pax-table .total-cell { font-weight: 800; color: var(--cx-teal); font-size: 15px; text-align: center; min-height: 38px; display: flex; align-items: center; justify-content: center; }
+      .pax-table .total-cell { color: var(--cx-teal); font-size: 15px; text-align: center; min-height: 38px; display: flex; align-items: center; justify-content: center; }
 
       .sum-label { font-size: 0.7rem; font-weight: 600; color: #6B7280; text-transform: uppercase; }
-      .sum-value { font-size: 0.95rem; font-weight: 700; color: var(--cx-teal-dark); margin-top: 2px; }
+      .sum-value { font-size: 0.95rem; font-weight: 400; color: var(--cx-teal-dark); margin-top: 2px; }
 
       .import-field-preview {
         display: flex; justify-content: space-between; align-items: center;
@@ -329,7 +381,6 @@ document.addEventListener('DOMContentLoaded', function() {
         font-family: -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px;
         line-height: 1.5; background: #FAFAFA; color: #1F2937;
         padding: 16px; border: 1.5px solid #E5E7EB; border-radius: 10px;
-        white-space: pre; tab-size: 4;
         -webkit-overflow-scrolling: touch;
       }
 
@@ -348,6 +399,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       /* Blink countdown only (not ETA HKG) — hold visible, then disappear, repeat */
       .blink-countdown { display:inline-block; color:#FCA5A5; animation: blink-hold 3s steps(2, start) infinite; }
+      .pasted-image-gallery { display:flex; flex-wrap:wrap; gap:8px; padding:8px 12px; background:#F9FAFB; border-left:1px solid #E5E7EB; border-right:1px solid #E5E7EB; }
+      .pasted-image-gallery:empty { display:none; padding:0; border:none; }
+      .pasted-image-item { position:relative; display:inline-block; }
+      .pasted-image-item img { max-width:140px; max-height:140px; border-radius:6px; border:1px solid #D1D5DB; display:block; cursor:zoom-in; }
+      .pasted-image-item .pi-remove { position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%; background:#EF4444; color:#fff; border:none; font-size:12px; line-height:20px; text-align:center; cursor:pointer; padding:0; }
       @keyframes blink-hold { 0% { visibility: visible; } 50% { visibility: hidden; } }
       @media (prefers-reduced-motion: reduce) { .blink-countdown { animation: none !important; visibility: visible !important; } }
 
@@ -397,6 +453,10 @@ document.addEventListener('DOMContentLoaded', function() {
         #live-clock, #live-clock-m { font-size: 20px !important; }
         #etd-countdown, #etd-countdown-m { font-size: 18px !important; }
         #boarding-countdown, #boarding-countdown-m { font-size: 18px !important; }
+        /* Prevent time/date cutoff in mobile header */
+        #hdr-mobile .flex.flex-col { min-width: 0 !important; }
+        #hdr-mobile div[data-id="43"] { max-width: 70px !important; }
+        #live-date-m { font-size: 11px !important; white-space: normal !important; word-break: break-word !important; }
       }
 
       @media (min-width: 768px) and (orientation: landscape) {
@@ -405,6 +465,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       
+      @media (max-width: 768px) {
         #hdr-mobile  { display: none !important; }
       }
 
@@ -424,6 +485,9 @@ document.addEventListener('DOMContentLoaded', function() {
         input[data-key], textarea[data-key] {
           font-size: 14px !important;
         }
+        /* Stack the two PTS schedule tables vertically on phones */
+        .pts-schedule-split { flex-direction: column !important; }
+        .pts-schedule-split > div { flex: 1 1 auto !important; width: 100% !important; }
       }
 
       /* Capacity / pax tables — horizontal scroll on small screens */
@@ -717,6 +781,107 @@ document.addEventListener('DOMContentLoaded', function() {
       
       }
 
+      /* ═══ MOBILE RESPONSIVENESS — Scrolling & Content Fit ═══ */
+      #main-content-w3x4 { 
+        width: 100% !important; 
+        overflow-y: auto !important; 
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding-left: 8px !important; 
+        padding-right: 8px !important;
+      }
+
+      /* Ensure all tab content is responsive */
+      .tab-content { 
+        width: 100% !important; 
+        box-sizing: border-box !important;
+        padding: 12px 4px !important;
+      }
+      .tab-content > div {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      /* Card sizing for mobile */
+      .card {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+
+      /* Grid adjustments for small screens */
+      @media (max-width: 480px) {
+        .grid-cols-2 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+        .grid-cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        .grid-cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        .gap-4 { gap: 6px !important; }
+        .gap-3 { gap: 4px !important; }
+        .card { padding: 10px !important; margin-bottom: 8px !important; }
+        .field-label { font-size: 0.65rem !important; margin-bottom: 3px !important; }
+        .field-input { min-height: 36px !important; padding: 6px 8px !important; font-size: 14px !important; }
+        .sum-label { font-size: 0.65rem !important; }
+        .sum-value { font-size: 0.85rem !important; margin-top: 1px !important; }
+        .ms-table td { padding: 6px 8px !important; font-size: 12px !important; }
+        .pax-table input { min-height: 32px !important; padding: 6px 8px !important; font-size: 12px !important; }
+        .section-hdr { font-size: 0.6rem !important; }
+        /* Ensure content doesn't overflow */
+        .tab-content > div { overflow-x: hidden !important; }
+        input, textarea, select { max-width: 100% !important; }
+      }
+
+      /* Extra small screens (< 380px) */
+      @media (max-width: 379px) {
+        .grid-cols-2 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+        .grid-cols-3 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+        .grid-cols-4 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+        .grid-cols-5 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+        .gap-4 { gap: 3px !important; }
+        .gap-3 { gap: 2px !important; }
+        .gap-2 { gap: 2px !important; }
+        .card { padding: 8px !important; margin-bottom: 4px !important; }
+        .field-label { font-size: 0.6rem !important; margin-bottom: 2px !important; }
+        .field-input { min-height: 32px !important; padding: 5px 6px !important; font-size: 13px !important; }
+        .field-input.sm { min-height: 32px !important; padding: 5px 6px !important; font-size: 13px !important; }
+        .section-hdr { font-size: 0.55rem !important; padding: 4px 8px !important; }
+        .ms-table th { font-size: 0.6rem !important; padding: 6px 4px !important; }
+        .ms-table td { padding: 4px 4px !important; font-size: 11px !important; }
+        .pax-table th, .pax-table td:first-child { font-size: 0.6rem !important; }
+        .pax-table input { min-height: 30px !important; padding: 4px 6px !important; font-size: 11px !important; }
+        .pax-table .total-cell { min-height: 30px !important; font-size: 12px !important; }
+        .log-btn, .logged-time { min-width: 60px !important; padding: 4px 8px !important; font-size: 11px !important; min-height: 28px !important; }
+      }
+
+      /* S25 portrait - even more compact */
+      @media (max-width: 430px) {
+        .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        .grid-cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        .gap-4 { gap: 4px !important; }
+        .gap-3 { gap: 3px !important; }
+        .card { padding: 8px !important; margin-bottom: 6px !important; }
+        div[style*="width:70px"] { width: 60px !important; padding: 4px 6px !important; font-size: 0.9rem !important; }
+      }
+
+      /* iPad & large device optimization */
+      @media (min-width: 768px) {
+        #main-content-w3x4 { 
+          padding-left: 16px !important; 
+          padding-right: 16px !important;
+        }
+      }
+
+      /* iPad landscape specific */
+      @media (min-width: 1024px) and (orientation: landscape) {
+        #main-content-w3x4 { 
+          padding-left: 24px !important; 
+          padding-right: 24px !important;
+        }
+        .card { max-width: 1200px !important; }
+      }
+
+      
+      
       
       /* ═══ DEVICE LAYOUT — authoritative block ═══ */
       html,body{overflow-x:hidden!important;}
@@ -737,6 +902,7 @@ document.addEventListener('DOMContentLoaded', function() {
         #hdr-mobile .gap-2{gap:3px!important;}
         #hdr-mobile button{padding:5px 7px!important;font-size:10px!important;min-height:30px!important;}
         #live-clock-m{font-size:17px!important;}
+        #live-date-m{font-size:13px!important;}
         #etd-countdown-m{font-size:13px!important;}
         #boarding-countdown-m{font-size:12px!important;}
         #hdr-flight-num-m{font-size:16px!important;font-weight:800!important;}
@@ -750,17 +916,33 @@ document.addEventListener('DOMContentLoaded', function() {
         .pax-table td{font-size:12px!important;}
         .pax-table input{min-height:34px!important;font-size:14px!important;}
         .ms-table td,.ms-table th{padding:6px 8px!important;font-size:12px!important;}
+        /* Inline time input usable on phones */
+        .act-inline-input{font-size:15px!important;min-height:34px!important;width:64px!important;}
+        .act-inline-ok,.act-inline-x{min-height:34px!important;min-width:34px!important;font-size:14px!important;}
       }
 
       /* ── S25 portrait ≤430px ── */
       @media(max-width:430px){
         #live-clock-m{font-size:15px!important;}
+        #live-date-m{font-size:11px!important;margin-top:1px!important;}
         #etd-countdown-m{font-size:11px!important;}
         #boarding-countdown-m{font-size:10px!important;}
         #hdr-flight-num-m{font-size:14px!important;}
         #hdr-mobile button{padding:4px 5px!important;font-size:9px!important;min-height:28px!important;}
         #bottom-nav-k1>div>button,.bottom-tab{min-width:46px!important;font-size:8.5px!important;padding:4px 2px!important;}
         .tab-content>div{padding:6px!important;}
+        .section-hdr { font-size: 0.95rem !important; margin-bottom: 8px !important; }
+        .card { padding: 8px !important; margin-bottom: 6px !important; }
+        .grid { gap: 4px !important; }
+        .sum-label { font-size: 0.6rem !important; margin-bottom: 2px !important; }
+        .sum-value { font-size: 0.8rem !important; }
+        .mt-3 { margin-top: 8px !important; }
+        .mt-4 { margin-top: 10px !important; }
+        /* Fix time/date cutoff in mobile header */
+        #hdr-mobile .flex.flex-col[data-id="43"] { flex-shrink: 1 !important; min-width: 0 !important; }
+        /* Inline time input on S25 */
+        .act-inline-input{font-size:14px!important;min-height:32px!important;width:58px!important;padding:3px 4px!important;}
+        .act-inline-ok,.act-inline-x{min-height:32px!important;min-width:32px!important;font-size:13px!important;}
       }
 
       /* ── Phone landscape ── */
@@ -775,10 +957,12 @@ document.addEventListener('DOMContentLoaded', function() {
       @media(min-width:768px){
         #hdr-mobile{display:none!important;}
         #hdr-desktop{display:flex!important;align-items:center;justify-content:space-between;min-height:52px;padding:8px 16px;gap:12px;flex-wrap:wrap;}
-        #hdr-desktop > div[data-id="22"] { display: none !important; }
         #bottom-nav-k1>div>button,.bottom-tab{font-size:12px!important;min-width:80px!important;min-height:52px!important;}
         .field-input,input[data-key],select[data-key]{font-size:15px!important;}
         .tab-content>div{padding:16px!important;}
+        /* PTS inline time input comfortable on iPad */
+        .act-inline-input{font-size:15px!important;min-height:38px!important;}
+        .act-inline-ok,.act-inline-x{min-height:38px!important;min-width:44px!important;font-size:15px!important;}
       }
 
       /* ── iPad landscape compact ── */
@@ -791,12 +975,118 @@ document.addEventListener('DOMContentLoaded', function() {
       button{min-height:36px;}
       #bottom-nav-k1>div>button.active,.bottom-tab.active{color:#005c5c!important;border-top:3px solid #005c5c!important;font-weight:700!important;background:rgba(0,92,92,0.07)!important;}
 
+      /* Phone browsers: keep the app inside the viewport and make menus swipe-scrollable */
+      @media(max-width:767px){
+        html,body,#app-shell,#app-header,#main-content-w3x4,#bottom-nav-k1{max-width:100vw!important;}
+        #app-header,#main-content-w3x4,#bottom-nav-k1,.tab-content{overflow-x:hidden!important;}
+
+        #hdr-mobile{max-width:100vw!important;overflow:hidden!important;}
+        #hdr-mobile>div{max-width:100vw!important;box-sizing:border-box!important;}
+        #hdr-mobile>div[data-id="50"]{display:none!important;}
+        #hdr-mobile>div:first-child{align-items:flex-start!important;}
+        #hdr-mobile>div:first-child>div:first-child{min-width:0!important;flex:1 1 auto!important;overflow:hidden!important;}
+        #hdr-mobile>div:first-child>div:first-child>div:last-child{min-width:0!important;overflow:hidden!important;}
+        #hdr-mobile>div:first-child>div:first-child>div:last-child>div:first-child{
+          max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:14px!important;
+        }
+        #hdr-mobile>div:first-child>div:last-child{flex:0 0 auto!important;}
+        #hdr-mobile>div:nth-child(2){
+          justify-content:flex-start!important;overflow-x:auto!important;overflow-y:hidden!important;
+          -webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;touch-action:pan-x!important;
+        }
+        #hdr-mobile>div:nth-child(2)::-webkit-scrollbar{display:none!important;}
+        #gate-display-m{font-size:18px!important;flex:0 0 auto!important;}
+
+        #hdr-mobile>div[data-id="50"],
+        #tab-pts>.tab-content-menu,
+        #tab-pts>div:first-child{
+          max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;
+          -webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;touch-action:pan-x!important;
+          justify-content:flex-start!important;flex-wrap:nowrap!important;
+        }
+        #hdr-mobile>div[data-id="50"]::-webkit-scrollbar,
+        #tab-pts>div:first-child::-webkit-scrollbar{display:none!important;}
+        #hdr-mobile>div[data-id="50"] button,
+        #tab-pts>div:first-child button{flex:0 0 auto!important;min-width:max-content!important;}
+
+        #bottom-nav-k1{
+          overflow-x:auto!important;overflow-y:hidden!important;-webkit-overflow-scrolling:touch!important;
+          scrollbar-width:none!important;touch-action:pan-x!important;
+        }
+        #bottom-nav-k1::-webkit-scrollbar{display:none!important;}
+        #bottom-nav-k1>div{
+          width:max-content!important;min-width:max-content!important;max-width:none!important;
+          display:flex!important;flex-wrap:nowrap!important;overflow-x:visible!important;
+          touch-action:pan-x!important;
+        }
+        #bottom-nav-k1>div>button,.bottom-tab{
+          flex:0 0 92px!important;min-width:92px!important;max-width:92px!important;
+          overflow:hidden!important;text-align:center!important;touch-action:pan-x!important;
+        }
+        #bottom-nav-k1>div>button span,.bottom-tab span{
+          max-width:86px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;display:block!important;
+        }
+
+        .tab-content{
+          width:100%!important;max-width:100%!important;padding:8px!important;
+          box-sizing:border-box!important;overflow-x:hidden!important;
+        }
+        .tab-content.active.tab-flex-panel{
+          display:flex!important;width:100%!important;max-width:100%!important;
+          min-height:calc(100dvh - 210px)!important;overflow:hidden!important;
+        }
+        .tab-content>div,.tab-content>section,.tab-content .card,
+        .textarea-panel-wrapper,.crew-section,#summary-content-g7{
+          width:100%!important;max-width:100%!important;min-width:0!important;
+          box-sizing:border-box!important;overflow-x:hidden!important;
+        }
+        .card{border-radius:10px!important;}
+        .textarea-panel-wrapper{
+          height:auto!important;min-height:calc(100dvh - 230px)!important;
+          border-radius:10px!important;background:#fff!important;overflow:hidden!important;
+        }
+        .textarea-panel-wrapper .panel-header,
+        .textarea-panel-wrapper .panel-footer{
+          width:100%!important;max-width:100%!important;min-width:0!important;
+          box-sizing:border-box!important;flex-wrap:wrap!important;gap:6px!important;
+          padding-left:10px!important;padding-right:10px!important;
+        }
+        .textarea-panel-wrapper .panel-header h2,
+        .textarea-panel-wrapper .panel-header h3{
+          min-width:0!important;max-width:100%!important;overflow:hidden!important;
+          text-overflow:ellipsis!important;white-space:nowrap!important;
+        }
+        .textarea-panel-wrapper .panel-footer button{
+          flex:1 1 auto!important;min-width:0!important;white-space:nowrap!important;
+          padding-left:8px!important;padding-right:8px!important;
+        }
+        .textarea-panel-wrapper textarea,
+        #staff-acc-textarea,#arr-ptm-textarea,#oir-textarea,#itd-tag-card-textarea,
+        #dep-lir-textarea,#crew-textarea,#dep-crew-textarea,#dep-gen-dec-textarea,
+        #agent-pos-textarea,#f-remarks{
+          width:100%!important;max-width:100%!important;min-width:0!important;
+          box-sizing:border-box!important;overflow-x:auto!important;
+        }
+        #tab-itd-tag-card .textarea-panel-wrapper>div[style*="display:flex"]{
+          width:100%!important;max-width:100%!important;min-width:0!important;
+          box-sizing:border-box!important;flex-wrap:wrap!important;overflow-x:hidden!important;
+          padding-left:10px!important;padding-right:10px!important;
+        }
+        #itd-search-input{width:100%!important;max-width:100%!important;flex:1 1 160px!important;min-width:0!important;}
+        #itd-search-result{min-width:0!important;flex:1 1 100%!important;padding:0!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+        input,select,textarea,.field-input{max-width:100%!important;box-sizing:border-box!important;}
+        .pasted-image-gallery{width:100%!important;max-width:100%!important;box-sizing:border-box!important;}
+        .pasted-image-item img{max-width:100px!important;max-height:100px!important;}
+      }
+
       </style>
     <script>
+    window.APP_VERSION = 'v1.0.19';
     (function(){
       var manifest = {
         name: "Flight PTS",
         short_name: "PTS",
+        version: window.APP_VERSION,
         display: "standalone",
         orientation: "any",
         background_color: "#1e3a5f",
@@ -811,6 +1101,11 @@ document.addEventListener('DOMContentLoaded', function() {
       link.href = url;
       document.head.appendChild(link);
     })();
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('[data-app-version]').forEach(function(el) {
+        el.textContent = window.APP_VERSION || '';
+      });
+    });
     </script>
 </head>
 <body data-id="0">
@@ -837,12 +1132,13 @@ document.addEventListener('DOMContentLoaded', function() {
         <div data-id="10" class="flex items-center gap-2 flex-shrink-0">
           <div data-id="11" class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(255,255,255,0.15);"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAiCAYAAABMfblJAAACi0lEQVR42r2Wv2sUQRiGn9mLmkREg4mYGKImGgOKxggBURtB7KIEOxtLRfwLLESwtBGstLCxEVGxUwtBU2gZCCpoIyk0EIORmAjm7h4LZ2FZLnp3ucsHy3zs7sw77zvfj0EdYg0tAYbUbQBqWAvAdqB/LRn+AHrV9WsFOAfsBoZCCDZb1gTYDBSAQ+rWZoMmwC+gBPQCI2p7MwMoAaaBNqAV2AnsCSHYTIazwBLQBXQAg2poFmgSQlgEvgGd8ekHhpslaxLH99EfBnYAp9XuGEBJMwA/ADPARqAb6AFOqR0hhHIjmSZqEkJYAKaADcAIsAU4DoynBaFRoFm5JoBNQB9wJBaDUeBoCMGG5md6TupNddG/9ll9pd5Vz2SYJo0ALMTxsLqkltRyBJ5Sn6hX1HXxv5ZGgj6IQMtxLKvz6qx6S+1LQVfFVk3UoPapC2oxwzJr0+pYZl5L3WebYXk5Lv47w7Kc28A9dVd2bl2MM6DPctKmVoqP6nf1htqTmR8i60L0Q7XSdqqf4sLFCtJm382pt9XRFdYMcd3C/9JknzqzAtNU6vxm3qpX1WNqV55h+Je0IYSSehB4DmwHikCllDD21Py3eeBrbA7G60xV5zmovsswrRS9WalX+ud6LUHUoT60OivmpH6hDtdc+qJ/MZa9fJ6WK7x7o47nN191uqQlTd2vfonpUawQUC/Vs/korQWsJeNfiAyXc7L9VO+rJyodSU3lLvoD6qMK5/VRvab25xjVBBRyrC7F5E5tSX2qjqutOdkLdZW26B9QJzJAkzGp9+Ylr7eOpvK1xmZsbMh31JO5zSRpvVxtXxxTX8dIO69uaQibbGmLC7QB54AB4HEIYbKCzOXVXpD/AKfv6s702tgRAAAAAElFTkSuQmCC" alt="" style="height:30px;width:auto;display:block;"></div>
           <div style="display:flex;flex-direction:column;line-height:1.2;">
-            <div style="font-size:16px;font-weight:600;opacity:0.75;color:#fff;letter-spacing:0.04em;white-space:nowrap;">Flight Info &amp; Precision Timing Schedule</div>
-            <div id="hdr-flight-num" style="font-weight:500;letter-spacing:0.02em;"></div>
+            <div style="font-size:16px;font-weight:600;opacity:0.75;color:#fff;letter-spacing:0.04em;white-space:nowrap;">Flight Info &amp; Precision Timing Schedule <span data-app-version style="font-size:0.72em;font-weight:500;opacity:0.85;letter-spacing:0;"></span></div>
+            <div id="hdr-flight-num" data-summary="flight" style="font-weight:500;letter-spacing:0.02em;"></div>
           </div>
         </div>
         <div data-id="14" class="flex items-center gap-2 flex-shrink-0">
           <div data-id="15" class="flex flex-col items-center leading-none">
+            <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em;">Current Time:</div>
             <div data-id="16" id="live-clock" class="tabular-nums leading-none" style="font-size:26px;">--:--:--</div>
             <div data-id="17" id="live-date" style="font-size:18px;color:rgba(255,255,255,0.7);font-weight:500;margin-top:2px;line-height:1;white-space:nowrap;">...</div>
           </div>
@@ -850,24 +1146,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div data-id="19" id="etd-countdown" class="tabular-nums leading-none" style="font-size:22px;">ETD --:--:--</div>
           <div data-id="20" class="etd-divider"></div>
           <div data-id="21" id="boarding-countdown" class="tabular-nums leading-none" style="font-size:22px;">--:--:--</div>
-        </div>
-        <div data-id="22" class="flex items-center gap-2 flex-shrink-0">
-          <button data-id="23" id="btn-import-q7r8" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/40 text-white text-xs font-semibold hover:bg-white/10 transition-colors" style="background:#F59E0B;color:#1a1a1a;">
-            <i data-id="24" data-lucide="upload" class="w-3.5 h-3.5"></i> Import
-          </button>
-          <button data-id="25" id="btn-save-pts" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/40 text-white text-xs font-semibold hover:bg-white/10 transition-colors" style="background:#10B981;color:#ffffff;">
-            <i data-id="26" data-lucide="save" class="w-3.5 h-3.5"></i> Save
-          </button>
-          <button data-id="27" id="btn-share-pts" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/40 text-white text-xs font-semibold hover:bg-white/10 transition-colors" style="background:#3B82F6;color:#ffffff;">
-            <i data-id="28" data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
-          </button>
-          <button data-id="29" id="btn-email-i9j0" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-cx-teal text-xs font-semibold hover:bg-gray-100 transition-colors" style="background:#ffffff;color:#005c5c;">
-            <i data-id="30" data-lucide="mail" class="w-3.5 h-3.5"></i> Send
-          </button>
-          <button data-id="33" id="btn-clear-all" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-400/60 text-red-200 text-xs font-semibold hover:bg-red-500/20 transition-colors" style="background:#EF4444;color:#ffffff;">
-            <i data-id="34" data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear
-          </button>
-          <span data-id="35" id="hdr-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#fff;background:rgba(255,255,255,0.2);border-radius:99px;padding:4px 10px;white-space:nowrap;"></span>
+          <div data-id="21-gate" id="gate-display" class="tabular-nums leading-none" style="font-size:22px;white-space:nowrap;">Gate: --</div>
         </div>
       </div>
       <!-- MOBILE: two rows (<md) -->
@@ -876,12 +1155,13 @@ document.addEventListener('DOMContentLoaded', function() {
           <div data-id="38" class="flex items-center gap-2 flex-shrink-0">
             <div data-id="39" class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:rgba(255,255,255,0.15);"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAiCAYAAABMfblJAAACi0lEQVR42r2Wv2sUQRiGn9mLmkREg4mYGKImGgOKxggBURtB7KIEOxtLRfwLLESwtBGstLCxEVGxUwtBU2gZCCpoIyk0EIORmAjm7h4LZ2FZLnp3ucsHy3zs7sw77zvfj0EdYg0tAYbUbQBqWAvAdqB/LRn+AHrV9WsFOAfsBoZCCDZb1gTYDBSAQ+rWZoMmwC+gBPQCI2p7MwMoAaaBNqAV2AnsCSHYTIazwBLQBXQAg2poFmgSQlgEvgGd8ekHhpslaxLH99EfBnYAp9XuGEBJMwA/ADPARqAb6AFOqR0hhHIjmSZqEkJYAKaADcAIsAU4DoynBaFRoFm5JoBNQB9wJBaDUeBoCMGG5md6TupNddG/9ll9pd5Vz2SYJo0ALMTxsLqkltRyBJ5Sn6hX1HXxv5ZGgj6IQMtxLKvz6qx6S+1LQVfFVk3UoPapC2oxwzJr0+pYZl5L3WebYXk5Lv47w7Kc28A9dVd2bl2MM6DPctKmVoqP6nf1htqTmR8i60L0Q7XSdqqf4sLFCtJm382pt9XRFdYMcd3C/9JknzqzAtNU6vxm3qpX1WNqV55h+Je0IYSSehB4DmwHikCllDD21Py3eeBrbA7G60xV5zmovsswrRS9WalX+ud6LUHUoT60OivmpH6hDtdc+qJ/MZa9fJ6WK7x7o47nN191uqQlTd2vfonpUawQUC/Vs/korQWsJeNfiAyXc7L9VO+rJyodSU3lLvoD6qMK5/VRvab25xjVBBRyrC7F5E5tSX2qjqutOdkLdZW26B9QJzJAkzGp9+Ylr7eOpvK1xmZsbMh31JO5zSRpvVxtXxxTX8dIO69uaQibbGmLC7QB54AB4HEIYbKCzOXVXpD/AKfv6s702tgRAAAAAElFTkSuQmCC" alt="" style="height:24px;width:auto;display:block;"></div>
             <div style="display:flex;flex-direction:column;line-height:1.2;">
-              <div style="font-size:16px;font-weight:600;opacity:0.75;color:#fff;letter-spacing:0.03em;white-space:nowrap;">Flight Info &amp; Precision Timing Schedule</div>
-              <div id="hdr-flight-num-m" style="font-weight:500;letter-spacing:0.02em;"></div>
+              <div style="font-size:16px;font-weight:600;opacity:0.75;color:#fff;letter-spacing:0.03em;white-space:nowrap;">Flight Info &amp; Precision Timing Schedule <span data-app-version style="font-size:0.72em;font-weight:500;opacity:0.85;letter-spacing:0;"></span></div>
+              <div id="hdr-flight-num-m" data-summary="flight" style="font-weight:500;letter-spacing:0.02em;"></div>
             </div>
           </div>
           <div data-id="42" class="flex items-center gap-1 flex-shrink-0">
             <div data-id="43" class="flex flex-col items-center leading-none">
+              <div style="font-size:9px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em;">Current Time:</div>
               <div data-id="44" id="live-clock-m" class="tabular-nums leading-none" style="font-size:24px;">--:--:--</div>
               <div data-id="45" id="live-date-m" style="font-size:18px;color:rgba(255,255,255,0.7);font-weight:500;margin-top:2px;line-height:1;white-space:nowrap;">...</div>
             </div>
@@ -891,8 +1171,9 @@ document.addEventListener('DOMContentLoaded', function() {
           <div data-id="47" id="etd-countdown-m" class="tabular-nums leading-none" style="font-size:20px;">ETD --:--:--</div>
           <div data-id="48" class="etd-divider"></div>
           <div data-id="49" id="boarding-countdown-m" class="tabular-nums leading-none" style="font-size:20px;">--:--:--</div>
+          <div data-id="49-gate" id="gate-display-m" class="tabular-nums leading-none" style="font-size:20px;white-space:nowrap;">Gate: --</div>
         </div>
-        <div data-id="50" class="flex items-center justify-around px-2 pb-2 gap-1">
+        <div data-id="50" class="flex items-center justify-around px-2 pb-2 gap-1" style="display:none;">
           <button data-id="51" id="btn-import-mob" class="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg border border-white/40 text-white text-xs font-semibold min-h-[36px] hover:bg-white/10 transition-colors" style="background:#F59E0B;color:#1a1a1a;">
             <i data-id="52" data-lucide="upload" class="w-3.5 h-3.5 flex-shrink-0"></i><span data-id="53">Import</span>
           </button>
@@ -908,7 +1189,9 @@ document.addEventListener('DOMContentLoaded', function() {
           <button data-id="66" id="btn-clear-mob" class="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg border border-red-400/60 text-red-200 text-xs font-semibold min-h-[36px] hover:bg-red-500/20 transition-colors" style="background:#EF4444;color:#ffffff;">
             <i data-id="67" data-lucide="trash-2" class="w-3.5 h-3.5 flex-shrink-0"></i><span data-id="68">Clear</span>
           </button>
-          <span data-id="69" id="hdr-lock-badge-m" style="display:none;align-items:center;gap:3px;font-size:10px;font-weight:600;color:#fff;background:rgba(255,255,255,0.2);border-radius:99px;padding:3px 8px;white-space:nowrap;"></span>
+          <button data-id="68-edit" id="btn-edit-mode-mob" class="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold border border-white/40 text-white min-h-[36px] hover:bg-white/10 transition-colors" style="background:rgba(255,255,255,0.2);">
+            <span id="edit-mode-text-mob">✏️ Edit Off</span>
+          </button>
         </div>
       </div>
     </header>
@@ -964,7 +1247,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <h2 data-id="111" id="send-modal-title" class="text-lg font-bold text-cx-teal-dark">📧 Send Report</h2>
           <button data-id="112" id="send-modal-close" class="p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"><i data-id="113" data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
         </div>
-        <pre data-id="114" id="send-report-pre" class="send-report-pre"></pre>
+        <div data-id="114" id="send-report-pre" class="send-report-pre"></div>
         <div data-id="115" class="flex justify-end gap-3 mt-4">
           <button data-id="116" id="send-copy-btn" class="flex items-center gap-2 px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark transition-colors">
             <i data-id="117" data-lucide="clipboard-copy" class="w-4 h-4"></i> Copy Report
@@ -999,7 +1282,11 @@ document.addEventListener('DOMContentLoaded', function() {
       <div data-id="566" style="display:flex;flex-direction:row;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
         <button data-id="567" class="bottom-tab active" data-tab="pts">
           <i data-id="568" data-lucide="plane" class="w-5 h-5"></i>
-          <span data-id="569" class="text-[11px] font-semibold">PTS</span>
+          <span data-id="569" class="text-[11px] font-semibold">Flight Info</span>
+        </button>
+        <button data-id="700" class="bottom-tab" data-tab="pts-schedule">
+          <i data-id="701" data-lucide="timer" class="w-5 h-5"></i>
+          <span data-id="702" class="text-[11px] font-semibold">PTS Schedule</span>
         </button>
         <button data-id="576" class="bottom-tab" data-tab="summary">
          <i data-id="577" data-lucide="clipboard-list" class="w-5 h-5"></i>
@@ -1047,10 +1334,10 @@ document.addEventListener('DOMContentLoaded', function() {
       <div data-id="133" id="tab-pts" class="tab-content active">
 
         <!-- Navigation Menu for Precision Timing Schedules + Action Buttons -->
-        <div style="position:sticky;top:0;z-index:10;background:#005C5C;border-bottom:2px solid #004545;padding:12px 16px;display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center;min-height:48px;box-shadow:0 2px 4px rgba(0,0,0,0.1);width:100vw;margin-left:calc(-50vw + 50%);">
+        <div style="position:sticky;top:0;z-index:10;background:#005C5C;border-bottom:2px solid #004545;padding:12px 16px;display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center;min-height:48px;box-shadow:0 2px 4px rgba(0,0,0,0.1);width:100%;box-sizing:border-box;">
           <!-- Navigation buttons -->
-          <button onclick="document.getElementById('arrival-pts').scrollIntoView({behavior:'smooth'});" style="flex-shrink:0;padding:8px 14px;background:#00838F;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;">⏱️ Arrival</button>
-          <button onclick="document.getElementById('departure-pts').scrollIntoView({behavior:'smooth'});" style="flex-shrink:0;padding:8px 14px;background:#00838F;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;">⏱️ Departure</button>
+          <button onclick="switchToTab('pts-schedule');setTimeout(function(){document.getElementById('arrival-pts').scrollIntoView({behavior:'smooth'});},60);" style="flex-shrink:0;padding:8px 14px;background:#00838F;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;">⏱️ Arrival</button>
+          <button onclick="switchToTab('pts-schedule');setTimeout(function(){document.getElementById('departure-pts').scrollIntoView({behavior:'smooth'});},60);" style="flex-shrink:0;padding:8px 14px;background:#00838F;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;">⏱️ Departure</button>
           
           <!-- Divider -->
           <div style="width:1px;height:24px;background:rgba(255,255,255,0.3);flex-shrink:0;"></div>
@@ -1071,7 +1358,9 @@ document.addEventListener('DOMContentLoaded', function() {
           <button id="btn-clear-nav" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-white text-xs font-semibold hover:bg-white/20 transition-colors flex-shrink-0" style="background:rgba(239,68,68,0.9);min-height:32px;white-space:nowrap;border:none;cursor:pointer;">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear
           </button>
-          <span id="hdr-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#fff;background:rgba(255,255,255,0.2);border-radius:99px;padding:4px 10px;white-space:nowrap;flex-shrink:0;"></span>
+          <button id="btn-edit-mode-nav" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-white text-xs font-semibold hover:bg-white/20 transition-colors flex-shrink-0" style="background:rgba(255,255,255,0.2);min-height:32px;white-space:nowrap;border:none;cursor:pointer;">
+            ✏️ <span id="edit-mode-text-nav">Edit Off</span>
+          </button>
         </div>
 
         <div data-id="134" class="section-hdr">Flight Information</div>
@@ -1081,12 +1370,12 @@ document.addEventListener('DOMContentLoaded', function() {
             <div data-id="140"><label data-id="141" class="field-label">Date</label><input data-id="142" class="field-input sm" id="f-date" data-key="date" placeholder="03 May 2026"></div>
             <div data-id="143"><label data-id="144" class="field-label">REGN</label><input data-id="145" class="field-input sm" id="f-regn" data-key="regn" placeholder="KPF"></div>
             <div data-id="146"><label data-id="147" class="field-label">Config</label><input data-id="148" class="field-input sm" id="f-config" data-key="config" placeholder="77J"></div>
-            <div data-id="149-152" style="display:flex;gap:6px;"><div style="flex:1;"><label data-id="150" class="field-label">STA</label><input data-id="151" class="field-input sm" id="f-sta" data-key="sta" placeholder="HH:MM" inputmode="text"></div><div style="flex:1;"><label data-id="153" class="field-label">ETA</label><input data-id="154" class="field-input sm" id="f-eta" data-key="eta" placeholder="HH:MM" inputmode="text"></div></div>
+            <div data-id="149-152" style="display:flex;gap:6px;"><div style="flex:1;"><label data-id="150" class="field-label">STA</label><input data-id="151" class="field-input sm" id="f-sta" data-key="sta" placeholder="HH:MM" inputmode="text"></div><div style="flex:1;"><label data-id="153" class="field-label">ETA</label><input data-id="154" class="field-input sm" id="f-eta" data-key="eta" placeholder="HH:MM" inputmode="text"></div><div style="flex:1;"><label data-id="154a" class="field-label">ATA</label><input data-id="154b" class="field-input sm locked-input" id="f-ata" data-key="ata" placeholder="HH:MM" inputmode="text" readonly></div></div>
             <div data-id="155"><label data-id="156" class="field-label">Gate</label><input data-id="157" class="field-input sm" id="f-gate" data-key="gate" placeholder="67" inputmode="numeric"></div>
             <div data-id="158"><label data-id="159" class="field-label">Carousel</label><input data-id="160" class="field-input sm" id="f-carousel" data-key="carousel" placeholder="24" inputmode="numeric"></div>
             <div data-id="161"><label data-id="162" class="field-label">Weather</label><input data-id="163" class="field-input sm" id="f-weather" data-key="weather" placeholder="Fine"></div>
           </div>
-          <div data-id="164" class="mt-3"><label data-id="165" class="field-label">Delay Code</label><input data-id="166" class="field-input sm" id="f-delayCode" data-key="delayCode" placeholder="e.g. FAC8 / IAK3"></div>
+          <div data-id="164" class="mt-3"><label data-id="165" class="field-label">Delay Code(s) ex HKG</label><input data-id="166" class="field-input sm" id="f-delayCode" data-key="delayCode" placeholder="e.g. FAC8 / IAK3"></div>
         </div>
 
         <div data-id="167" class="section-hdr green text-center text-base tracking-widest" style="font-size:0.85rem;">─── ARRIVAL ───</div>
@@ -1142,17 +1431,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="grid grid-cols-2 gap-3">
             <div><label class="field-label">Doorside</label><textarea class="field-input sm autosize" id="f-arr_doorside" data-key="arr_doorside" placeholder="e.g. 01 WCH" data-autoresize="true"></textarea></div>
             <div><label class="field-label">Total Bags</label><input class="field-input sm" id="f-arr_total_bags" data-key="arr_total_bags" placeholder="0"></div>
-          </div>
-        </div>
-
-        <div data-id="250" class="section-hdr" id="arrival-pts">Arrival Precision Timing Schedule</div>
-        <div data-id="251" class="card">
-          <p data-id="252" class="text-xs text-cx-grey italic mb-3">Targets auto-calculate from ETA. Tap to log actual time, Long press to reset, or edit time manually</p>
-          <div data-id="253" class="table-scroll-wrap">
-            <div class="table-scroll-wrap"><table data-id="254" class="ms-table" id="arr-ms-table">
-              <thead data-id="255"><tr data-id="256"><th data-id="257">Activity</th><th data-id="258">Target</th><th data-id="259">Actual</th></tr></thead>
-              <tbody data-id="260" id="arr-milestones-a1"></tbody>
-            </table></div>
+            <div><label class="field-label">First Bag <span style="font-weight:400;opacity:0.7;">(auto)</span></label><input class="field-input sm" id="f-arr_first_bag" data-key="arr_first_bag" placeholder="&mdash;" readonly style="background:#F3F4F6;cursor:not-allowed;"></div>
+            <div><label class="field-label">Last Bag <span style="font-weight:400;opacity:0.7;">(auto)</span></label><input class="field-input sm" id="f-arr_last_bag" data-key="arr_last_bag" placeholder="&mdash;" readonly style="background:#F3F4F6;cursor:not-allowed;"></div>
           </div>
         </div>
 
@@ -1243,9 +1523,9 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
-        <div data-id="373" class="section-hdr amber">Defects</div>
+        <div data-id="373" class="section-hdr">Defects</div>
         <div data-id="374" class="card">
-          <textarea data-id="375" class="field-input" id="f-defects" data-key="defects" placeholder="e.g. 11K Armrest Inop (SL) / 31C Legrest Inop (SL)" rows="4" style="min-height:100px;"></textarea>
+          <textarea data-id="375" class="field-input autosize" id="f-defects" data-key="defects" data-autoresize="true" placeholder="e.g. 11K Armrest Inop (SL) / 31C Legrest Inop (SL)" rows="2" style="min-height:60px;"></textarea>
         </div>
 
         <div data-id="376" class="section-hdr">Catering Order</div>
@@ -1320,26 +1600,46 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
-        <div data-id="489" class="section-hdr" id="departure-pts">Departure Precision Timing Schedule</div>
-        <div data-id="490" class="card">
-          <p data-id="491" class="text-xs text-cx-grey italic mb-3">Targets auto-calculate from ETD. Tap to log actual time, Long press to reset, or edit time manually</p>
-          <div data-id="492" class="table-scroll-wrap">
-            <div class="table-scroll-wrap"><table data-id="493" class="ms-table" id="dep-ms-table">
-              <thead data-id="494"><tr data-id="495"><th data-id="496">Activity</th><th data-id="497">Target</th><th data-id="498">Actual</th></tr></thead>
-              <tbody data-id="499" id="dep-milestones-e5"></tbody>
-            </table></div>
-          </div>
-        </div>
-
         <div data-id="500" class="section-hdr">Remarks</div>
         <div data-id="501" class="card">
-          <textarea data-id="502" class="field-input" id="f-remarks" data-key="remarks" placeholder="Enter any remarks..." rows="6" style="min-height:320px;"></textarea>
+          <textarea data-id="502" class="field-input autosize" id="f-remarks" data-key="remarks" data-autoresize="true" placeholder="Enter any remarks..." rows="2" style="min-height:60px;"></textarea>
         </div>
 
         <div data-id="503" class="section-hdr" style="background:#EF4444;">Notices</div>
         <div data-id="504" class="notice-card">⚠️ Verify Locks Raised Before Close!!!</div>
         <div data-id="505" class="notice-card">⚠️ Re-confirm Final Pax Figure with ISM!!!</div>
 
+      </div>
+
+      <!-- ========== TAB: PTS SCHEDULE ========== -->
+      <div data-id="703" id="tab-pts-schedule" class="tab-content">
+        <div class="pts-schedule-split" style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+          <div style="flex:1 1 340px;min-width:0;">
+            <div data-id="250" class="section-hdr" id="arrival-pts">Arrival Precision Timing Schedule</div>
+            <div data-id="251" class="card">
+              <p data-id="252" class="text-xs text-cx-grey italic mb-3">Targets auto-calculate from ETA. Tap to log actual time, Long press to reset, or edit time manually</p>
+              <div data-id="253" class="table-scroll-wrap">
+                <div class="table-scroll-wrap"><table data-id="254" class="ms-table" id="arr-ms-table">
+                  <thead data-id="255"><tr data-id="256"><th data-id="257">Activity</th><th data-id="258">Target</th><th data-id="259">Actual</th><th style="text-align:center;">Variance</th></tr></thead>
+                  <tbody data-id="260" id="arr-milestones-a1"></tbody>
+                </table></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex:1 1 340px;min-width:0;">
+            <div data-id="489" class="section-hdr" id="departure-pts">Departure Precision Timing Schedule</div>
+            <div data-id="490" class="card">
+              <p data-id="491" class="text-xs text-cx-grey italic mb-3">Targets auto-calculate from ETD. Tap to log actual time, Long press to reset, or edit time manually</p>
+              <div data-id="492" class="table-scroll-wrap">
+                <div class="table-scroll-wrap"><table data-id="493" class="ms-table" id="dep-ms-table">
+                  <thead data-id="494"><tr data-id="495"><th data-id="496">Activity</th><th data-id="497">Target</th><th data-id="498">Actual</th><th style="text-align:center;">Variance</th></tr></thead>
+                  <tbody data-id="499" id="dep-milestones-e5"></tbody>
+                </table></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ========== TAB 2: SUMMARY ========== -->
@@ -1356,7 +1656,8 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <textarea data-id="511" id="staff-acc-textarea" placeholder="Paste Staff Acceptance content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="512" class="panel-footer">
-            <button data-id="513" id="staff-acc-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">💾 Save &amp; Lock</button>
+            <button data-id="513" id="staff-acc-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">📋 Paste from Excel</button>
+            <button data-id="513a" id="staff-acc-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">💾 Save &amp; Lock</button>
             <button data-id="514" id="staff-acc-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
         </div>
@@ -1371,6 +1672,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <textarea data-id="520" id="arr-ptm-textarea" placeholder="Paste Arrival PTM content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="521" class="panel-footer">
+            <button data-id="521a" id="arr-ptm-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">📋 Paste from Excel</button>
             <button data-id="522" id="arr-ptm-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">💾 Save &amp; Lock</button>
             <button data-id="523" id="arr-ptm-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -1384,8 +1686,15 @@ document.addEventListener('DOMContentLoaded', function() {
             <h2 data-id="618" style="font-size:18px;font-weight:700;margin:0;">ITD Tag Card</h2>
             <span data-id="619" id="itd-tag-card-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
           </div>
+          <!-- Search Box with Clear Button -->
+          <div style="display:flex;gap:8px;padding:12px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;align-items:center;">
+            <input id="itd-search-input" type="text" placeholder="Tag #..." style="width:240px;padding:8px 12px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;font-family:monospace;"/>
+            <button id="itd-clear-search-btn" style="background:#6B7280;color:#fff;border:none;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">✕ Clear Search</button>
+            <div id="itd-search-result" style="padding:0 12px;font-size:20px;font-weight:700;color:#1f2937;min-width:150px;text-align:left;">Ready to search...</div>
+          </div>
           <textarea data-id="620" id="itd-tag-card-textarea" placeholder="Paste ITD Tag Card content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="621" class="panel-footer">
+            <button data-id="621a" id="itd-tag-card-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">📋 Paste from Excel</button>
             <button data-id="622" id="itd-tag-card-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">💾 Save &amp; Lock</button>
             <button data-id="623" id="itd-tag-card-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -1401,6 +1710,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <textarea data-id="531" id="oir-textarea" placeholder="Paste Arrival Offload content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="532" class="panel-footer">
+            <button data-id="532a" id="oir-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">📋 Paste from Excel</button>
             <button data-id="533" id="oir-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">💾 Save &amp; Lock</button>
             <button data-id="534" id="oir-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -1416,6 +1726,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <textarea data-id="540" id="dep-lir-textarea" placeholder="Paste Departure Onload content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="541" class="panel-footer">
+            <button data-id="541a" id="dep-lir-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">📋 Paste from Excel</button>
             <button data-id="542" id="dep-lir-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">💾 Save &amp; Lock</button>
             <button data-id="543" id="dep-lir-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -1428,11 +1739,12 @@ document.addEventListener('DOMContentLoaded', function() {
           <!-- Arrival Crew Section -->
           <div data-id="546" class="crew-section">
             <div data-id="547" class="panel-header">
-              <h3 data-id="548" style="font-size:15px;font-weight:700;margin:0;">Arrival Crew List</h3>
+              <h3 data-id="548" style="font-size:18px;font-weight:700;margin:0;">Arrival Crew List</h3>
               <span data-id="549" id="crew-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
             </div>
             <textarea data-id="550" id="crew-textarea" placeholder="Paste Arrival Crew List here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
             <div data-id="551" class="panel-footer">
+              <button data-id="551a" id="crew-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">📋 Paste from Excel</button>
               <button data-id="552" id="crew-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">💾 Save &amp; Lock</button>
               <button data-id="553" id="crew-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
             </div>
@@ -1449,6 +1761,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <textarea data-id="599" id="dep-gen-dec-textarea" placeholder="Paste Departure Gen Dec content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="600" class="panel-footer">
+            <button data-id="600a" id="dep-gen-dec-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">📋 Paste from Excel</button>
             <button data-id="601" id="dep-gen-dec-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">💾 Save &amp; Lock</button>
             <button data-id="602" id="dep-gen-dec-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -1464,6 +1777,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <textarea data-id="608" id="agent-pos-textarea" placeholder="Paste Agent Positions content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="609" class="panel-footer">
+            <button data-id="609a" id="agent-pos-paste-btn" style="background:#10B981;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">📋 Paste from Excel</button>
             <button data-id="610" id="agent-pos-save-btn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">💾 Save &amp; Lock</button>
             <button data-id="611" id="agent-pos-clear-btn" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -1504,6 +1818,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       if (typeof arrActual !== 'undefined') { for (var k in arrActual) { delete arrActual[k]; } }
       if (typeof depActual !== 'undefined') { for (var k in depActual) { delete depActual[k]; } }
+      if (typeof PASTE_IMAGE_IDS !== 'undefined') { PASTE_IMAGE_IDS.forEach(function(id){ pastedImages[id]=[]; renderPastedImageGallery(id); }); }
       ['renderActivities','renderPaxLoadTable','updateArrPaxTotal','renderSummary','updateETDCountdown'].forEach(function(fn) {
         if (typeof window[fn] === 'function') window[fn]();
       });
@@ -1513,18 +1828,27 @@ document.addEventListener('DOMContentLoaded', function() {
       ['hdr-lock-badge','hdr-lock-badge-m'].forEach(function(id){
         var el=document.getElementById(id); if(el) { el.style.display='none'; el.innerHTML=''; }
       });
-      updateHeaderFlightNum();
+      // Ensure flight field is cleared and state is updated
+      var flightField = document.getElementById('f-flight');
+      if (flightField) {
+        flightField.value = '';
+        if (state) state.flight = '';
+      }
       ['import-modal-k1l2','send-modal','share-modal'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.style.display = 'none';
       });
       localStorage.removeItem(PTS_SAVE_KEY);
+      // Clear all tabs
       clearOIR();
       clearCrew();
       clearDepCrew();
       clearStaffAcc();
       clearArrPTM();
       clearDepLIR();
+      clearITDTagCard();
+      clearDepGenDec();
+      clearAgentPos();
       refreshSummarySpans();
       refreshFinalLoading();
       if (typeof showToast === 'function') showToast('All data cleared', 'red');
@@ -1586,7 +1910,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // STATE
     // ===========================
     var state = {
-      flight:'', date:'', regn:'', config:'', sta:'', eta:'', gate:'', carousel:'', weather:'', delayCode:'',
+      flight:'', date:'', regn:'', config:'', sta:'', eta:'', ata:'', gate:'', carousel:'', weather:'', delayCode:'',
       arr_cn:'', arr_ism:'',
       arr_pax_j:'', arr_pax_w:'', arr_pax_y:'', arr_pax_inf:'',
       arr_wchr_s:'', arr_wchr_s_details:'', arr_wchc:'', arr_maas:'', arr_meda:'', arr_umnr:'', arr_svip:'', arr_deaf:'', arr_blnd:'',
@@ -1625,7 +1949,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===========================
     var FIELD_LABELS = {
       flight:'Flight', date:'Date', regn:'REGN', config:'Config', sta:'STA', eta:'ETA',
-      gate:'Gate', carousel:'Carousel', weather:'Weather', delayCode:'Delay Code',
+      gate:'Gate', carousel:'Carousel', weather:'Weather', delayCode:'Delay Code(s) ex HKG',
       arr_cn:'Arr CN', arr_ism:'Arr ISM',
       arr_pax_j:'Arr PAX J', arr_pax_w:'Arr PAX W', arr_pax_y:'Arr PAX Y', arr_pax_inf:'Arr PAX INF',
       arr_wchr_s:'WCHR/S', arr_wchr_s_details:'WCHR/S Details', arr_wchc:'WCHC', arr_maas:'MAAS',
@@ -1634,7 +1958,7 @@ document.addEventListener('DOMContentLoaded', function() {
       arr_doorside:'Doorside', F19:'Doorside', arr_total_bags:'Arr Total Bags', arr_first_bag:'First Bag', arr_last_bag:'Last Bag',
       dep_std:'STD', dep_etd:'ETD', dep_board_time:'Board Time', dep_dct:'DCT',
       dep_gate_close:'Gate Close', dep_blk:'BLK', dep_eta_hkg:'ETA HKG', dep_sta_hkg:'STA HKG',
-      dep_delay:'Delay', dep_px_dt:'PX/DT Crew',
+      dep_delay:'Delay Code(s) ex HKG', dep_px_dt:'PX/DT Crew',
       dep_cn:'Dep CN', dep_ism:'Dep ISM', dep_crew_fig:'Crew Fig', dep_ft:'FT',
       dep_cat_j:'CAT J', dep_cat_w:'CAT W', dep_cat_y:'CAT Y',
       dep_cargo_type:'Cargo Type', dep_cargo_kg:'Cargo KG',
@@ -1685,6 +2009,50 @@ document.addEventListener('DOMContentLoaded', function() {
       return parseInt(m[1],10)*60 + parseInt(m[2],10);
     }
 
+    // Parse the Flight Information date field (e.g. "03 May 2026", "03/05/2026")
+    function parseFlightDateStr(s) {
+      if (!s) return null;
+      var t = String(s).trim();
+      var m = /^(\d{1,2})\s*[-\/]?\s*([A-Za-z]{3,9})(?:[\s\-\/]+(\d{4}))?$/.exec(t);
+      if (m) {
+        var day = parseInt(m[1],10);
+        var monMap = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+        var mon = monMap[m[2].substr(0,3).toLowerCase()] || 0;
+        var yr = m[3] ? parseInt(m[3],10) : (new Date()).getFullYear();
+        return new Date(yr, mon, day);
+      }
+      var p = Date.parse(t);
+      if (!isNaN(p)) return new Date(p);
+      var n = /^(\d{1,2})[-\/](\d{1,2})(?:[-\/](\d{4}))?$/.exec(t);
+      if (n) {
+        var dayN = parseInt(n[1],10);
+        var monN = parseInt(n[2],10) - 1;
+        var yrN = n[3] ? parseInt(n[3],10) : (new Date()).getFullYear();
+        return new Date(yrN, monN, dayN);
+      }
+      return null;
+    }
+
+    // Detect the ETA HKG day offset (+1/+2) from the YVR->HKG time difference.
+    // HKG is 15h ahead of YVR during PDT, 16h during PST. The offset is how many times the
+    // HKG clock crosses midnight relative to the YVR departure calendar day:
+    // floor((depMin + hkgLead)/1440)  -> HKG date at the moment of departure
+    // plus 1 more if the arrival itself crosses another HKG midnight.
+    // depDayBase = extra days the departure is already past the flight's calendar day
+    // (e.g. a next-day 03:36 ATD for a 23:00 flight -> depDayBase 1), so the +1 shows correctly.
+    function computeEtaHkgDayOffset(depMin, etaClockMin, depDayBase) {
+      var now = new Date();
+      var yr = now.getFullYear();
+      function nthSunday(y, month, n) { var d = new Date(y, month, 1); var s = 0; while (true) { if (d.getDay() === 0) { s++; if (s === n) return d; } d.setDate(d.getDate() + 1); } return d; }
+      var dstStart = nthSunday(yr, 2, 2);   // 2nd Sunday March
+      var dstEnd = nthSunday(yr, 10, 1);    // 1st Sunday November
+      var isDST = now >= dstStart && now < dstEnd;
+      var hkgLead = isDST ? 15 * 60 : 16 * 60; // minutes HKG is ahead of YVR
+      var eta = ((etaClockMin % 1440) + 1440) % 1440;
+      var off = (depDayBase || 0) + Math.floor((depMin + hkgLead) / 1440) + (eta + hkgLead >= 2880 ? 1 : 0);
+      return off > 2 ? 2 : (off < 0 ? 0 : off);
+    }
+
     // ===========================
     // TOAST
     // ===========================
@@ -1710,13 +2078,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===========================
     // REFRESH SUMMARY SPANS
     // ===========================
-    function refreshSummarySpans() {
-      document.querySelectorAll('[data-summary]').forEach(function(el) {
-        var key = el.getAttribute('data-summary');
-        var val = (state && state[key] && String(state[key]).trim()) ? state[key] : '-';
-        el.textContent = val;
-      });
-    }
+     function refreshSummarySpans() {
+       document.querySelectorAll('[data-summary]').forEach(function(el) {
+         var key = el.getAttribute('data-summary');
+         var val = (state && state[key] && String(state[key]).trim()) ? state[key] : (key === 'flight' ? '' : '-');
+         el.textContent = val;
+       });
+     }
 
     // ===========================
     // resolveActiveLoading + refreshFinalLoading
@@ -1760,10 +2128,10 @@ document.addEventListener('DOMContentLoaded', function() {
       { name:'Pax Off Started', offset: 5 },
       { name:'Unloading Started', offset: 5 },
       { name:'L2 Pax Off Started', offset: 5 },
+      { name:'First Bag on Carousel', offset: 20 },
       { name:'L1 Pax Off Completed', offset: 20 },
       { name:'Pax Off Completed', offset: 30 },
       { name:'Unloading Completed', offset: 40 },
-      { name:'First Bag on Carousel', offset: 20 },
       { name:'Last Bag on Carousel', offset: 45 }
     ];
 
@@ -1773,11 +2141,11 @@ document.addEventListener('DOMContentLoaded', function() {
       { name:'Catering Started', offset: -80 },
       { name:'Cockpit Crew Onboard', offset: -60 },
       { name:'Cabin Crew Onboard', offset: null },
+      { name:'Loading Started', offset: -60 },
+      { name:'Security Check Started', offset: null },
       { name:'Catering Completed', offset: -50 },
       { name:'Cleaning Completed', offset: null },
       { name:'Triangle Handshake', offset: null },
-      { name:'Loading Started', offset: -60 },
-      { name:'Security Check Started', offset: null },
       { name:'First Coach Departed (RSO)', offset: null },
       { name:'First Coach Arr A/C (RSO)', offset: null },
       { name:'Security Check Completed', offset: -40 },
@@ -1801,10 +2169,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // PAX LOADING TABLE ROWS
     // ===========================
     var paxLoadRows = [
-      { label:'Loading (L36)',      keys:['load_j','load_w','load_y','load_inf'], hasInf: true },
-      { label:'Sublo (L37)',        keys:['sublo_j','sublo_w','sublo_y','sublo_inf'], hasInf: true },
-      { label:'NET (L38)',          keys:['net_j','net_w','net_y','net_inf'], hasInf: true },
-      { label:'Total (L39)',        keys:['total_j','total_w','total_y','total_inf'], hasInf: true },
+      { label:'Loading',      keys:['load_j','load_w','load_y','load_inf'], hasInf: true },
+      { label:'Sublo',        keys:['sublo_j','sublo_w','sublo_y','sublo_inf'], hasInf: true },
+      { label:'NET',          keys:['net_j','net_w','net_y','net_inf'], hasInf: true },
+      { label:'Total',        keys:['total_j','total_w','total_y','total_inf'], hasInf: true },
       { label:'FINAL',              keys:['final_j','final_w','final_y','final_inf'], hasInf: true },
       { label:'FINAL REV 1',        keys:['final_rev1_j','final_rev1_w','final_rev1_y','final_rev1_inf'], hasInf: true },
       { label:'FINAL REV 2',        keys:['final_rev2_j','final_rev2_w','final_rev2_y','final_rev2_inf'], hasInf: true }
@@ -1890,17 +2258,42 @@ document.addEventListener('DOMContentLoaded', function() {
       if (el) el.textContent = t;
     }
 
-    function renderActivityTable(tbodyId, defs, baseTimeKey, type, actualObj) {
+    function renderActivityTable(tbodyId, defs, baseTimeKey, type, actualObj, baseShift) {
       var tbody = document.getElementById(tbodyId);
-      if (!tbody) return;
+      if (!tbody) return null;
+      var shift = baseShift || 0; // turnaround compression shift (departure only)
       var baseMin = parseTime(state[baseTimeKey]);
       var html = '';
+      var targetsOut = [];
+      var prevOrigTarget = null;
+      var drift = 0; // cumulative drift from most recently logged actual, applied to future un-logged targets
+      var prevAbsTarget = null; // for detecting the schedule crossing midnight
+      var dayOffset = 0; // becomes 1440 once the schedule passes midnight (next-day activities)
+      // Anchor targets to the flight date and the logged actual to the current date, so the
+      // difference between the Flight Information date and today's date drives the variance
+      // (e.g. flight 04-Sep target 12:37, actual logged 01:32 on 05-Sep -> +12:55).
+      var now0 = new Date();
+      var todayMid = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
+      var fDate = parseFlightDateStr(state.date);
+      var actualDayOffset = 0; // days from the flight date to today
+      if (fDate) {
+        var fMid = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate()).getTime();
+        actualDayOffset = Math.round((todayMid - fMid) / 86400000);
+      }
       for (var i = 0; i < defs.length; i++) {
         var act = defs[i];
-        var target = null;
+        var origTarget = null;
         if (act.offset !== null && baseMin !== null) {
-          target = baseMin + act.offset;
+          origTarget = baseMin + act.offset + shift;
+          prevOrigTarget = origTarget;
+        } else if (act.offset === null && prevOrigTarget !== null) {
+          origTarget = prevOrigTarget;
         }
+        // Detect the schedule crossing midnight (a big drop from the previous target)
+        if (prevAbsTarget !== null && origTarget !== null && origTarget < prevAbsTarget - 720) dayOffset += 1440;
+        var target = origTarget !== null ? origTarget + drift : null;
+        targetsOut.push(target);
+        if (target !== null) prevAbsTarget = target;
         var targetStr = target !== null ? fmtMin(target) : '\u2014';
         var logged = actualObj[i];
         var actualCell = '';
@@ -1916,72 +2309,191 @@ document.addEventListener('DOMContentLoaded', function() {
             '<button class="act-edit-btn" data-ms-type="' + type + '" data-ms-idx="' + i + '" title="Manual input">&#9998;</button>' +
             '</span>';
         }
-        html += '<tr><td>' + act.name + '</td><td>' + targetStr + '</td><td>' + actualCell + '</td></tr>';
+        var variance = '\u2014';
+        if (target !== null && logged) {
+          var actualMin = parseTime(logged);
+          if (actualMin !== null) {
+            // Anchor the target to the flight date (plus any schedule midnight rollover) and
+            // the actual to today's date via actualDayOffset. When the flight date is already
+            // in the past (actualDayOffset > 0), the date anchor alone places the actual on the
+            // correct day - the schedule's internal midnight rollover (dayOffset) must NOT be
+            // added again, or a post-drift activity (e.g. Chocks On 03:35 after a 03:34 target)
+            // would be read as next-day (+24h). The >6h-early roll-forward only applies when
+            // there is no date anchor at all.
+            var targetAbs = target; // flight-date-based minutes (may exceed 1440 via offsets)
+            var actualAbs = actualMin + actualDayOffset * 1440 + (actualDayOffset > 0 ? 0 : dayOffset);
+            if (actualDayOffset === 0 && dayOffset === 0) {
+              while (actualAbs - targetAbs < -360) actualAbs += 1440;
+            }
+            var diffMin = actualAbs - targetAbs;
+            var sign = diffMin >= 0 ? '+' : '-';
+            var absMin = Math.abs(diffMin);
+            var h = Math.floor(absMin / 60);
+            var m = absMin % 60;
+            variance = sign + (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+            // Shift all subsequent un-logged targets by this activity's real drift
+            if (origTarget !== null) drift = actualAbs - actualDayOffset * 1440 - origTarget;
+          }
+        }
+        var targetTdStyle = (shift > 0 && target !== null) ? ' style="color:#DC2626;font-weight:700;"' : '';
+        var varianceColor = (variance.charAt(0) === '+') ? '#DC2626' : '#059669';
+        html += '<tr><td>' + act.name + '</td><td' + targetTdStyle + '>' + targetStr + '</td><td>' + actualCell + '</td><td style="text-align:center;font-weight:600;color:' + varianceColor + ';">' + variance + '</td></tr>';
       }
       tbody.innerHTML = html;
+      return targetsOut;
+    }
+
+    // Standard turnaround is 95 min (ATA -> ETD). If the logged ATA leaves
+    // less than 95 min to ETD, shift all departure targets later by the shortfall.
+    // ATA is anchored to the flight date vs today (same as the milestone tables), so a
+    // delayed next-day ATA (e.g. 01:32 logged on 05-Sep for an 04-Sep flight) is handled.
+    function computeDepTurnaroundShift() {
+      var ataMin = arrActual[0] ? parseTime(arrActual[0]) : null;
+      var etdMin = parseTime(state.dep_etd);
+      // Ignore an auto-adjusted ETD (set from a prior compression) to avoid a feedback loop
+      if (etdMin !== null && _autoDepTimes.etd && state.dep_etd === _autoDepTimes.etd) {
+        etdMin = parseTime(state.dep_std);
+      }
+      if (etdMin === null) etdMin = parseTime(state.dep_std);
+      if (ataMin === null || etdMin === null) return 0;
+      // Days between the flight date and today push the ATA forward (next-day arrival)
+      var now0 = new Date();
+      var todayMid = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
+      var fDate = parseFlightDateStr(state.date);
+      var dayAdv = 0;
+      if (fDate) {
+        var fMid = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate()).getTime();
+        dayAdv = Math.round((todayMid - fMid) / 86400000);
+      }
+      var ataAbs = ataMin + dayAdv * 1440;
+      // ETD is scheduled on the flight date; roll it forward so it never sits before the ATA
+      // (a heavily delayed arrival forces the departure later). No upper clamp.
+      var etdAbs = etdMin;
+      while (etdAbs <= ataAbs) etdAbs += 1440;
+      var turn = etdAbs - ataAbs;
+      return turn < 95 ? (95 - turn) : 0;
+    }
+
+    // Track last auto-computed values so manual user edits are not overwritten
+    var _autoDepTimes = { etd: null, board: null, dct: null, gateclose: null };
+
+    // Auto-populate ETD / Board Time / DCT / Gate Close from the (possibly
+    // compressed) departure targets, based on the 95-min turnaround.
+    // depTargets indices: 13 Boarding Signal Released, 23 Last Pax Door Closed, 25 ATD.
+    function syncDepAutoTimeFields(depTargets, shift) {
+      if (!depTargets) return;
+      function applyField(key, elId, autoKey, minutes, force) {
+        if (minutes === null || minutes === undefined) return;
+        var v = fmtMin(minutes);
+        var el = document.getElementById(elId);
+        var cur = el ? el.value : (state[key] || '');
+        if (force || !cur || cur === _autoDepTimes[autoKey]) {
+          state[key] = v;
+          if (el) el.value = v;
+        }
+        _autoDepTimes[autoKey] = v;
+      }
+      var atdTarget = depTargets[25];
+      if (shift > 0 && atdTarget !== null && atdTarget !== undefined) {
+        // ATD becomes the new ETD when the schedule is compressed (force overwrite)
+        applyField('dep_etd', 'f-dep_etd', 'etd', atdTarget, true);
+      } else {
+        _autoDepTimes.etd = null;
+      }
+      applyField('dep_board_time', 'f-dep_board_time', 'board', depTargets[13], false);
+      applyField('dep_dct', 'f-dep_dct', 'dct', depTargets[23], false);
+      if (atdTarget !== null && atdTarget !== undefined) {
+        applyField('dep_gate_close', 'f-dep_gate_close', 'gateclose', atdTarget - 15, false);
+      }
     }
 
     function renderActivities() {
       renderActivityTable('arr-milestones-a1', arrActivities, 'eta', 'arr', arrActual);
-      renderActivityTable('dep-milestones-e5', depActivities, 'dep_std', 'dep', depActual);
+      var depShift = computeDepTurnaroundShift();
+      var depTargets = renderActivityTable('dep-milestones-e5', depActivities, 'dep_std', 'dep', depActual, depShift);
       attachActivityListeners();
+      updateATAFromArrival();
+      syncBaggageAutoFields();
+      syncDepAutoTimeFields(depTargets, depShift);
+      if (typeof updateETDCountdown === 'function') updateETDCountdown();
+    }
+
+    // First Bag / Last Bag auto-populate from logged actual times
+    // (First Bag on Carousel = arrActivities index 7, Last Bag on Carousel = index 11)
+    function syncBaggageAutoFields() {
+      // Prefer the logged activity actual time; fall back to any previously imported value
+      if (arrActual[7]) state.arr_first_bag = arrActual[7];
+      if (arrActual[11]) state.arr_last_bag = arrActual[11];
+      var fbEl = document.getElementById('f-arr_first_bag');
+      var lbEl = document.getElementById('f-arr_last_bag');
+      if (fbEl) fbEl.value = state.arr_first_bag || '';
+      if (lbEl) lbEl.value = state.arr_last_bag || '';
+    }
+
+    function updateATAFromArrival() {
+      var ataField = document.getElementById('f-ata');
+      if (!ataField) return;
+      if (arrActual[0]) {
+        ataField.value = arrActual[0];
+      } else {
+        ataField.value = '';
+      }
     }
 
     function attachActivityListeners() {
-      // Edit (pencil) button — prompt for manual time
+      // Edit (pencil) button — inline time input (prompt() is blocked on iPad/iOS)
       document.querySelectorAll('.act-edit-btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
           var type = btn.dataset.msType;
           var idx  = parseInt(btn.dataset.msIdx);
           var cur  = (type === 'arr') ? (arrActual[idx]||'') : (depActual[idx]||'');
-          var val  = prompt('Enter actual time (HHMM, HH:MM, or HH:MM:SS):', cur);
-          if (val === null) return;
-          val = val.trim();
-          if (val === '') { resetTime(type, idx); return; }
 
           function normalizeTime(input) {
             input = input.trim();
-            // already colon-formatted
             if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(input)) return input;
-            // only digits entered, try to infer
             if (!/^\d+$/.test(input)) return null;
             var d = input;
-            if (d.length <= 2) {
-              // hours only -> HH:00
-              return pad(parseInt(d,10)) + ':00';
-            }
+            if (d.length <= 2) return pad(parseInt(d,10)) + ':00';
             if (d.length === 3 || d.length === 4) {
-              // HHMM or HMM
-              var h = d.slice(0, d.length-2);
-              var m = d.slice(-2);
+              var h = d.slice(0, d.length-2); var m = d.slice(-2);
               return pad(parseInt(h,10)) + ':' + pad(parseInt(m,10));
             }
             if (d.length === 5 || d.length === 6) {
-              // HHMMSS or HMMSS
-              var h2 = d.slice(0, d.length-4);
-              var m2 = d.slice(-4, d.length-2);
-              var s2 = d.slice(-2);
+              var h2 = d.slice(0, d.length-4); var m2 = d.slice(-4, d.length-2); var s2 = d.slice(-2);
               return pad(parseInt(h2,10)) + ':' + pad(parseInt(m2,10)) + ':' + pad(parseInt(s2,10));
             }
             return null;
           }
-
-          var n = normalizeTime(val);
-          if (n) {
+          function commit(n) {
+            if (!n) { showToast('Enter time as HHMM, HH:MM or HH:MM:SS', 'red'); return; }
             var parts = n.split(':');
-            var hh = parseInt(parts[0],10); var mm = parseInt(parts[1],10); var ss = parts[2] ? parseInt(parts[2],10) : null;
+            var hh = parseInt(parts[0],10), mm = parseInt(parts[1],10), ss = parts[2] ? parseInt(parts[2],10) : null;
             if (hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59 && (ss === null || (ss >= 0 && ss <= 59))) {
-              if (type === 'arr') arrActual[idx] = n;
-              else depActual[idx] = n;
-              renderActivities();
-              updateETDCountdown();
-            } else {
-              alert('Entered time is out of range (HH 0-23, MM/SS 0-59)');
-            }
-          } else {
-            alert('Please enter time as HHMM (e.g. 0204), HH:MM, or HH:MM:SS');
+              if (type === 'arr') arrActual[idx] = n; else depActual[idx] = n;
+              renderActivities(); updateETDCountdown();
+            } else { showToast('Time out of range (HH 0-23, MM/SS 0-59)', 'red'); }
           }
+
+          // Replace the button cell with an inline input + confirm/cancel
+          var cell = btn.parentNode;
+          if (!cell || cell.querySelector('.act-inline-input')) return;
+          var wrap = document.createElement('span');
+          wrap.style.cssText = 'display:inline-flex;align-items:center;gap:4px;';
+          wrap.innerHTML = '<input type="text" class="act-inline-input" value="' + cur + '" placeholder="HH:MM" style="width:70px;padding:4px 6px;font-size:13px;font-family:monospace;border:1px solid #005C5C;border-radius:4px;" />' +
+            '<button type="button" class="act-inline-ok" style="background:#1a6e4e;color:#fff;border:none;border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer;">✓</button>' +
+            '<button type="button" class="act-inline-x" style="background:#6B7280;color:#fff;border:none;border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer;">✕</button>';
+          cell.innerHTML = '';
+          cell.appendChild(wrap);
+          var input = wrap.querySelector('.act-inline-input');
+          input.focus(); input.select();
+          function finish(save) {
+            if (save) { var v = input.value.trim(); if (v === '') { resetTime(type, idx); return; } commit(normalizeTime(v)); }
+            else renderActivities();
+          }
+          wrap.querySelector('.act-inline-ok').addEventListener('click', function(ev){ ev.stopPropagation(); finish(true); });
+          wrap.querySelector('.act-inline-x').addEventListener('click', function(ev){ ev.stopPropagation(); finish(false); });
+          input.addEventListener('keydown', function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); finish(true); } else if (ev.key === 'Escape') { finish(false); } });
         });
       });
       // Delete (×) button
@@ -2017,7 +2529,8 @@ function renderPaxLoadTable() {
         var row = paxLoadRows[r];
         var isFinal = row.label === 'FINAL' || row.label === 'FINAL REV 1' || row.label === 'FINAL REV 2';
         var isRev = row.label === 'FINAL REV 1' || row.label === 'FINAL REV 2';
-        var cls = isFinal ? 'font-extrabold text-cx-teal' : '';
+        var cls = isFinal ? 'text-cx-teal' : '';
+        var totalCls = isFinal ? 'text-cx-teal' : '';
         var inputCls = isRev ? 'pax-tbl-input pax-no-indicator' : 'pax-tbl-input';
         var cells = '';
         cells += '<td><input class="' + inputCls + '" data-key="' + row.keys[0] + '" value="' + (state[row.keys[0]]||'') + '" inputmode="numeric" placeholder=""></td>';
@@ -2030,7 +2543,7 @@ function renderPaxLoadTable() {
         }
         var total = 0;
         row.keys.forEach(function(k) { total += numOrZero(state[k]); });
-        cells += '<td><div class="total-cell ' + cls + '">' + (total || '\u2014') + '</div></td>';
+        cells += '<td><div class="total-cell ' + totalCls + '">' + (total || '\u2014') + '</div></td>';
         html += '<tr><td class="' + cls + '">' + row.label + '</td>' + cells + '</tr>';
       }
       tbody.innerHTML = html;
@@ -2070,49 +2583,68 @@ function renderPaxLoadTable() {
             '<div><div class="sum-label">Config</div><div class="sum-value">' + v('config') + '</div></div>' +
             '<div><div class="sum-label">Gate</div><div class="sum-value">' + v('gate') + '</div></div>' +
             '<div><div class="sum-label">Carousel</div><div class="sum-value">' + v('carousel') + '</div></div>' +
-            '<div><div class="sum-label">STA / ETA</div><div class="sum-value">' + v('sta') + ' / ' + v('eta') + '</div></div>' +
             '<div><div class="sum-label">Delay</div><div class="sum-value">' + v('delayCode') + '</div></div>' +
           '</div>' +
         '</div>' +
         '<div class="card">' +
           '<div class="section-hdr" style="margin-top:0;">Arrival</div>' +
-          '<div class="grid grid-cols-5 gap-3 text-center">' +
+          '<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">' +
             '<div><div class="sum-label">CN</div><div class="sum-value">' + v('arr_cn') + '</div></div>' +
             '<div><div class="sum-label">ISM</div><div class="sum-value">' + v('arr_ism') + '</div></div>' +
+            '<div><div class="sum-label">STA / ETA / ATA</div><div class="sum-value">' + v('sta') + ' / ' + v('eta') + ' / ' + (arrActual[0] || v('ata')) + '</div></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="section-hdr" style="margin-top:0;">Arrival Loading</div>' +
+          '<div class="grid grid-cols-5 gap-3 text-center">' +
             '<div><div class="sum-label">J</div><div class="sum-value">' + (state.arr_pax_j||'-') + '</div></div>' +
             '<div><div class="sum-label">W</div><div class="sum-value">' + (state.arr_pax_w||'-') + '</div></div>' +
-            '<div><div class="sum-label">PAX Total</div><div class="sum-value font-extrabold text-cx-teal">' + (arrTotal||'-') + '</div></div>' +
+            '<div><div class="sum-label">Y</div><div class="sum-value">' + (state.arr_pax_y||'-') + '</div></div>' +
+            '<div><div class="sum-label">+INF</div><div class="sum-value">' + (state.arr_pax_inf||'-') + '</div></div>' +
+            '<div><div class="sum-label">Total</div><div class="sum-value text-cx-teal">' + (arrTotal||'-') + '</div></div>' +
           '</div>' +
           '<div class="mt-4">' +
             '<div class="sum-label" style="display:block;margin-bottom:8px;">Special Handling</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
               ['WCHR/S:'+(state.arr_wchr_s||0),'WCHC:'+(state.arr_wchc||0),'MAAS:'+(state.arr_maas||0),'MEDA:'+(state.arr_meda||0),'UMNR:'+(state.arr_umnr||0),'SVIP:'+(state.arr_svip||0),'DEAF:'+(state.arr_deaf||0),'BLND:'+(state.arr_blnd||0)].map(function(s) {
                 var val = parseInt(s.split(':')[1]); var bg = val ? 'bg-cx-teal text-white' : 'bg-gray-100 text-gray-500'; var display = val ? val : '-';
-                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:'+ (val ? 'white' : '#111827')+';">'+display+'</div><div style="font-size:0.7rem;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+s.split(':')[0]+'</div></div>';
+                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;min-width:70px;text-align:center;flex-shrink:0;height:auto;overflow:visible;"><div style="font-size:0.95rem;font-weight:600;color:'+ (val ? 'white' : '#111827')+';white-space:normal;overflow:visible;word-break:break-word;">'+display+'</div><div style="font-size:0.7rem;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+s.split(':')[0]+'</div></div>';
               }).join('') +
             '</div>' +
           '</div>' +
         '</div>' +
         '<div class="card">' +
           '<div class="section-hdr" style="margin-top:0;">Departure</div>' +
-          '<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">' +
+          '<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">' +
             '<div><div class="sum-label">CN</div><div class="sum-value">' + v('dep_cn') + '</div></div>' +
             '<div><div class="sum-label">ISM</div><div class="sum-value">' + v('dep_ism') + '</div></div>' +
             '<div><div class="sum-label">STD / ETD</div><div class="sum-value">' + v('dep_std') + ' / ' + v('dep_etd') + '</div></div>' +
-            '<div><div class="sum-label">Crew Fig</div><div class="sum-value">' + v('dep_crew_fig') + '</div></div>' + '<div><div class="sum-label">PX/DT Crew</div><div class="sum-value">' + v('dep_px_dt') + '</div></div>' +
           '</div>' +
-          '<div class="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-4">' +
-            '<div><div class="sum-label">Cargo</div><div class="sum-value">' + v('dep_cargo_type') + ' \u2014 ' + v('dep_cargo_kg') + ' kg</div></div>' +
-            '<div><div class="sum-label">Total Fuel</div><div class="sum-value">' + v('dep_total_fuel') + ' t</div></div>' +
+          '<div class="mt-3 grid grid-cols-2 gap-4">' +
+            '<div><div class="sum-label">Crew Fig</div><div class="sum-value">' + v('dep_crew_fig') + '</div></div>' +
+            '<div><div class="sum-label">PX/DT Crew</div><div class="sum-value">' + v('dep_px_dt') + '</div></div>' +
           '</div>' +
         '</div>' +
         '<div class="card">' +
-          '<div class="section-hdr" style="margin-top:0;">Weight (KG)</div>' +
-          '<div class="grid grid-cols-3 gap-4">' +
+          '<div class="section-hdr" style="margin-top:0;">Weight Fuel Cargo and Baggage Details</div>' +
+          '<div class="grid grid-cols-4 gap-4">' +
+            '<div><div class="sum-label">Cargo</div><div class="sum-value">' + v('dep_cargo_type') + ' — ' + v('dep_cargo_kg') + ' kg</div></div>' +
+            '<div><div class="sum-label">Pre Fuel (t)</div><div class="sum-value">' + v('dep_pre_fuel') + '</div></div>' +
+            '<div><div class="sum-label">Total Fuel (t)</div><div class="sum-value">' + v('dep_total_fuel') + '</div></div>' +
+            '<div><div class="sum-label">Actual Fuel (t)</div><div class="sum-value">' + v('dep_actual_fuel') + '</div></div>' +
+          '</div>' +
+          '<div class="grid grid-cols-4 gap-4 mt-3">' +
             '<div><div class="sum-label">MZFW (KG)</div><div class="sum-value">' + v('dep_mzfw') + '</div></div>' +
             '<div><div class="sum-label">EZFW (KG)</div><div class="sum-value">' + v('dep_ezfw') + '</div></div>' +
-            '<div><div class="sum-label">Underload (KG)</div><div class="sum-value">' + v('Q31') + '</div></div>' +
             '<div><div class="sum-label">AZFW (KG)</div><div class="sum-value">' + v('dep_azfw') + '</div></div>' +
+            '<div><div class="sum-label">Underload (KG)</div><div class="sum-value">' + v('Q31') + '</div></div>' +
+          '</div>' +
+          '<div class="grid grid-cols-5 gap-4 mt-3">' +
+            '<div><div class="sum-label">Total Bags</div><div class="sum-value">' + v('dep_total_bags') + '</div></div>' +
+            '<div><div class="sum-label">Crew Bags</div><div class="sum-value">' + v('dep_crew_bags') + '</div></div>' +
+            '<div><div class="sum-label">STRL</div><div class="sum-value">' + v('dep_strl') + '</div></div>' +
+            '<div><div class="sum-label">WCH</div><div class="sum-value">' + v('dep_wch') + '</div></div>' +
+            '<div><div class="sum-label">Carry-On Needed</div><div class="sum-value">' + v('dep_carry_on') + '</div></div>' +
           '</div>' +
         '</div>' +
         '<div class="card">' +
@@ -2122,35 +2654,26 @@ function renderPaxLoadTable() {
             '<div><div class="sum-label">W</div><div class="sum-value" id="final-loading-w">-</div></div>' +
             '<div><div class="sum-label">Y</div><div class="sum-value" id="final-loading-y">-</div></div>' +
             '<div><div class="sum-label">INF</div><div class="sum-value" id="final-loading-inf">-</div></div>' +
-            '<div><div class="sum-label">Total</div><div class="sum-value font-extrabold text-cx-teal" id="final-loading-total">-</div></div>' +
+            '<div><div class="sum-label">Total</div><div class="sum-value text-cx-teal" id="final-loading-total">-</div></div>' +
           '</div>' +
           '<div class="mt-4">' +
             '<div class="sum-label" style="display:block;margin-bottom:8px;">Special Handling</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_inf_occ">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">INF OCC</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_wchr_s">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">WCHR/S</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_wchc">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">WCHC</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_maas">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">MAAS</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_umnr">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">UMNR</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_svip">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">SVIP</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_meda">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">MEDA</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_deaf">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">DEAF</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_blnd">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">BLND</div></div>' +
-              '<div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;padding:6px 10px;width:70px;text-align:center;flex-shrink:0;"><div style="font-size:0.95rem;font-weight:600;color:#111827;"><span data-summary="dep_chd">-</span></div><div style="font-size:0.7rem;color:#6B7280;margin-top:2px;text-transform:uppercase;font-weight:600;">CHD</div></div>' +
+              ['INF OCC:'+(state.dep_inf_occ||0),'WCHR/S:'+(state.dep_wchr_s||0),'WCHC:'+(state.dep_wchc||0),'MAAS:'+(state.dep_maas||0),'UMNR:'+(state.dep_umnr||0),'SVIP:'+(state.dep_svip||0),'MEDA:'+(state.dep_meda||0),'DEAF:'+(state.dep_deaf||0),'BLND:'+(state.dep_blnd||0),'CHD:'+(state.dep_chd||0)].map(function(s) {
+                var val = parseInt(s.split(':')[1]); var display = val ? val : '-';
+                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;min-width:70px;text-align:center;flex-shrink:0;height:auto;overflow:visible;"><div style="font-size:0.95rem;font-weight:600;color:'+ (val ? 'white' : '#111827')+';white-space:normal;overflow:visible;word-break:break-word;">'+display+'</div><div style="font-size:0.7rem;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+s.split(':')[0]+'</div></div>';
+              }).join('') +
             '</div>' +
           '</div>' +
-          '<div class="mt-3 grid grid-cols-4 sm:grid-cols-8 gap-2 text-center">' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_dm_e') + '</div><div class="sum-label" style="margin-top:2px;">DM/Emer</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_go_s') + '</div><div class="sum-label" style="margin-top:2px;">GO/Saph</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_sl_r') + '</div><div class="sum-label" style="margin-top:2px;">SL/Ruby</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_ic') + '</div><div class="sum-label" style="margin-top:2px;">IC</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_oc') + '</div><div class="sum-label" style="margin-top:2px;">OC</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_hkg') + '</div><div class="sum-label" style="margin-top:2px;">HKG</div></div>' +
-            '<div class="p-2 bg-cx-bg rounded-lg"><div class="sum-value">' + v('dep_cis') + '</div><div class="sum-label" style="margin-top:2px;">CIS</div></div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">' +
+            ['DM/Emer:'+(state.dep_dm_e||''),'GO/Saph:'+(state.dep_go_s||''),'SL/Ruby:'+(state.dep_sl_r||''),'IC:'+(state.dep_ic||''),'OC:'+(state.dep_oc||''),'HKG:'+(state.dep_hkg||''),'CIS:'+(state.dep_cis||'')].map(function(s) {
+              var val = s.split(':')[1]; var display = val && String(val).trim() ? val : '-';
+              return '<div style="background:'+( val && String(val).trim() ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val && String(val).trim() ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;min-width:70px;text-align:center;flex-shrink:0;height:auto;overflow:visible;"><div style="font-size:0.95rem;font-weight:600;color:'+ (val && String(val).trim() ? 'white' : '#111827')+';white-space:normal;overflow:visible;word-break:break-word;">'+display+'</div><div style="font-size:0.7rem;color:'+(val && String(val).trim() ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+s.split(':')[0]+'</div></div>';
+            }).join('') +
           '</div>' +
         '</div>' +
-        '<div class="card"><div class="section-hdr" style="margin-top:0;">Defects</div><div style="padding:12px;font-size:0.95rem;line-height:1.6;color:#111827;whitespace-pre-wrap;">'+(state.defects||'—')+'</div></div>' +
-        '<div class="card"><div class="section-hdr" style="margin-top:0;">Remarks</div><div style="padding:12px;font-size:0.95rem;line-height:1.6;color:#111827;whitespace-pre-wrap;">'+(state.remarks||'—')+'</div></div>';
+        '<div class="card"><div class="section-hdr" style="margin-top:0;">Defects</div><div class="sum-value" style="margin-top:0;white-space:pre-wrap;">'+(state.defects||'—')+'</div></div>' +
+        '<div class="card"><div class="section-hdr" style="margin-top:0;">Remarks</div><div class="sum-value" style="margin-top:0;white-space:pre-wrap;">'+(state.remarks||'—')+'</div></div>';
 
       refreshSummarySpans();
       refreshFinalLoading();
@@ -2179,7 +2702,7 @@ function renderPaxLoadTable() {
       sec('FLIGHT INFORMATION');
       fld('Flight','flight'); fld('Date','date'); fld('REGN','regn'); fld('Config','config');
       fld('STA','sta'); fld('ETA','eta'); fld('Gate','gate'); fld('Carousel','carousel');
-      fld('Weather','weather'); fld('Delay Code','delayCode');
+      fld('Weather','weather'); fld('Delay Code(s) ex HKG','delayCode');
       lines.push('');
 
       sec('ARRIVAL CREW');
@@ -2220,7 +2743,7 @@ function renderPaxLoadTable() {
       fld('STD','dep_std'); fld('ETD','dep_etd'); fld('Board Time','dep_board_time');
       fld('DCT','dep_dct'); fld('Gate Close','dep_gate_close'); fld('BLK','dep_blk');
       fld('FT','dep_ft'); fld('ETA HKG','dep_eta_hkg'); fld('STA HKG','dep_sta_hkg');
-      fld('Delay','dep_delay');
+      fld('Delay Code(s) ex HKG','dep_delay');
       lines.push('');
 
       sec('DEPARTURE CREW');
@@ -2279,6 +2802,32 @@ function renderPaxLoadTable() {
       if(oirVal.trim()) lines.push(oirVal.trim());
       lines.push('');
 
+      sec('ITD TAG CARD');
+      var itdTagCardVal = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
+      if(itdTagCardVal.trim()) {
+        var rows = itdTagCardVal.trim().split('\n').map(function(row){ return row.split('\t'); });
+        if(rows.length > 0) {
+          var colWidths = [];
+          rows.forEach(function(row){
+            row.forEach(function(cell, idx){
+              var len = (cell||'').length;
+              colWidths[idx] = Math.max(colWidths[idx]||0, len);
+            });
+          });
+          rows.forEach(function(row){
+            var line = '';
+            row.forEach(function(cell, idx){
+              if(idx < row.length) {
+                var padded = (cell||'').padEnd(colWidths[idx], ' ');
+                line += padded + '  ';
+              }
+            });
+            lines.push(line.trim());
+          });
+        }
+      }
+      lines.push('');
+
       sec('DEP LIR');
       var depLirVal = (document.getElementById('dep-lir-textarea')||{}).value||'';
       if(depLirVal.trim()) lines.push(depLirVal.trim());
@@ -2312,10 +2861,90 @@ function renderPaxLoadTable() {
       return lines.join('\n');
     }
 
-    // ===========================
-    // SAVE / RESTORE
-    // ===========================
+    function buildReportHTML() {
+      return buildPrintReport();
+    }
     var PTS_SAVE_KEY = 'pts_saved_state_v1';
+
+    // ===========================
+    // IMAGE PASTE SUPPORT (content boxes)
+    // ===========================
+    // Content boxes (e.g. Staff Acceptance, Departure Gen Dec) only accept text natively.
+    // This lets a user paste a screenshot (e.g. from Snipping Tool) into the same box;
+    // the image is captured as a data-URL and shown in a small gallery under the textarea,
+    // and travels with saveToLocal/generateShareCode just like the textarea's text.
+    var PASTE_IMAGE_IDS = ['staff-acc-textarea','arr-ptm-textarea','itd-tag-card-textarea','oir-textarea',
+      'dep-lir-textarea','crew-textarea','dep-crew-textarea','dep-gen-dec-textarea','agent-pos-textarea'];
+    var pastedImages = {}; // textareaId -> array of image data-URLs
+
+    function renderPastedImageGallery(id) {
+      var ta = document.getElementById(id);
+      if (!ta) return;
+      var gal = document.getElementById(id + '-gallery');
+      if (!gal) {
+        gal = document.createElement('div');
+        gal.className = 'pasted-image-gallery';
+        gal.id = id + '-gallery';
+        ta.insertAdjacentElement('afterend', gal);
+      }
+      var imgs = pastedImages[id] || [];
+      gal.innerHTML = imgs.map(function(src, idx) {
+        return '<span class="pasted-image-item"><img src="' + src + '" onclick="window.open(this.src,\'_blank\')">' +
+          '<button type="button" class="pi-remove" data-img-id="' + id + '" data-img-idx="' + idx + '" title="Remove image">&times;</button></span>';
+      }).join('');
+    }
+
+    function addPastedImage(id, dataUrl) {
+      if (!pastedImages[id]) pastedImages[id] = [];
+      pastedImages[id].push(dataUrl);
+      renderPastedImageGallery(id);
+    }
+
+    function removePastedImage(id, idx) {
+      if (pastedImages[id]) pastedImages[id].splice(idx, 1);
+      renderPastedImageGallery(id);
+    }
+
+    function clearPastedImages(id) {
+      pastedImages[id] = [];
+      renderPastedImageGallery(id);
+    }
+
+    function attachImagePasteSupport(id) {
+      var ta = document.getElementById(id);
+      if (!ta || ta._imagePasteAttached) return;
+      ta._imagePasteAttached = true;
+      ta.addEventListener('paste', function(e) {
+        var items = (e.clipboardData && e.clipboardData.items) || [];
+        var handled = false;
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].type && items[i].type.indexOf('image/') === 0) {
+            var file = items[i].getAsFile();
+            if (file) {
+              handled = true;
+              (function(fileId){
+                var reader = new FileReader();
+                reader.onload = function(ev) { addPastedImage(fileId, ev.target.result); };
+                reader.readAsDataURL(file);
+              })(id);
+            }
+          }
+        }
+        if (handled) e.preventDefault();
+      });
+    }
+
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest && e.target.closest('.pi-remove');
+      if (btn) { removePastedImage(btn.getAttribute('data-img-id'), parseInt(btn.getAttribute('data-img-idx'), 10)); }
+    });
+
+    function initImagePasteSupport() {
+      PASTE_IMAGE_IDS.forEach(function(id) {
+        attachImagePasteSupport(id);
+        renderPastedImageGallery(id);
+      });
+    }
 
     function saveToLocal() {
       try {
@@ -2324,9 +2953,13 @@ function renderPaxLoadTable() {
         payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
         payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
         payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
+        payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
         payload._dep_lir   = (document.getElementById('dep-lir-textarea')||{}).value||'';
         payload._crew      = (document.getElementById('crew-textarea')||{}).value||'';
         payload._dep_crew  = (document.getElementById('dep-crew-textarea')||{}).value||'';
+        payload._dep_gen_dec = (document.getElementById('dep-gen-dec-textarea')||{}).value||'';
+        payload._agent_pos   = (document.getElementById('agent-pos-textarea')||{}).value||'';
+        payload._images = pastedImages;
         localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(payload));
         showToast('\u2705 Saved! Open this app on any device to restore.', 'green');
       } catch(e) {
@@ -2369,6 +3002,17 @@ function renderPaxLoadTable() {
     function generateShareCode() {
       try {
         var payload = { v: 1, state: state, arrActual: arrActual, depActual: depActual };
+        // Include paste-tab content in share payload
+        payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
+        payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
+        payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
+        payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
+        payload._dep_lir   = (document.getElementById('dep-lir-textarea')||{}).value||'';
+        payload._crew      = (document.getElementById('crew-textarea')||{}).value||'';
+        payload._dep_crew  = (document.getElementById('dep-crew-textarea')||{}).value||'';
+        payload._dep_gen_dec = (document.getElementById('dep-gen-dec-textarea')||{}).value||'';
+        payload._agent_pos   = (document.getElementById('agent-pos-textarea')||{}).value||'';
+        payload._images = pastedImages;
         var code = btoa(encodeURIComponent(JSON.stringify(payload)));
         var el = document.getElementById('share-code-output');
         if (el) el.value = code;
@@ -2393,13 +3037,19 @@ function renderPaxLoadTable() {
         // Restore paste-tab textarea content from shared payload
         (function(){
           var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm',
-                   'oir-textarea':'_oir','dep-lir-textarea':'_dep_lir',
-                   'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew'};
+                   'oir-textarea':'_oir','itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir',
+                   'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew',
+                   'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos'};
           Object.keys(m).forEach(function(id){
             var ta=document.getElementById(id);
-            if(ta&&data[m[id]]) ta.value=data[m[id]];
+            if(ta&&data[m[id]]) {
+              ta.value=data[m[id]];
+              // Rebuild the Excel table preview so imported content shows as a table, not plain text
+              try { processPastedData(ta, ta.value); } catch(e) {}
+            }
           });
         })();
+        if (data._images) { pastedImages = data._images; PASTE_IMAGE_IDS.forEach(renderPastedImageGallery); }
         syncInputsFromState();
         renderActivities();
         renderPaxLoadTable();
@@ -2653,6 +3303,49 @@ function renderPaxLoadTable() {
       lastParsedResult = null;
     }
 
+    // Compute the live (drift/shift-adjusted) targets for one activity list without touching
+    // the DOM, mirroring renderActivityTable. Returns an array of absolute minute targets.
+    function computeActivityTargets(defs, baseTimeKey, shift, actualObj) {
+      var baseMin = parseTime(state[baseTimeKey]);
+      var out = [];
+      var prevOrigTarget = null;
+      var drift = 0;
+      var prevAbsTarget = null;
+      var dayOffset = 0;
+      var now0 = new Date();
+      var todayMid = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
+      var fDate = parseFlightDateStr(state.date);
+      var actualDayOffset = 0;
+      if (fDate) {
+        var fMid = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate()).getTime();
+        actualDayOffset = Math.round((todayMid - fMid) / 86400000);
+      }
+      for (var i = 0; i < defs.length; i++) {
+        var act = defs[i];
+        var origTarget = null;
+        if (act.offset !== null && baseMin !== null) {
+          origTarget = baseMin + act.offset + shift;
+          prevOrigTarget = origTarget;
+        } else if (act.offset === null && prevOrigTarget !== null) {
+          origTarget = prevOrigTarget;
+        }
+        if (prevAbsTarget !== null && origTarget !== null && origTarget < prevAbsTarget - 720) dayOffset += 1440;
+        var target = origTarget !== null ? origTarget + drift : null;
+        out.push(target);
+        if (target !== null) prevAbsTarget = target;
+        var logged = actualObj[i];
+        if (target !== null && logged) {
+          var am = parseTime(logged);
+          if (am !== null) {
+            var aAbs = am + actualDayOffset * 1440 + dayOffset;
+            while (aAbs - target < -360) aAbs += 1440;
+            if (origTarget !== null) drift = aAbs - actualDayOffset * 1440 - origTarget;
+          }
+        }
+      }
+      return out;
+    }
+
     // ===========================
     // ETD + BOARDING COUNTDOWN
     // ===========================
@@ -2691,6 +3384,13 @@ function renderPaxLoadTable() {
 
       var etdMin = parseTime(state.dep_etd); // minutes from midnight
       var stdMin = parseTime(state.dep_std);
+      // Live (drift/shift-adjusted) Departure PTS targets drive the ETD countdown (ATD idx 25).
+      var depShiftForEtd = computeDepTurnaroundShift();
+      var depTargetsForEtd = computeActivityTargets(depActivities, 'dep_std', depShiftForEtd, depActual);
+      var atdTableMin = (depTargetsForEtd && depTargetsForEtd[25] !== null && depTargetsForEtd[25] !== undefined) ? ((depTargetsForEtd[25] % 1440) + 1440) % 1440 : null;
+      // Only override the ETD field with the ATD table target when compression pushed ATD
+      // beyond the scheduled STD (depShiftForEtd > 0). Otherwise a manual ETD stands.
+      if (atdTableMin !== null && depShiftForEtd > 0) etdMin = atdTableMin;
       
       // Calculate delay from precision timing schedule (if actual > target)
       var delayMinutes = 0;
@@ -2718,32 +3418,56 @@ function renderPaxLoadTable() {
         }
       } catch (e) { delayMinutes = 0; }
       
-      // Calculate adjusted ETA HKG with delay
-      var etaHKG = parseHKGTime(state.dep_eta_hkg);
+      // ETA HKG: take the ATD (new ETD) as a real YVR moment, add BLK (flight time), convert
+      // to HKG time for the arrival clock+date, then label the day change vs the ORIGINAL STD
+      // date (0 / +1 / +2). Uses proper timezone conversion (America/Vancouver -> Asia/Hong_Kong).
       var etaHKGStr = state.dep_eta_hkg ? state.dep_eta_hkg : '';
       var adjustedEtaHKGStr = etaHKGStr;
-      
-      if (delayMinutes > 0 && etaHKGStr) {
-        // Parse ETA HKG and add delay
-        var etaHKGParts = etaHKGStr.split(':');
-        if (etaHKGParts.length >= 2) {
-          var etaHKGHours = parseInt(etaHKGParts[0], 10);
-          var etaHKGMins = parseInt(etaHKGParts[1], 10);
-          var totalMins = etaHKGHours * 60 + etaHKGMins + delayMinutes;
-          var adjHours = Math.floor(totalMins / 60) % 24;
-          var adjMins = totalMins % 60;
-          adjustedEtaHKGStr = pad(adjHours) + ':' + pad(adjMins);
-          if (etaHKGStr.includes('+1')) {
-            // Preserve +1 day indicator if present
-            adjHours = Math.floor(totalMins / 60);
-            if (adjHours >= 24) {
-              adjustedEtaHKGStr = pad(adjHours - 24) + ':' + pad(adjMins) + ' +1';
-            }
+      var blkMin = parseTime(state.dep_blk);
+      if (blkMin === null) blkMin = parseTime(state.dep_ft);
+      // ATD (new ETD) source: logged actual once departed, else the effective ETD (manual
+      // delay or the compressed ATD target) already resolved into etdMin.
+      var atdMinForEta = null;
+      if (depActual[25]) atdMinForEta = parseTime(depActual[25]);
+      else if (etdMin !== null && etdMin !== undefined) atdMinForEta = etdMin;
+      if (atdMinForEta !== null && blkMin !== null && fd) {
+        try {
+          var fmtYVR = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Vancouver', hour12:false, year:'numeric', month:'2-digit', day:'2-digit' });
+          var fmtHKG = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Hong_Kong', hour12:false, hour:'2-digit', minute:'2-digit', year:'numeric', month:'2-digit', day:'2-digit' });
+          // Build a UTC ms for a YVR local wall-clock time: find offset by probing.
+          function yvrWallToUtcMs(y, mo, d, h, mi) {
+            // guess UTC = wall + 7/8h; refine using the formatter's parts
+            var guess = Date.UTC(y, mo, d, h, mi);
+            var parts = new Intl.DateTimeFormat('en-US', { timeZone:'America/Vancouver', hour12:false, year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit', second:'2-digit' }).formatToParts(new Date(guess));
+            function gp(p,n){ for(var i=0;i<p.length;i++) if(p[i].type===n) return parseInt(p[i].value,10); return 0; }
+            var backY=gp(parts,'year'), backMo=gp(parts,'month')-1, backD=gp(parts,'day'), backH=gp(parts,'hour')%24, backMi=gp(parts,'minute');
+            var backUtc = Date.UTC(backY, backMo, backD, backH, backMi);
+            return guess + (guess - backUtc); // add the offset
           }
-        }
+          var y0 = fd.getFullYear(), mo0 = fd.getMonth(), d0 = fd.getDate();
+          // Original STD instant (departure day reference)
+          var stdUtcMs = yvrWallToUtcMs(y0, mo0, d0, Math.floor(stdMin/60), stdMin % 60);
+          // ATD instant: start at STD instant, then add whole days until the ATD clock is
+          // reached at/after STD (ATD is always >= STD for a departure), then it may differ.
+          var atdUtcMs = yvrWallToUtcMs(y0, mo0, d0, Math.floor(atdMinForEta/60), atdMinForEta % 60);
+          while (atdUtcMs < stdUtcMs - 6*3600*1000) atdUtcMs += 86400000; // ATD next day if before STD
+          // Arrival instant (UTC) = ATD + block time
+          var arrUtcMs = atdUtcMs + blkMin * 60000;
+          // Arrival HKG wall clock + date
+          var hp = new Intl.DateTimeFormat('en-GB', { timeZone:'Asia/Hong_Kong', hour12:false, hour:'2-digit', minute:'2-digit', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(arrUtcMs));
+          function gp2(p,n){ for(var i=0;i<p.length;i++) if(p[i].type===n) return parseInt(p[i].value,10); return 0; }
+          var arrHkgH = gp2(hp,'hour') % 24, arrHkgMi = gp2(hp,'minute');
+          var arrHkgDateMs = Date.UTC(gp2(hp,'year'), gp2(hp,'month')-1, gp2(hp,'day'));
+          // Day change = arrival date minus the ORIGINAL STD calendar date (not the new ETD).
+          var stdOrigDateMs = Date.UTC(y0, mo0, d0);
+          var dayChange = Math.round((arrHkgDateMs - stdOrigDateMs) / 86400000);
+          if (dayChange < 0) dayChange = 0;
+          adjustedEtaHKGStr = pad(arrHkgH) + ':' + pad(arrHkgMi) + (dayChange > 0 ? ' +' + dayChange : '');
+        } catch (e) { /* fall back to prior value */ }
       }
-      
+
       var staHKG = parseHKGTime(state.dep_sta_hkg);
+      var etaHKG = parseHKGTime(adjustedEtaHKGStr);
       var etaTimeColor = (etaHKG !== null && staHKG !== null && etaHKG > staHKG) ? '#FCA5A5' : '#ffffff';
       var etaLine = adjustedEtaHKGStr ? '<br><span style="font-size:0.72em;font-weight:500;color:#ffffff;">ETA HKG </span><span style="font-size:0.72em;font-weight:600;color:' + etaTimeColor + ';">' + adjustedEtaHKGStr + '</span>' : '';
 
@@ -2761,24 +3485,31 @@ function renderPaxLoadTable() {
           var todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0,0);
           etdTargetMs = todayMid.getTime() + etdMin*60*1000;
         }
+        // A compressed/late ATD can roll past midnight (e.g. ATD 03:36 for a flight whose
+        // schedule started the prior evening). If the ATD table target is in use and anchoring
+        // to the flight day puts it >12h in the past, roll it forward a day.
+        if (atdTableMin !== null && (nowMs - etdTargetMs) > 12*3600*1000) etdTargetMs += 86400000;
       }
 
       // Update ETD display
       ['etd-countdown','etd-countdown-m'].forEach(function(id) {
         var el = document.getElementById(id); if (!el) return;
+        // Once ATD (idx 25) is logged the aircraft has departed - stop the countdown
+        if (depActual && depActual[25]) { el.innerHTML = '<span style="color:#fff;">Departed</span>' + etaLine; el.style.color = '#fff'; return; }
         if (!etdTargetMs) { el.innerHTML = 'ETD --:--:--' + etaLine; el.style.color = '#fff'; return; }
         var diffSec = Math.round((etdTargetMs - nowMs)/1000);
 
         if (diffSec < 0) {
           // Past ETD - check all three disruption scenarios
-          var hasDepActual = false;
+          // Only show "Departed" if ATD (index 25) is logged, not any other activity
+          var atdLogged = depActual && depActual[25]; // ATD is at index 25 in depActivities
+          var hasDepActual = atdLogged;
           var maxActualMin = null;
           
           try {
             if (typeof depActual !== 'undefined') {
               for (var daKey in depActual) { 
                 if (depActual[daKey]) { 
-                  hasDepActual = true; 
                   var actualTime = parseTime(depActual[daKey]);
                   if (actualTime != null) {
                     // If actual time is much earlier than STD (e.g., 01:53 vs 14:55), assume it's next day
@@ -2823,15 +3554,29 @@ function renderPaxLoadTable() {
           return;
         }
 
-        // Future target -> show countdown
+        // Future target -> if ATD is logged the aircraft has departed; otherwise count down
+        if (depActual && depActual[25]) {
+          el.innerHTML = '<span style="color:#fff;">Departed</span>' + etaLine;
+          el.style.color = '#fff';
+          return;
+        }
         var countdownStr = 'ETD -' + fmtFromSec(diffSec);
         var delayStr = '';
 
-        // Scenario 1: ETD > STD to show Disruption: Delay
-        if (stdMin != null && etdMin != null && etdMin > stdMin) {
-          var delayMins = etdMin - stdMin;
-          var delayH = Math.floor(delayMins/60);
-          var delayM = delayMins % 60;
+        // Disruption: Delay whenever the new ATD target is later than the STD. The turnaround
+        // compression shift already measures how far the schedule pushed out (handles
+        // post-midnight ATD), and the field ETD > STD covers manual delays.
+        var atdLateBy = null;
+        if (depShiftForEtd > 0) {
+          atdLateBy = depShiftForEtd;
+        } else if (stdMin != null && etdMin != null) {
+          var ed = etdMin - stdMin;
+          if (ed < -720) ed += 1440; // post-midnight ETD
+          if (ed > 0) atdLateBy = ed;
+        }
+        if (atdLateBy !== null) {
+          var delayH = Math.floor(atdLateBy/60);
+          var delayM = atdLateBy % 60;
           delayStr = '<br><span style="font-size:0.75em;opacity:0.9;">Disruption: Delay +' + pad(delayH) + ':' + pad(delayM) + '</span>';
           el.style.color = '#FCA5A5';
         } else {
@@ -2843,47 +3588,86 @@ function renderPaxLoadTable() {
         el.style.visibility = 'visible';
       });
 
-      // Boarding: compute target ms for boarding and gate close
-      var btMin = parseTime(state.dep_board_time);
-      var gctMin = parseTime(state.dep_gate_close);
-      var btTargetMs = null, gctTargetMs = null;
-      if (btMin != null) {
-        if (fd) { var fdMid2 = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate(),0,0,0,0); btTargetMs = fdMid2.getTime() + btMin*60*1000; }
-        else { var todayMid2 = new Date(now.getFullYear(), now.getMonth(), now.getDate(),0,0,0,0); btTargetMs = todayMid2.getTime() + btMin*60*1000; }
+      // Boarding & ETD are driven by the Departure PTS table's live (drift/shift-adjusted)
+      // targets: Boarding Signal Released (idx 13) and ATD (idx 25).
+      var depShiftNow = computeDepTurnaroundShift();
+      var depTargetsNow = computeActivityTargets(depActivities, 'dep_std', depShiftNow, depActual);
+      var anchorMin = depActual[13] ? parseTime(depActual[13]) : (depTargetsNow ? depTargetsNow[13] : null);
+      var gctMin2 = depTargetsNow && depTargetsNow[25] !== null && depTargetsNow[25] !== undefined ? (depTargetsNow[25] - 15) : null;
+      var anchorTargetMs = null, gctTargetMs = null;
+      if (anchorMin != null) {
+        if (fd) { var fdMidA = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate(),0,0,0,0); anchorTargetMs = fdMidA.getTime() + anchorMin*60*1000; }
+        else { var todayMidA = new Date(now.getFullYear(), now.getMonth(), now.getDate(),0,0,0,0); anchorTargetMs = todayMidA.getTime() + anchorMin*60*1000; }
       }
-      if (gctMin != null) {
-        if (fd) { var fdMid3 = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate(),0,0,0,0); gctTargetMs = fdMid3.getTime() + gctMin*60*1000; }
-        else { var todayMid3 = new Date(now.getFullYear(), now.getMonth(), now.getDate(),0,0,0,0); gctTargetMs = todayMid3.getTime() + gctMin*60*1000; }
+      if (gctMin2 != null) {
+        if (fd) { var fdMid3 = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate(),0,0,0,0); gctTargetMs = fdMid3.getTime() + gctMin2*60*1000; }
+        else { var todayMid3 = new Date(now.getFullYear(), now.getMonth(), now.getDate(),0,0,0,0); gctTargetMs = todayMid3.getTime() + gctMin2*60*1000; }
       }
 
       ['boarding-countdown','boarding-countdown-m'].forEach(function(id) {
         var bl = document.getElementById(id); if (!bl) return;
-        var gateNum = state.gate && String(state.gate).trim() !== '' ? state.gate : '--';
+        bl.style.display = 'inline-block';
+        bl.style.lineHeight = '1.2';
+        bl.style.minHeight = '28px';
+        bl.style.verticalAlign = 'middle';
         var isMobile = id.includes('-m');
         var sepMargin = isMobile ? '4px' : '10px';
         var sep = '<span style="width:1px;height:28px;background:rgba(255,255,255,0.3);display:inline-block;margin:0 ' + sepMargin + ';vertical-align:middle;flex-shrink:0;font-size:0;"></span>';
-        if (!btTargetMs) { bl.innerHTML = '<span style="color:#fff;vertical-align:middle;">--:--:--</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>'; bl.style.color = '#fff'; return; }
-        var dBoardSec = Math.round((btTargetMs - nowMs)/1000);
+
+        if (!anchorTargetMs) { bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;">--:--:--</span></div>' + sep; bl.style.color = '#fff'; return; }
+        var dBoardSec = Math.round((anchorTargetMs - nowMs)/1000);
         var dGateSec = gctTargetMs ? Math.round((gctTargetMs - nowMs)/1000) : null;
 
-        // Check if within 5 minutes before gate close
-        if (dGateSec !== null && dGateSec > 0 && dGateSec <= 300) {
-          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;"> Gate Closing</span><span style="font-size:0.75em;opacity:0.85;color:#fff;"> -' + fmtFromSec(dGateSec) + '</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>';
-          bl.style.color = '#fff';
+        // Gate Close subline: only from 5 min before gate close onward
+        var gateLine = '';
+        if (dGateSec !== null && dGateSec <= 300) {
+          var gcColor, gcPrefix, gcBlink = '';
+          if (dGateSec <= 0) { gcColor = '#FCA5A5'; gcPrefix = '+'; }
+          else { gcColor = '#FFD700'; gcPrefix = '-'; gcBlink = ' class="blink-countdown"'; }
+          gateLine = '<br><span style="font-size:0.75em;opacity:0.9;color:#fff;">Gate Close </span><span' + gcBlink + ' style="font-size:0.75em;opacity:0.9;color:' + gcColor + ';">' + gcPrefix + fmtFromSec(Math.abs(dGateSec)) + '</span>';
+        }
+
+        // Boarding Closed once Last Pax Onboard (idx 20) is logged - gate close no longer shows
+        var lastPaxLogged = depActual[20];
+        if (lastPaxLogged) {
+          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Closed</span></div>' + sep;
+          bl.style.color = '#FCA5A5';
           return;
         }
-        
-        if (dGateSec !== null && dGateSec <= 0) {
-          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;"> Boarding Closed</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>'; bl.style.color = '#FCA5A5'; return;
-        }
+
+        // "Boarding" main status shows only once Boarding Signal Released is actually logged
+        var boardSignalLogged = depActual[13];
+
+        // Past boarding (signal-released) time
         if (dBoardSec <= 0) {
-          var gateStr = dGateSec !== null ? ', closes -' + fmtFromSec(Math.abs(dGateSec)) : '';
-          bl.innerHTML = '<span style="color:#fff;vertical-align:middle;"> Boarding</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + gateStr + '</span>';
+          if (!boardSignalLogged) {
+            // Past the target with no actual -> keep 'Boarding Soon' + Late Boarding count-up
+            bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Soon</span><br><span style="font-size:0.75em;opacity:0.9;color:#fff;">Late Boarding </span><span class="blink-countdown" style="font-size:0.75em;opacity:0.9;color:#FCA5A5;">+' + fmtFromSec(Math.abs(dBoardSec)) + '</span>' + gateLine + '</div>' + sep;
+          } else {
+            bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding</span>' + gateLine + '</div>' + sep;
+          }
           bl.style.color = '#fff';
           return;
         }
-        bl.innerHTML = '<span style="color:#fff;vertical-align:middle;"> -' + fmtFromSec(dBoardSec) + '</span>' + sep + '<span style="color:#fff;vertical-align:middle;">Gate: ' + gateNum + '</span>';
-        bl.style.color = dBoardSec < 1200 ? '#fff' : '#fff';
+
+        // Within 10 min before the Boarding Signal Released target -> Boarding Soon
+        if (dBoardSec > 0 && dBoardSec <= 600) {
+          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Soon</span>' + gateLine + '</div>' + sep;
+          bl.style.color = '#fff';
+          return;
+        }
+        // More than 10 min before the target -> Boarding Open with countdown
+        bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#fff;font-size:1em;"> Boarding Open </span><span style="color:#fff;font-size:1em;">-' + fmtFromSec(dBoardSec) + '</span></div>' + sep;
+        bl.style.color = '#fff';
+      });
+      
+      // Update gate display
+      ['gate-display', 'gate-display-m'].forEach(function(id) {
+        var gEl = document.getElementById(id);
+        if (gEl) {
+          var gateNum = state.gate && String(state.gate).trim() !== '' ? state.gate : '--';
+          gEl.textContent = 'Gate: ' + gateNum;
+        }
       });
     }
 
@@ -2902,7 +3686,8 @@ function renderPaxLoadTable() {
     // LOCK / UNLOCK FIELDS
     // ===========================
     function lockFields() {
-      document.querySelectorAll('input[data-key], textarea[data-key], select[data-key]').forEach(function(el) {
+      // Lock all fields with values in the PTS tab
+      document.getElementById('tab-pts').querySelectorAll('input[data-key], textarea[data-key], select[data-key]').forEach(function(el) {
         if (el.value && el.value.trim() !== '') {
           el.setAttribute('readonly', 'readonly');
           el.style.pointerEvents = 'none';
@@ -2910,31 +3695,30 @@ function renderPaxLoadTable() {
           el.classList.add('field-locked');
         }
       });
-      ['hdr-lock-badge','hdr-lock-badge-m'].forEach(function(id){
-        var el = document.getElementById(id);
-        if (!el) return;
-        el.style.display = 'inline-flex';
-        el.innerHTML = '\uD83D\uDD12 Locked <button class="lock-toggle-btn lock-badge-btn" style="background:rgba(255,255,255,0.3);border:none;border-radius:99px;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer;margin-left:4px;">Unlock</button>';
-      });
+      var textMobEl = document.getElementById('edit-mode-text-mob');
+      if (textMobEl) textMobEl.textContent = '✏️ Edit Off';
+      var textNavEl = document.getElementById('edit-mode-text-nav');
+      if (textNavEl) textNavEl.textContent = 'Edit Off';
       wireLockBadgeButtons();
+      wireEditModeButtons();
       state._locked = true;
       try { localStorage.setItem('pts_state', JSON.stringify(state)); } catch(e) {}
     }
 
     function unlockFields() {
-      document.querySelectorAll('input[data-key], textarea[data-key], select[data-key]').forEach(function(el) {
+      // Unlock all locked fields in the PTS tab
+      document.getElementById('tab-pts').querySelectorAll('.field-locked').forEach(function(el) {
         el.removeAttribute('readonly');
         el.style.pointerEvents = '';
         el.style.userSelect = '';
         el.classList.remove('field-locked');
       });
-      ['hdr-lock-badge','hdr-lock-badge-m'].forEach(function(id){
-        var el = document.getElementById(id);
-        if (!el) return;
-        el.style.display = 'inline-flex';
-        el.innerHTML = '\uD83D\uDD13 Unlocked <button class="lock-toggle-btn lock-badge-btn" style="background:rgba(255,255,255,0.3);border:none;border-radius:99px;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer;margin-left:4px;">Lock</button>';
-      });
+      var textMobEl = document.getElementById('edit-mode-text-mob');
+      if (textMobEl) textMobEl.textContent = '✏️ Edit On';
+      var textNavEl = document.getElementById('edit-mode-text-nav');
+      if (textNavEl) textNavEl.textContent = 'Edit On';
       wireLockBadgeButtons();
+      wireEditModeButtons();
       state._locked = false;
       try { localStorage.setItem('pts_state', JSON.stringify(state)); } catch(e) {}
     }
@@ -2955,6 +3739,325 @@ function renderPaxLoadTable() {
           });
         }
       });
+    }
+
+    function wireEditModeButtons() {
+      ['btn-edit-mode', 'btn-edit-mode-mob', 'btn-edit-mode-nav'].forEach(function(id) {
+        var btn = document.getElementById(id);
+        if (!btn) return;
+        // Remove old listeners by cloning (removes all event listeners)
+        var newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        // Add new listener
+        newBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Edit button clicked, current state._locked:', state._locked);
+          if (state._locked) {
+            console.log('Unlocking fields...');
+            unlockFields();
+          } else {
+            console.log('Locking fields...');
+            lockFields();
+          }
+        });
+      });
+    }
+
+    // ===========================
+    // PASTE FROM EXCEL HANDLER
+    // ===========================
+    function pasteFromExcel(textareaId) {
+      console.log('pasteFromExcel called with:', textareaId);
+      var textarea = document.getElementById(textareaId);
+      if (!textarea) {
+        console.error('Textarea not found:', textareaId);
+        return;
+      }
+      
+      // Try Clipboard API first
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        console.log('Trying Clipboard API...');
+        textarea.focus();
+        
+        setTimeout(function() {
+          navigator.clipboard.readText().then(function(data) {
+            console.log('Clipboard API succeeded');
+            processPastedData(textarea, data);
+          }).catch(function(err) {
+            console.error('Clipboard API failed:', err.name);
+            // Fallback to modal paste dialog
+            showPasteModal(textarea);
+          });
+        }, 50);
+      } else {
+        // Fallback to modal paste dialog
+        showPasteModal(textarea);
+      }
+    }
+    
+    function showPasteModal(textarea) {
+      // Create modal overlay
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;';
+      
+      var box = document.createElement('div');
+      box.style.cssText = 'background:#fff;border-radius:8px;padding:20px;width:90%;max-width:500px;box-shadow:0 4px 6px rgba(0,0,0,0.1);';
+      
+      var title = document.createElement('h2');
+      title.textContent = 'Paste from Excel';
+      title.style.cssText = 'margin:0 0 10px 0;font-size:18px;color:#333;';
+      box.appendChild(title);
+      
+      var desc = document.createElement('p');
+      desc.textContent = 'Paste your Excel data below, then click Import:';
+      desc.style.cssText = 'margin:0 0 10px 0;color:#666;font-size:14px;';
+      box.appendChild(desc);
+      
+      var pasteTextarea = document.createElement('textarea');
+      pasteTextarea.placeholder = 'Paste Excel data here (Ctrl+V or Cmd+V)';
+      pasteTextarea.style.cssText = 'width:100%;height:150px;padding:10px;border:1px solid #ccc;border-radius:4px;font-family:monospace;font-size:12px;box-sizing:border-box;';
+      pasteTextarea.focus();
+      box.appendChild(pasteTextarea);
+      
+      var buttonDiv = document.createElement('div');
+      buttonDiv.style.cssText = 'display:flex;gap:10px;margin-top:15px;justify-content:flex-end;';
+      
+      var importBtn = document.createElement('button');
+      importBtn.textContent = '✓ Import';
+      importBtn.style.cssText = 'background:#10B981;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;';
+      importBtn.onclick = function() {
+        var data = pasteTextarea.value;
+        if (data.trim()) {
+          processPastedData(textarea, data);
+          modal.remove();
+        } else {
+          showToast('Please paste data first', 'orange');
+        }
+      };
+      buttonDiv.appendChild(importBtn);
+      
+      var cancelBtn = document.createElement('button');
+      cancelBtn.textContent = '✕ Cancel';
+      cancelBtn.style.cssText = 'background:#ccc;color:#333;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;';
+      cancelBtn.onclick = function() { modal.remove(); };
+      buttonDiv.appendChild(cancelBtn);
+      
+      box.appendChild(buttonDiv);
+      modal.appendChild(box);
+      document.body.appendChild(modal);
+      
+      pasteTextarea.focus();
+    }
+    
+    function processPastedData(textarea, data) {
+      console.log('Processing pasted data, length:', data.length);
+      if (!data || !data.trim()) {
+        showToast('No data to paste', 'orange');
+        return;
+      }
+      
+      // Store the raw data in textarea
+      textarea.value = data;
+      
+      // Parse lines and calculate column widths for auto-fit
+      var lines = data.split('\n').filter(function(line) { return line.trim(); });
+      console.log('Lines parsed:', lines.length);
+      
+      var allCells = lines.map(function(line) { return line.split('\t'); });
+      var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
+      var colWidths = new Array(numCols).fill(80); // Minimum 80px per column
+      
+      // Calculate max width for each column (monospace ~8px per char + 16px padding)
+      allCells.forEach(function(row) {
+        row.forEach(function(cell, idx) {
+          var trimmed = cell.trim() || '&nbsp;';
+          var width = Math.max(80, trimmed.length * 9 + 16); // 9px per char + padding, min 80px
+          colWidths[idx] = Math.max(colWidths[idx], width);
+        });
+      });
+      
+      console.log('Column widths:', colWidths);
+      
+      var tableHTML = '<table style="width:auto;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
+      
+      allCells.forEach(function(row, rowIdx) {
+        tableHTML += '<tr id="itd-tag-card-row-' + rowIdx + '" style="transition:background-color 0.3s ease;">';
+        row.forEach(function(cell, idx) {
+          var cellContent = cell.trim() || '&nbsp;';
+          tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;min-width:' + colWidths[idx] + 'px;text-align:left;">' + 
+            cellContent + '</td>';
+        });
+        tableHTML += '</tr>';
+      });
+      
+      tableHTML += '</table>';
+      
+      // Find or create preview container
+      var previewId = textarea.id + '-preview';
+      var preview = document.getElementById(previewId);
+      if (!preview) {
+        preview = document.createElement('div');
+        preview.id = previewId;
+        // Match textarea's flex sizing to maintain container height
+        preview.style.cssText = 'flex:1 1 0;width:100%;border:1px solid #ddd;border-radius:6px;padding:12px;background:#f9fafb;max-height:none;overflow:auto;box-sizing:border-box;';
+        textarea.parentNode.insertBefore(preview, textarea);
+      }
+      preview.innerHTML = tableHTML;
+      preview.style.display = 'block';
+      
+      // Hide the textarea and show preview only
+      textarea.style.display = 'none';
+      
+      // Trigger events for state update
+      var event = new Event('input', { bubbles: true });
+      textarea.dispatchEvent(event);
+      var changeEvent = new Event('change', { bubbles: true });
+      textarea.dispatchEvent(changeEvent);
+      
+      showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
+    }
+
+    // ===========================
+    // ITD TAG CARD SEARCH FUNCTION
+    // ===========================
+    function searchITDTagCard(searchTerm) {
+      var textarea = document.getElementById('itd-tag-card-textarea');
+      var resultDiv = document.getElementById('itd-search-result');
+      var previewId = textarea.id + '-preview';
+      var preview = document.getElementById(previewId);
+      
+      if (!searchTerm.trim()) {
+        resultDiv.textContent = 'Ready to search...';
+        resultDiv.style.color = '#1f2937';
+        // Clear any previous highlighting
+        if (preview) {
+          var rows = preview.querySelectorAll('tr');
+          rows.forEach(function(row) {
+            row.style.backgroundColor = '';
+          });
+        }
+        return;
+      }
+      
+      if (!textarea || !textarea.value) {
+        resultDiv.textContent = 'No data to search';
+        resultDiv.style.color = '#ef4444';
+        console.log('No textarea or value. textarea:', !!textarea, 'value:', textarea ? textarea.value.length : 0);
+        return;
+      }
+      
+      console.log('Searching for:', searchTerm, 'in', textarea.value.length, 'chars');
+      
+      // Parse the table data from textarea
+      var lines = textarea.value.split('\n');
+      var searchTermLower = searchTerm.toLowerCase();
+      var rowIndex = 0;
+      
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        if (!line.trim()) continue;
+        
+        var cells = line.split('\t');
+        console.log('Row ' + i + ' cells:', cells.length, 'content:', cells.join('|'));
+        
+        // Search through all cells (not just first) to find the tag number
+        var foundMatch = false;
+        for (var j = 0; j < cells.length; j++) {
+          if (cells[j].toLowerCase().includes(searchTermLower)) {
+            foundMatch = true;
+            console.log('Found match in cell', j, ':', cells[j]);
+            break;
+          }
+        }
+        
+        if (foundMatch) {
+          // Get last NON-EMPTY cell (Location)
+          var location = '';
+          for (var k = cells.length - 1; k >= 0; k--) {
+            var cellVal = cells[k].trim();
+            if (cellVal) {
+              location = cellVal;
+              console.log('Found location at cell', k, ':', location);
+              break;
+            }
+          }
+          
+          if (location) {
+            // Enhance with the loading position from the Arrival Offload tab (e.g. "32R - AKE40093CX")
+            var oirPos = findOirPositionForContainer(location);
+            resultDiv.textContent = '📦 ' + (oirPos ? oirPos + ' - ' + location : location);
+            resultDiv.style.color = '#059669';
+            console.log('Result:', (oirPos ? oirPos + ' - ' : '') + location, 'at row', rowIndex);
+            
+            // Clear previous highlighting
+            if (preview) {
+              var allRows = preview.querySelectorAll('tr');
+              allRows.forEach(function(row) {
+                row.style.backgroundColor = '';
+              });
+              
+              // Highlight the matching row
+              var rowId = 'itd-tag-card-row-' + rowIndex;
+              var matchRow = preview.querySelector('#' + rowId);
+              if (matchRow) {
+                matchRow.style.backgroundColor = '#FFFF00';
+                matchRow.style.transition = 'background-color 0.3s ease';
+                
+                // Scroll the row into view with a slight delay to ensure rendering
+                setTimeout(function() {
+                  try {
+                    matchRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    console.log('Scrolled to row', rowId);
+                  } catch(e) {
+                    console.log('Error scrolling:', e);
+                  }
+                }, 50);
+              }
+            }
+            return;
+          } else {
+            console.log('No location found in row - all cells empty after match');
+          }
+        }
+        
+        rowIndex++;
+      }
+      
+      resultDiv.textContent = 'Not found';
+      resultDiv.style.color = '#ef4444';
+      console.log('No match found');
+      
+      // Clear highlighting
+      if (preview) {
+        var allRows = preview.querySelectorAll('tr');
+        allRows.forEach(function(row) {
+          row.style.backgroundColor = '';
+        });
+      }
+    }
+
+    // Look up a ULD/container code in the Arrival Offload text and return its loading
+    // position (the token immediately before the container, e.g. "32R" in "32R AKE40093CX").
+    function findOirPositionForContainer(container) {
+      var oir = document.getElementById('oir-textarea');
+      if (!oir || !oir.value || !container) return '';
+      var cont = String(container).trim().toUpperCase();
+      if (!cont) return '';
+      var lines = oir.value.split('\n');
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        if (line.toUpperCase().indexOf(cont) < 0) continue;
+        // Split on whitespace and pipe separators
+        var tokens = line.split(/[\s|]+/).filter(function(t){ return t; });
+        for (var j = 0; j < tokens.length; j++) {
+          if (tokens[j].toUpperCase() === cont) {
+            // The position is the token right before the container
+            if (j > 0) return tokens[j-1].trim();
+          }
+        }
+      }
+      return '';
     }
 
     // ===========================
@@ -2992,9 +4095,12 @@ function renderPaxLoadTable() {
     }
     function clearOIR() {
       unlockOIR();
-      var ta = document.getElementById('oir-textarea'); if(ta) ta.value='';
+      var ta = document.getElementById('oir-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
+      var preview = document.getElementById('oir-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_oir'); localStorage.removeItem('pts_oir_locked'); } catch(e) {}
       var badge = document.getElementById('oir-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('oir-textarea');
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // ===========================
@@ -3032,9 +4138,12 @@ function renderPaxLoadTable() {
     }
     function clearCrew() {
       unlockCrew();
-      var ta = document.getElementById('crew-textarea'); if(ta) ta.value='';
+      var ta = document.getElementById('crew-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
+      var preview = document.getElementById('crew-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_crew'); localStorage.removeItem('pts_crew_locked'); } catch(e) {}
       var badge = document.getElementById('crew-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('crew-textarea');
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // ===========================
@@ -3072,9 +4181,12 @@ function renderPaxLoadTable() {
     }
     function clearDepCrew() {
       unlockDepCrew();
-      var ta = document.getElementById('dep-crew-textarea'); if(ta) ta.value='';
+      var ta = document.getElementById('dep-crew-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
+      var preview = document.getElementById('dep-crew-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_dep_crew'); localStorage.removeItem('pts_dep_crew_locked'); } catch(e) {}
       var badge = document.getElementById('dep-crew-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('dep-crew-textarea');
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // ===========================
@@ -3112,9 +4224,12 @@ function renderPaxLoadTable() {
     }
     function clearStaffAcc() {
       unlockStaffAcc();
-      var ta = document.getElementById('staff-acc-textarea'); if(ta) ta.value='';
+      var ta = document.getElementById('staff-acc-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
+      var preview = document.getElementById('staff-acc-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_staff_acc'); localStorage.removeItem('pts_staff_acc_locked'); } catch(e) {}
       var badge = document.getElementById('staff-acc-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('staff-acc-textarea');
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // ===========================
@@ -3152,9 +4267,12 @@ function renderPaxLoadTable() {
     }
     function clearArrPTM() {
       unlockArrPTM();
-      var ta = document.getElementById('arr-ptm-textarea'); if(ta) ta.value='';
+      var ta = document.getElementById('arr-ptm-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
+      var preview = document.getElementById('arr-ptm-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_arr_ptm'); localStorage.removeItem('pts_arr_ptm_locked'); } catch(e) {}
       var badge = document.getElementById('arr-ptm-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('arr-ptm-textarea');
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // ===========================
@@ -3192,9 +4310,41 @@ function renderPaxLoadTable() {
     }
     function clearDepLIR() {
       unlockDepLIR();
-      var ta = document.getElementById('dep-lir-textarea'); if(ta) ta.value='';
+      var ta = document.getElementById('dep-lir-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
+      var preview = document.getElementById('dep-lir-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_dep_lir'); localStorage.removeItem('pts_dep_lir_locked'); } catch(e) {}
       var badge = document.getElementById('dep-lir-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('dep-lir-textarea');
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // ITD Tag Card - simple clear (no lock/unlock needed if not implemented)
+    function clearITDTagCard() {
+      var ta = document.getElementById('itd-tag-card-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
+      var preview = document.getElementById('itd-tag-card-textarea-preview'); if(preview) preview.remove();
+      var searchInput = document.getElementById('itd-search-input'); if(searchInput) { searchInput.value=''; }
+      var searchResult = document.getElementById('itd-search-result'); if(searchResult) { searchResult.textContent='Ready to search...'; searchResult.style.color='#1f2937'; }
+      try { localStorage.removeItem('pts_itd_tag_card'); } catch(e) {}
+      clearPastedImages('itd-tag-card-textarea');
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // Departure Gen Dec - simple clear
+    function clearDepGenDec() {
+      var ta = document.getElementById('dep-gen-dec-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
+      var preview = document.getElementById('dep-gen-dec-textarea-preview'); if(preview) preview.remove();
+      try { localStorage.removeItem('pts_dep_gen_dec'); } catch(e) {}
+      clearPastedImages('dep-gen-dec-textarea');
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // Agent Positions - simple clear
+    function clearAgentPos() {
+      var ta = document.getElementById('agent-pos-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
+      var preview = document.getElementById('agent-pos-textarea-preview'); if(preview) preview.remove();
+      try { localStorage.removeItem('pts_agent_pos'); } catch(e) {}
+      clearPastedImages('agent-pos-textarea');
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // ===========================
@@ -3212,38 +4362,45 @@ function renderPaxLoadTable() {
       var s = state;
       function v(k){ return (s[k]&&String(s[k]).trim()) ? String(s[k]) : '—'; }
       function numOrZero(x){ return parseInt(x)||0; }
-      function row(label,val){ return val&&val!=='—'?'<tr><td class="lbl">'+label+'</td><td class="val">'+val+'</td></tr>':''; }
+      function row(label,val){ return '<tr><td class="lbl">'+label+'</td><td class="val">'+val+'</td></tr>'; }
 
       // Flight header
       var flightLabel = (s.flight||'') + (s.date ? '  ·  '+s.date : '');
 
       // Active pax loading row (Rev2 > Rev1 > Final)
       function paxRow(label, jk, wk, yk, infk, totk){
-        var j=v(jk),w=v(wk),y=v(yk),inf=v(infk),tot=v(totk);
-        if([j,w,y,inf,tot].every(function(x){return x==='—';})) return '';
-        return '<tr><td class="lbl">'+label+'</td><td class="val">J:'+j+' W:'+w+' Y:'+y+' INF:'+inf+' Total:'+tot+'</td></tr>';
+        var j=numOrZero(s[jk]),w=numOrZero(s[wk]),y=numOrZero(s[yk]),inf=numOrZero(s[infk]);
+        var calcTotal = j+w+y;
+        var tot=s[totk]&&String(s[totk]).trim()?String(s[totk]):calcTotal;
+        return '<tr><td class="lbl">'+label+'</td><td class="val">J: '+j+' / W: '+w+' / Y: '+y+' / INF: '+inf+' / Total: '+tot+'</td></tr>';
       }
 
-      // Arrival PTS — Fix 7: show target + actual
+      // Arrival PTS — Fix 7: show target + actual + variance
       var arrPtsHtml = '';
       (function(){
         var bm = (function(str){if(!str)return null;var p=str.split(':');return p.length>=2?parseInt(p[0])*60+parseInt(p[1]):null;})(s.eta);
         function fmt(m){var hh=((Math.floor(m/60)%24)+24)%24;var mm=((m%60)+60)%60;return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;}
+        function parseTime(str){if(!str||str==='—')return null;var p=str.split(':');return p.length>=2?parseInt(p[0])*60+parseInt(p[1]):null;}
+        function fmtVariance(tgtMin, actMin){if(tgtMin===null||actMin===null)return '—';var diffMin=actMin-tgtMin;var sign=diffMin>=0?'+':'-';var absMin=Math.abs(diffMin);var h=Math.floor(absMin/60);var m=absMin%60;return sign+(h<10?'0':'')+h+':'+(m<10?'0':'')+m;}
         arrActivities.forEach(function(a,i){
           var tgt=(a.offset!==null&&bm!==null)?fmt(bm+a.offset):'—';
           var act=(typeof arrActual!=='undefined'&&arrActual[i])?arrActual[i]:'—';
-          arrPtsHtml+='<tr><td class="lbl">'+a.name+'</td><td class="val">Target: '+tgt+' | Actual: '+act+'</td></tr>';
+          var variance=fmtVariance(parseTime(tgt), parseTime(act));
+          arrPtsHtml+='<tr><td class="lbl">'+a.name+'</td><td class="val">Target: '+tgt+' | Actual: '+act+' | Variance: '+variance+'</td></tr>';
         });
       })();
-      // Departure PTS — Fix 7: show target + actual
+      // Departure PTS — Fix 7: show target + actual + variance
       var depPtsHtml = '';
       (function(){
         var bm = (function(str){if(!str)return null;var p=str.split(':');return p.length>=2?parseInt(p[0])*60+parseInt(p[1]):null;})(s.dep_std);
         function fmt(m){var hh=((Math.floor(m/60)%24)+24)%24;var mm=((m%60)+60)%60;return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;}
+        function parseTime(str){if(!str||str==='—')return null;var p=str.split(':');return p.length>=2?parseInt(p[0])*60+parseInt(p[1]):null;}
+        function fmtVariance(tgtMin, actMin){if(tgtMin===null||actMin===null)return '—';var diffMin=actMin-tgtMin;var sign=diffMin>=0?'+':'-';var absMin=Math.abs(diffMin);var h=Math.floor(absMin/60);var m=absMin%60;return sign+(h<10?'0':'')+h+':'+(m<10?'0':'')+m;}
         depActivities.forEach(function(a,i){
           var tgt=(a.offset!==null&&bm!==null)?fmt(bm+a.offset):'—';
           var act=(typeof depActual!=='undefined'&&depActual[i])?depActual[i]:'—';
-          depPtsHtml+='<tr><td class="lbl">'+a.name+'</td><td class="val">Target: '+tgt+' | Actual: '+act+'</td></tr>';
+          var variance=fmtVariance(parseTime(tgt), parseTime(act));
+          depPtsHtml+='<tr><td class="lbl">'+a.name+'</td><td class="val">Target: '+tgt+' | Actual: '+act+' | Variance: '+variance+'</td></tr>';
         });
       })();
 
@@ -3251,10 +4408,12 @@ function renderPaxLoadTable() {
       function taVal(id){ var el=document.getElementById(id); return el&&el.value.trim()?el.value.trim():''; }
       var staffAccContent = taVal('staff-acc-textarea');
       var arrPtmContent   = taVal('arr-ptm-textarea');
+      var itdTagCardContent = taVal('itd-tag-card-textarea');
       var oirContent      = taVal('oir-textarea');
       var depLirContent   = taVal('dep-lir-textarea');
       var crewArrContent  = taVal('crew-textarea');
       var crewDepContent  = taVal('dep-crew-textarea');
+      var agentPosContent = taVal('agent-pos-textarea');
 
       var css = [
         '*{box-sizing:border-box;margin:0;padding:0;}',
@@ -3289,19 +4448,52 @@ function renderPaxLoadTable() {
       ].join('\n');
 
       function section(title, tableRows){
-        if(!tableRows.trim()) return '';
         return '<div class="section"><h2>'+title+'</h2><table>'+tableRows+'</table></div>';
       }
+      function formatITDTagCardTable(content){
+        if(!content || !content.trim()) return '—';
+        var lines = content.split('\n').filter(function(line) { return line.trim(); });
+        var allCells = lines.map(function(line) { return line.split('\t'); });
+        var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
+        
+        // Calculate column widths by measuring all cells
+        var colWidths = [];
+        for(var c = 0; c < numCols; c++){
+          var maxWidth = 0;
+          allCells.forEach(function(row) {
+            var cell = (row[c] || '').trim();
+            var width = Math.max(60, cell.length * 7 + 12);
+            maxWidth = Math.max(maxWidth, width);
+          });
+          colWidths[c] = maxWidth;
+        }
+        
+        var tableHTML = '<table style="border-collapse:collapse;font-family:monospace;font-size:11px;border:1px solid #999;margin:10px 0;"><tbody>';
+        allCells.forEach(function(row, rowIdx) {
+          tableHTML += '<tr style="border-bottom:1px solid #ccc;">';
+          row.forEach(function(cell, colIdx) {
+            var cellContent = cell.trim() || '&nbsp;';
+            var bgColor = rowIdx === 0 ? '#e0e0e0' : '#fff';
+            var fontWeight = rowIdx === 0 ? 'font-weight:bold;' : '';
+            var width = colWidths[colIdx] || 60;
+            tableHTML += '<td style="border-right:1px solid #ccc;padding:6px;width:' + width + 'px;' + fontWeight + 'background:' + bgColor + ';">' + cellContent + '</td>';
+          });
+          tableHTML += '</tr>';
+        });
+        tableHTML += '</tbody></table>';
+        return tableHTML;
+      }
       function preSection(title, content, extraClass){
-        if(!content) return '';
-        return '<div class="section'+(extraClass?' '+extraClass:'')+'"><h2>'+title+'</h2><div class="pre-content">'+content.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div></div>';
+        return '<div class="section'+(extraClass?' '+extraClass:'')+'"><h2>'+title+'</h2><div class="pre-content">'+(content?content.replace(/</g,'&lt;').replace(/>/g,'&gt;'):'—')+'</div></div>';
+      }
+      function htmlSection(title, htmlContent, extraClass){
+        return '<div class="section'+(extraClass?' '+extraClass:'')+'"><h2>'+title+'</h2><div style="padding:8px;background:#fff;">'+(htmlContent||'—')+'</div></div>';
       }
 
       var body = [
         '<div class="no-print" style="margin-bottom:20px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">',
         '  <button onclick="window.print()">🖨️ Save as PDF / Print</button>',
         '  <button class="eml" onclick="emailTextReport()">📧 Email as Text</button>',
-        '  <button class="eml-pdf" onclick="showPdfEmailGuide()">📎 Email as PDF (Guide)</button>',
         '  <button class="sec" onclick="window.close()">✕ Close</button>',
         '</div>',
         '<div id="pdf-email-guide" style="display:none;background:#fef9c3;border:1px solid #fde047;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:12px;line-height:1.7;">',
@@ -3310,19 +4502,19 @@ function renderPaxLoadTable() {
         '  2️⃣ In the print/share dialog choose <strong>Save as PDF</strong><br>',
         '  3️⃣ Open your <strong>Mail / Outlook</strong> app and attach the saved PDF file',
         '</div>',
-        '<h1>Flight Details & PTS Report</h1>',
+        '<h1>Flight Details & Precision Timing Schedule Report</h1>',
         '<div class="subtitle">'+flightLabel+'</div>',
 
         // ── Page 1: PTS Data ──
         section('Flight Information',
           row('Flight',v('flight'))+row('Date',v('date'))+row('REGN',v('regn'))+row('Config',v('config'))+
-          row('STA',v('sta'))+row('ETA',v('eta'))+row('Gate',v('gate'))+row('Carousel',v('carousel'))+
-          row('Weather',v('weather'))+row('Delay Code',v('delayCode'))
+          row('STA',v('sta'))+row('ETA',v('eta'))+row('ATA',v('ata'))+row('Gate',v('gate'))+row('Carousel',v('carousel'))+
+          row('Weather',v('weather'))+row('Delay Code(s) ex HKG',v('delayCode'))
         ),
         section('Arrival Crew', row('CN',v('arr_cn'))+row('ISM',v('arr_ism'))),
         section('Arrival Pax',
           (function(){var aj=numOrZero(s.arr_pax_j),aw=numOrZero(s.arr_pax_w),ay=numOrZero(s.arr_pax_y),ai=numOrZero(s.arr_pax_inf);
-            return row('Pax','J:'+aj+' W:'+aw+' Y:'+ay+' INF:'+ai+' Total:'+(aj+aw+ay));})()
+            return row('Pax','J: '+aj+' / W: '+aw+' / Y: '+ay+' / INF: '+ai+' / Total: '+(aj+aw+ay));})()
         ),
         section('Arrival Special Handling',
           row('WCHR/S',v('arr_wchr_s'))+row('WCHC',v('arr_wchc'))+row('MAAS',v('arr_maas'))+
@@ -3337,25 +4529,27 @@ function renderPaxLoadTable() {
         row('Doorside', (v('arr_doorside') && v('arr_doorside')!=='-' ? v('arr_doorside').replace(/\n/g,'<br>') : v('arr_doorside')) )+row('Total Bags',v('arr_total_bags'))+
           row('First Bag',v('arr_first_bag'))+row('Last Bag',v('arr_last_bag'))
         ),
-        arrPtsHtml ? section('Arrival PTS', arrPtsHtml) : '',
+        arrPtsHtml ? section('Arrival Precision Timing Schedule', arrPtsHtml) : section('Arrival Precision Timing Schedule', ''),
         section('Departure Flight Info',
-          row('STD',v('dep_std'))+row('ETD',v('dep_etd'))+row('Delay',v('dep_delay'))+
+          row('STD',v('dep_std'))+row('ETD',v('dep_etd'))+row('Delay Code(s) ex HKG',v('dep_delay'))+
           row('Board Time',v('dep_board_time'))+row('Gate Close',v('dep_gate_close'))+
           row('DCT',v('dep_dct'))+row('FT',v('dep_ft'))+row('BLK',v('dep_blk'))+
           row('ETA HKG',v('dep_eta_hkg'))+row('STA HKG',v('dep_sta_hkg'))
         ),
         section('Departure Crew', row('CN',v('dep_cn'))+row('ISM',v('dep_ism'))+row('Crew Fig',v('dep_crew_fig'))+row('PX/DT Crew',v('dep_px_dt'))),
-        section('Cargo & Fuel',
+        section('Weight Fuel Cargo and Baggage Details',
           row('Cargo Type',v('dep_cargo_type'))+row('Cargo Weight',v('dep_cargo_kg'))+
           row('Pre Fuel',v('dep_pre_fuel'))+row('Total Fuel',v('dep_total_fuel'))+
           row('Actual Fuel',v('dep_actual_fuel'))+row('MZFW',v('dep_mzfw'))+
-          row('EZFW',v('dep_ezfw'))+row('AZFW',v('dep_azfw'))+row('Underload',v('Q31'))
+          row('EZFW',v('dep_ezfw'))+row('AZFW',v('dep_azfw'))+row('Underload',v('Q31'))+
+          row('Total Bags',v('dep_total_bags'))+row('Crew Bags',v('dep_crew_bags'))+
+          row('STRL',v('dep_strl'))+row('WCH',v('dep_wch'))+row('Carry-On',v('dep_carry_on'))
         ),
         section('Defects', row('Defects',v('defects'))),
         section('Capacity',
-          row('CAP','J:'+v('cap_j')+' W:'+v('cap_w')+' Y:'+v('cap_y'))+
-          row('Avail','J:'+v('avail_j')+' W:'+v('avail_w')+' Y:'+v('avail_y'))+
-          row('Est','J:'+v('est_j')+' W:'+v('est_w')+' Y:'+v('est_y'))
+          row('CAP','J: '+v('cap_j')+' / W: '+v('cap_w')+' / Y: '+v('cap_y'))+
+          row('Avail','J: '+v('avail_j')+' / W: '+v('avail_w')+' / Y: '+v('avail_y'))+
+          row('Est','J: '+v('est_j')+' / W: '+v('est_w')+' / Y: '+v('est_y'))
         ),
         section('Pax Loading (Final)',
           paxRow('Final',    'final_j','final_w','final_y','final_inf','final_total')+
@@ -3372,29 +4566,31 @@ function renderPaxLoadTable() {
           row('CIS',v('dep_cis'))+row('IC',v('dep_ic'))+row('OC',v('dep_oc'))+
           row('JOIN',v('dep_join'))+row('HKG',v('dep_hkg'))
         ),
-        section('Departure Baggage',
-          row('Total Bags',v('dep_total_bags'))+row('Crew Bags',v('dep_crew_bags'))+
-          row('STRL',v('dep_strl'))+row('WCH',v('dep_wch'))+row('Carry-On',v('dep_carry_on'))
-        ),
-        depPtsHtml ? section('Departure PTS', depPtsHtml) : '',
+        depPtsHtml ? section('Departure Precision Timing Schedule', depPtsHtml) : section('Departure Precision Timing Schedule', ''),
 
         // ── Page 2: Staff Acceptance ──
-        staffAccContent ? '<div class="page-break">'+preSection('Staff Acceptance', staffAccContent)+'</div>' : '',
+        '<div class="page-break">'+preSection('Staff Acceptance', staffAccContent)+'</div>',
 
         // ── Page 3: Arrival PTM ──
-        arrPtmContent ? '<div class="page-break">'+preSection('Arrival PTM', arrPtmContent)+'</div>' : '',
+        '<div class="page-break">'+preSection('Arrival PTM', arrPtmContent)+'</div>',
 
-        // ── Page 4: ARR OIR ──
-        oirContent ? '<div class="page-break">'+preSection('Arrival OIR', oirContent)+'</div>' : '',
+        // ── Page 4: ITD Tag Card ──
+        '<div class="page-break">'+htmlSection('ITD Tag Card', formatITDTagCardTable(itdTagCardContent))+'</div>',
 
-        // ── Page 5: DEP LIR ──
-        depLirContent ? '<div class="page-break">'+preSection('DEP LIR', depLirContent)+'</div>' : '',
+        // ── Page 5: Arrival Offloading Instruction ──
+        '<div class="page-break">'+preSection('Arrival Offloading Instruction', oirContent)+'</div>',
 
-        // ── Page 6: Crew List — Arrival ──
-        crewArrContent ? '<div class="page-break">'+preSection('Crew List — Arrival', crewArrContent)+'</div>' : '',
+        // ── Page 6: Departure Onloading Instruction ──
+        '<div class="page-break">'+preSection('Departure Onloading Instruction', depLirContent)+'</div>',
 
-        // ── Page 7: Crew List — Departure ──
-        crewDepContent ? '<div class="page-break">'+preSection('Crew List — Departure', crewDepContent)+'</div>' : '',
+        // ── Page 7: Arrival Crew List ──
+        '<div class="page-break">'+preSection('Arrival Crew List', crewArrContent)+'</div>',
+
+        // ── Page 8: Departure Gen Dec ──
+        '<div class="page-break">'+preSection('Departure Gen Dec', crewDepContent)+'</div>',
+
+        // ── Page 9: Agent Positions & Roster ──
+        '<div class="page-break">'+preSection('Agent Positions & Roster', agentPosContent)+'</div>'
       ].join('\n');
 
       return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PTS Report '+(s.flight||'')+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
@@ -3426,7 +4622,7 @@ function renderPaxLoadTable() {
         var st = document.getElementById('send-modal-title');
         var sp = document.getElementById('send-report-pre');
         if (st) st.textContent = 'Send Report' + (state.flight ? ' — ' + state.flight : '');
-        try { if (sp) sp.textContent = buildReport(); } catch(e) {}
+        try { if (sp) sp.innerHTML = buildReportHTML(); } catch(e) {}
         if (sm) sm.style.display = 'flex';
       }
     }
@@ -3468,6 +4664,9 @@ function renderPaxLoadTable() {
       safeOn('btn-share-mob',   generateShareCode);
       safeOn('btn-email-mob',   openSendModal);
             safeOn('btn-clear-mob',   clearAll);
+
+      // Edit Mode buttons (both desktop and mobile)
+      wireEditModeButtons();
 
       // Clear confirm
       safeOn('clear-confirm-yes', doClearAll);
@@ -3642,6 +4841,54 @@ function renderPaxLoadTable() {
       safeOn('dep-lir-save-btn', saveDepLIR);
       safeOn('dep-lir-clear-btn', clearDepLIR);
 
+      // ITD Tag Card clear
+      safeOn('itd-tag-card-clear-btn', clearITDTagCard);
+
+      // ITD Tag Card search
+      var itdSearchInput = document.getElementById('itd-search-input');
+      if (itdSearchInput) {
+        itdSearchInput.addEventListener('input', function() {
+          searchITDTagCard(this.value);
+        });
+      }
+      
+      // ITD Clear Search button
+      var itdClearSearchBtn = document.getElementById('itd-clear-search-btn');
+      if (itdClearSearchBtn) {
+        itdClearSearchBtn.addEventListener('click', function() {
+          if (itdSearchInput) {
+            itdSearchInput.value = '';
+            searchITDTagCard('');
+            
+            // Scroll preview back to top
+            var textarea = document.getElementById('itd-tag-card-textarea');
+            if (textarea) {
+              var previewId = textarea.id + '-preview';
+              var preview = document.getElementById(previewId);
+              if (preview) {
+                preview.scrollTop = 0;
+              }
+            }
+          }
+        });
+      }
+
+      // Departure Gen Dec clear
+      safeOn('dep-gen-dec-clear-btn', clearDepGenDec);
+
+      // Agent Positions clear
+      safeOn('agent-pos-clear-btn', clearAgentPos);
+
+      // Paste from Excel buttons
+      safeOn('staff-acc-paste-btn', function() { pasteFromExcel('staff-acc-textarea'); });
+      safeOn('arr-ptm-paste-btn', function() { pasteFromExcel('arr-ptm-textarea'); });
+      safeOn('itd-tag-card-paste-btn', function() { pasteFromExcel('itd-tag-card-textarea'); });
+      safeOn('oir-paste-btn', function() { pasteFromExcel('oir-textarea'); });
+      safeOn('dep-lir-paste-btn', function() { pasteFromExcel('dep-lir-textarea'); });
+      safeOn('crew-paste-btn', function() { pasteFromExcel('crew-textarea'); });
+      safeOn('dep-gen-dec-paste-btn', function() { pasteFromExcel('dep-gen-dec-textarea'); });
+      safeOn('agent-pos-paste-btn', function() { pasteFromExcel('agent-pos-textarea'); });
+
       // Delegated input listener on #tab-pts
       document.getElementById('tab-pts').addEventListener('input', function(e) {
         var el = e.target;
@@ -3681,6 +4928,7 @@ function renderPaxLoadTable() {
         if (key === 'dep_std') { renderActivities(); updateETDCountdown(); }
         if (['dep_etd','dep_board_time','dep_eta_hkg','dep_sta_hkg'].indexOf(key) >= 0) {
           updateETDCountdown();
+          if (key === 'dep_etd') renderActivities();
         }
         refreshSummarySpans();
         refreshFinalLoading();
@@ -3699,13 +4947,15 @@ function renderPaxLoadTable() {
         // Restore paste-tab textarea content from local storage payload
         (function(){
           var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm',
-                   'oir-textarea':'_oir','dep-lir-textarea':'_dep_lir',
-                   'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew'};
+                   'oir-textarea':'_oir','itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir',
+                   'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew',
+                   'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos'};
           Object.keys(m).forEach(function(id){
             var ta=document.getElementById(id);
             if(ta&&restored[m[id]]) ta.value=restored[m[id]];
           });
         })();
+        if (restored._images) pastedImages = restored._images;
         syncInputsFromState();
         renderActivities();
         renderPaxLoadTable();
@@ -3794,6 +5044,7 @@ function renderPaxLoadTable() {
 
       refreshSummarySpans();
       refreshFinalLoading();
+      initImagePasteSupport();
     }
 
     // ─── VIEWPORT HEIGHT (Android Chrome address bar) ───
@@ -3821,6 +5072,13 @@ function renderPaxLoadTable() {
     }
     init();
     wireNavTabs();
+
+    // Register service worker for PWA install / offline use
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').catch(function() {});
+      });
+    }
 
     </script>
 </body>
