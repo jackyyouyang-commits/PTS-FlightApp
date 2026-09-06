@@ -4902,28 +4902,39 @@ function renderPaxLoadTable() {
         var lines = content.split('\n').filter(function(line) { return line.trim(); });
         var allCells = lines.map(function(line) { return line.split('\t'); });
         var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
-        
-        // Calculate column widths by measuring all cells
+
+        // Calculate column widths by measuring cells. Short rows (e.g. a report title or
+        // sub-header that only has 1-2 tab-separated cells, meant to visually span the full
+        // table width) are excluded from per-column measurement — otherwise a long title
+        // sitting in column 0 alone would force column 0 far wider than it needs to be for
+        // its real per-row data (e.g. a "1, 2, 3..." index column), squeezing the columns
+        // that actually need the room (like "Tag Number") into wrapping onto a second line.
+        var fullRows = allCells.filter(function(row) { return row.length === numCols; });
+        var rowsForWidth = fullRows.length ? fullRows : allCells;
         var colWidths = [];
         for(var c = 0; c < numCols; c++){
           var maxWidth = 0;
-          allCells.forEach(function(row) {
+          rowsForWidth.forEach(function(row) {
             var cell = (row[c] || '').trim();
-            var width = Math.max(60, cell.length * 7 + 12);
+            var width = Math.max(30, cell.length * 7 + 12);
             maxWidth = Math.max(maxWidth, width);
           });
           colWidths[c] = maxWidth;
         }
-        
-        var tableHTML = '<table style="border-collapse:collapse;font-family:monospace;font-size:11px;border:1px solid #999;margin:10px 0;"><tbody>';
+
+        var tableHTML = '<table style="border-collapse:collapse;table-layout:fixed;font-family:monospace;font-size:11px;border:1px solid #999;margin:10px 0;width:' + colWidths.reduce(function(a,b){return a+b;},0) + 'px;">';
+        tableHTML += '<colgroup>' + colWidths.map(function(w){ return '<col style="width:' + w + 'px;">'; }).join('') + '</colgroup>';
+        tableHTML += '<tbody>';
         allCells.forEach(function(row, rowIdx) {
           tableHTML += '<tr style="border-bottom:1px solid #ccc;">';
           row.forEach(function(cell, colIdx) {
             var cellContent = cell.trim() || '&nbsp;';
             var bgColor = rowIdx === 0 ? '#e0e0e0' : '#fff';
             var fontWeight = rowIdx === 0 ? 'font-weight:bold;' : '';
-            var width = colWidths[colIdx] || 60;
-            tableHTML += '<td style="border-right:1px solid #ccc;padding:6px;width:' + width + 'px;' + fontWeight + 'background:' + bgColor + ';">' + cellContent + '</td>';
+            var isLastCellInShortRow = (row.length < numCols) && (colIdx === row.length - 1);
+            var span = isLastCellInShortRow ? (numCols - colIdx) : 1;
+            var colspanAttr = span > 1 ? ' colspan="' + span + '"' : '';
+            tableHTML += '<td' + colspanAttr + ' style="border-right:1px solid #ccc;padding:6px;white-space:nowrap;overflow:hidden;' + fontWeight + 'background:' + bgColor + ';">' + cellContent + '</td>';
           });
           tableHTML += '</tr>';
         });
