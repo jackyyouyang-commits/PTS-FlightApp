@@ -3849,22 +3849,24 @@ function renderPaxLoadTable() {
       // beyond the scheduled STD (depShiftForEtd > 0). Otherwise a manual ETD stands.
       if (atdTableMin !== null && depShiftForEtd > 0) etdMin = atdTableMin;
       
+      // Real elapsed delay: cross-check the flight's scheduled date (fd) against today's
+      // real calendar date. Actual times logged (e.g. ATD) carry no date of their own, so
+      // if several real days have passed since the scheduled STD, that day gap must be
+      // added on top of the clock-time difference (e.g. a flight from 04SEP still showing
+      // an ATD logged on 06SEP is +48h late, not just a same-day clock delta). Shared by
+      // both the disruption delay calc and the ETA HKG calc below.
+      var daysSinceFlight = 0;
+      if (fd) {
+        var fdMidMs = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate()).getTime();
+        var todayMidMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        daysSinceFlight = Math.round((todayMidMs - fdMidMs) / 86400000);
+        if (daysSinceFlight < 0) daysSinceFlight = 0;
+      }
+
       // Calculate delay from precision timing schedule (if actual > target)
       var delayMinutes = 0;
       try {
         if (typeof depActual !== 'undefined') {
-          // Real elapsed delay: cross-check the flight's scheduled date (fd) against today's
-          // real calendar date. Actual times logged (e.g. ATD) carry no date of their own, so
-          // if several real days have passed since the scheduled STD, that day gap must be
-          // added on top of the clock-time difference (e.g. a flight from 04SEP still showing
-          // an ATD logged on 06SEP is +48h late, not just a same-day clock delta).
-          var daysSinceFlight = 0;
-          if (fd) {
-            var fdMidMs = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate()).getTime();
-            var todayMidMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-            daysSinceFlight = Math.round((todayMidMs - fdMidMs) / 86400000);
-            if (daysSinceFlight < 0) daysSinceFlight = 0;
-          }
           var maxActualAbsMin = null;
           for (var daKey in depActual) { 
             if (depActual[daKey]) { 
@@ -3935,6 +3937,11 @@ function renderPaxLoadTable() {
           // ATD instant: start at STD instant, then add whole days until the ATD clock is
           // reached at/after STD (ATD is always >= STD for a departure), then it may differ.
           var atdUtcMs = yvrWallToUtcMs(y0, mo0, d0, Math.floor(atdMinForEta/60), atdMinForEta % 60);
+          // Once a real ATD is logged, anchor it to the number of real calendar days that have
+          // actually elapsed since the scheduled STD date, not just the clock-time difference -
+          // otherwise a multi-day-late ATD whose clock happens to be close to STD's clock (e.g.
+          // 23:10 logged two days after a 23:00 STD) is mistaken for a same-day departure.
+          if (depActual[25]) atdUtcMs += daysSinceFlight * 86400000;
           while (atdUtcMs < stdUtcMs - 6*3600*1000) atdUtcMs += 86400000; // ATD next day if before STD
           // Arrival instant (UTC) = ATD + block time
           var arrUtcMs = atdUtcMs + blkMin * 60000;
