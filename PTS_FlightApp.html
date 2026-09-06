@@ -2247,8 +2247,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             <span data-id="607" id="agent-pos-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
           </div>
           <textarea data-id="608" id="agent-pos-textarea" placeholder="Paste Agent Positions content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
+          <iframe id="agent-pos-pdf-viewer" style="display:none;width:100%;flex:1 1 0;min-height:120px;border:none;box-sizing:border-box;"></iframe>
+          <input type="file" id="agent-pos-pdf-input" accept="application/pdf" style="display:none;">
           <div data-id="609" class="panel-footer">
             <button data-id="609a" id="agent-pos-paste-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
+            <button id="agent-pos-import-pdf-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Import PDF</button>
+            <button id="agent-pos-remove-pdf-btn" style="display:none;background:#EF4444;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Remove PDF</button>
             <button data-id="610" id="agent-pos-save-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
             <button data-id="611" id="agent-pos-clear-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -3463,6 +3467,7 @@ function renderPaxLoadTable() {
         payload._dep_gen_dec = (document.getElementById('dep-gen-dec-textarea')||{}).value||'';
         payload._agent_pos   = (document.getElementById('agent-pos-textarea')||{}).value||'';
         payload._images = pastedImages;
+        payload._agent_pos_pdf = agentPosPdfData || '';
         localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(payload));
         var saveModal = document.getElementById('save-success-modal');
         if (saveModal) saveModal.style.display = 'flex';
@@ -4927,7 +4932,58 @@ function renderPaxLoadTable() {
       var preview = document.getElementById('agent-pos-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_agent_pos'); } catch(e) {}
       clearPastedImages('agent-pos-textarea');
+      removeAgentPosPdf();
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // ===========================
+    // AGENT POSITIONS - IMPORT PDF
+    // ===========================
+    var agentPosPdfData = null; // data URL of the imported PDF, persisted via saveToLocal/restoreFromLocal
+
+    function openAgentPosPdfPicker() {
+      var input = document.getElementById('agent-pos-pdf-input');
+      if (input) input.click();
+    }
+
+    function showAgentPosPdf(dataUrl) {
+      agentPosPdfData = dataUrl;
+      var ta = document.getElementById('agent-pos-textarea');
+      var viewer = document.getElementById('agent-pos-pdf-viewer');
+      var removeBtn = document.getElementById('agent-pos-remove-pdf-btn');
+      if (viewer) { viewer.src = dataUrl; viewer.style.display = ''; }
+      if (ta) ta.style.display = 'none';
+      if (removeBtn) removeBtn.style.display = '';
+    }
+
+    function removeAgentPosPdf() {
+      agentPosPdfData = null;
+      var ta = document.getElementById('agent-pos-textarea');
+      var viewer = document.getElementById('agent-pos-pdf-viewer');
+      var removeBtn = document.getElementById('agent-pos-remove-pdf-btn');
+      var input = document.getElementById('agent-pos-pdf-input');
+      if (viewer) { viewer.src = ''; viewer.style.display = 'none'; }
+      if (ta) ta.style.display = '';
+      if (removeBtn) removeBtn.style.display = 'none';
+      if (input) input.value = '';
+    }
+
+    function handleAgentPosPdfSelected(evt) {
+      var file = evt.target.files && evt.target.files[0];
+      if (!file) return;
+      if (file.type !== 'application/pdf') {
+        showToast('Please select a PDF file', 'red');
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        showAgentPosPdf(e.target.result);
+        showToast('PDF imported', 'green');
+      };
+      reader.onerror = function() {
+        showToast('Failed to read PDF file', 'red');
+      };
+      reader.readAsDataURL(file);
     }
 
     // ===========================
@@ -5604,6 +5660,11 @@ function renderPaxLoadTable() {
       safeOn('dep-gen-dec-paste-btn', function() { pasteFromExcel('dep-gen-dec-textarea'); });
       safeOn('agent-pos-paste-btn', function() { pasteFromExcel('agent-pos-textarea'); });
 
+      // Agent Positions - Import PDF
+      safeOn('agent-pos-import-pdf-btn', openAgentPosPdfPicker);
+      safeOn('agent-pos-remove-pdf-btn', removeAgentPosPdf);
+      (function(){ var pdfInput = document.getElementById('agent-pos-pdf-input'); if (pdfInput) pdfInput.addEventListener('change', handleAgentPosPdfSelected); })();
+
       // Delegated input listener on #tab-pts
       document.getElementById('tab-pts').addEventListener('input', function(e) {
         var el = e.target;
@@ -5671,6 +5732,7 @@ function renderPaxLoadTable() {
           });
         })();
         if (restored._images) pastedImages = restored._images;
+        if (restored._agent_pos_pdf) showAgentPosPdf(restored._agent_pos_pdf);
         syncInputsFromState();
         renderActivities();
         renderPaxLoadTable();
