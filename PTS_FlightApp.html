@@ -1548,6 +1548,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </div>
     </div>
 
+    <!-- CANCEL FLIGHT CONFIRM MODAL -->
+    <div id="cancel-flight-confirm-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
+        <div style="font-size:15px;font-weight:700;color:#7F1D1D;">Flight Status will be updated to Cancelled.</div>
+        <div style="margin-top:14px;color:#374151;font-size:13px;">Confirm?</div>
+        <div style="margin-top:18px;display:flex;gap:12px;justify-content:center;">
+          <button id="cancel-flight-confirm-yes" style="background:#EF4444;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">Yes, Cancel Flight</button>
+          <button id="cancel-flight-confirm-no" style="background:#F3F4F6;color:#111827;border:1px solid #E5E7EB;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;min-height:40px;">Disregard</button>
+        </div>
+      </div>
+    </div>
+
     <!-- SAVE SUCCESS MODAL -->
     <div id="save-success-modal" class="modal-overlay" style="display:none;">
       <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
@@ -1816,6 +1828,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </button>
           <button id="btn-clear-nav" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-white text-xs font-semibold hover:bg-white/20 transition-colors flex-shrink-0" style="background:rgba(239,68,68,0.9);min-height:32px;white-space:nowrap;border:none;cursor:pointer;">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear
+          </button>
+          <button id="btn-cancel-flight-nav" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-white text-xs font-semibold hover:bg-white/20 transition-colors flex-shrink-0" style="background:#7F1D1D;min-height:32px;white-space:nowrap;border:none;cursor:pointer;">
+            <i data-lucide="ban" class="w-3.5 h-3.5"></i> FX - Cancel
           </button>
         </div>
 
@@ -2317,6 +2332,37 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       if (banner) banner.style.display = 'none';
     }
 
+    // ===========================
+    // FX - CANCEL FLIGHT
+    // ===========================
+    function openCancelFlightModal() {
+      var modal = document.getElementById('cancel-flight-confirm-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function doCancelFlight() {
+      var modal = document.getElementById('cancel-flight-confirm-modal');
+      if (modal) modal.style.display = 'none';
+      if (typeof state !== 'undefined') {
+        state._flightCancelled = true;
+        try {
+          var raw = localStorage.getItem(PTS_SAVE_KEY);
+          var payload = raw ? JSON.parse(raw) : {};
+          payload.state = state;
+          payload.arrActual = (typeof arrActual !== 'undefined') ? arrActual : payload.arrActual;
+          payload.depActual = (typeof depActual !== 'undefined') ? depActual : payload.depActual;
+          payload.savedAt = new Date().toISOString();
+          localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(payload));
+        } catch(e) {}
+      }
+      if (typeof updateETDCountdown === 'function') updateETDCountdown();
+    }
+
+    function disregardCancelFlight() {
+      var modal = document.getElementById('cancel-flight-confirm-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
     // Lock only those fields that were filled in by the last import
     function lockImportedFields(parsed) {
       if (!parsed) return;
@@ -2393,7 +2439,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       dep_inf_occ:'', dep_wchr_s:'', dep_wchc:'', dep_maas:'', dep_umnr:'', dep_svip:'', dep_meda:'', dep_deaf:'', dep_blnd:'', dep_chd:'',
       defects:'', remarks:'',
       _locked: false,
-      _badgeVisible: false
+      _badgeVisible: false,
+      _flightCancelled: false
     };
 
     var arrActual = {};
@@ -3810,6 +3857,23 @@ function renderPaxLoadTable() {
       if (typeof state === 'undefined') return;
       var now = new Date();
       var nowMs = now.getTime();
+
+      // Flight cancelled: short-circuit both ETD and Boarding widgets to a red "Cancelled" state.
+      if (state._flightCancelled) {
+        ['etd-countdown', 'etd-countdown-m'].forEach(function(id) {
+          var el = document.getElementById(id); if (!el) return;
+          el.style.visibility = 'visible';
+          el.style.color = '#EF4444';
+          el.innerHTML = '<span style="color:#EF4444;font-weight:700;">Cancelled</span>';
+        });
+        ['boarding-countdown', 'boarding-countdown-m'].forEach(function(id) {
+          var bl = document.getElementById(id); if (!bl) return;
+          bl.style.display = 'inline-block';
+          bl.style.color = '#EF4444';
+          bl.innerHTML = '<div style="display:inline-block;vertical-align:middle;"><span style="color:#EF4444;font-weight:700;">Cancelled</span></div>';
+        });
+        return;
+      }
 
       // Parse flight date (if present)
       var fd = null;
@@ -5297,6 +5361,7 @@ function renderPaxLoadTable() {
       safeOn('btn-share-nav',  generateShareCode);
       safeOn('btn-email-nav',  openSendModal);
       safeOn('btn-clear-nav',  clearAll);
+      safeOn('btn-cancel-flight-nav', openCancelFlightModal);
 
       // Header buttons (mobile)
       safeOn('btn-import-mob',  openImportModal);
@@ -5311,6 +5376,9 @@ function renderPaxLoadTable() {
       // Clear confirm
       safeOn('clear-confirm-yes', doClearAll);
       safeOn('clear-confirm-no',  cancelClear);
+      // Cancel flight confirm
+      safeOn('cancel-flight-confirm-yes', doCancelFlight);
+      safeOn('cancel-flight-confirm-no',  disregardCancelFlight);
       safeOn('save-success-ok', function() {
         var m = document.getElementById('save-success-modal');
         if (m) m.style.display = 'none';
