@@ -5071,7 +5071,7 @@ function renderPaxLoadTable() {
       // When a PDF is imported, embed its actual rendered pages as images directly inside
       // the section's content box (stacked full-width), instead of a placeholder note.
       var agentPosImagesHtml = (typeof agentPosPdfImages !== 'undefined' ? agentPosPdfImages : [])
-        .map(function(src) { return '<img src="'+src+'" style="width:100%;display:block;margin-bottom:8px;">'; })
+        .map(function(src, i, arr) { return '<img src="'+src+'" style="width:100%;display:block;'+(i<arr.length-1?'margin-bottom:8px;':'')+'">'; })
         .join('');
 
       var css = [
@@ -5436,7 +5436,7 @@ function renderPaxLoadTable() {
             var position = y;
             pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
             heightLeft -= (margin + usableHeight - y);
-            while (heightLeft > 0) {
+            while (heightLeft > 1) { // >1pt tolerance avoids an almost-empty trailing page from rounding
               pdf.addPage();
               position -= usableHeight;
               pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
