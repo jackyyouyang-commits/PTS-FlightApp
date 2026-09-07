@@ -2435,7 +2435,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var txt = document.getElementById('cancel-flight-text-nav');
       var icon = document.getElementById('cancel-flight-icon-nav');
       var cancelled = (typeof state !== 'undefined') && state._flightCancelled;
-      if (txt) txt.textContent = cancelled ? 'Reinstate' : 'FX - Cancel';
+      if (txt) txt.textContent = cancelled ? 'FX - Reinstate' : 'FX - Cancel';
       if (btn) btn.style.background = cancelled ? '#1a6e4e' : '#7F1D1D';
       if (icon) {
         // createIcons() swaps the <i> for an <svg>, so rebuild a fresh placeholder each
