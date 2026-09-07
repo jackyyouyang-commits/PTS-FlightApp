@@ -1581,6 +1581,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </div>
     </div>
 
+    <!-- UNDERLOAD WARNING MODAL -->
+    <div id="underload-warning-modal" class="modal-overlay" style="display:none;z-index:200;">
+      <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;color:#B91C1C;">Warning!</div>
+        <div id="underload-warning-value" style="font-size:24px;font-weight:800;color:#0369a1;margin-top:10px;"></div>
+        <div style="font-size:15px;font-weight:700;color:#7F1D1D;margin-top:10px;">Payload Flight, All Sublo Refer L/C</div>
+        <div style="margin-top:18px;display:flex;gap:12px;justify-content:center;">
+          <button id="underload-warning-ok" style="background:#EF4444;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">OK</button>
+        </div>
+      </div>
+    </div>
+
     <!-- RESTORE SUCCESS MODAL -->
     <div id="restore-success-modal" class="modal-overlay" style="display:none;">
       <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
@@ -5664,6 +5676,7 @@ function renderPaxLoadTable() {
         }
         showToast('Code copied!','green');
       });
+      safeOn('underload-warning-ok',function(){ var m=document.getElementById('underload-warning-modal'); if(m)m.style.display='none'; });
       safeOn('share-copy-link-btn',function(){
         var el=document.getElementById('share-link-output'); if(!el)return;
         try{navigator.clipboard.writeText(el.value);}catch(e){
@@ -5810,6 +5823,18 @@ function renderPaxLoadTable() {
           }
           var ulEl = document.getElementById('f-dep_underload');
           if (ulEl) ulEl.value = state.Q31;
+          // Warn once when the computed underload exceeds MZFW
+          if (!isNaN(ul) && !isNaN(mzfw) && ul > mzfw) {
+            if (!window._underloadWarnShown) {
+              window._underloadWarnShown = true;
+              var uwv = document.getElementById('underload-warning-value');
+              if (uwv) uwv.textContent = state.Q31;
+              var uwm = document.getElementById('underload-warning-modal');
+              if (uwm) uwm.style.display = 'flex';
+            }
+          } else {
+            window._underloadWarnShown = false;
+          }
         }
         if (key === 'dep_std') { renderActivities(); updateETDCountdown(); }
         if (['dep_etd','dep_board_time','dep_eta_hkg','dep_sta_hkg'].indexOf(key) >= 0) {
