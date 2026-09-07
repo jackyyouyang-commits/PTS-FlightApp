@@ -1731,6 +1731,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
         <div data-id="114" id="send-report-pre" class="send-report-pre"></div>
         <div data-id="115" class="flex justify-end gap-3 mt-4">
+          <button data-id="116b" id="send-download-pdf-btn" class="flex items-center gap-2 px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark transition-colors">
+            <i data-lucide="save" class="w-4 h-4"></i> Download PDF
+          </button>
           <button data-id="116" id="send-copy-btn" class="flex items-center gap-2 px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark transition-colors">
             <i data-id="117" data-lucide="clipboard-copy" class="w-4 h-4"></i> Copy Report
           </button>
@@ -5444,6 +5447,9 @@ function renderPaxLoadTable() {
         var sp = document.getElementById('send-report-pre');
         if (st) st.textContent = 'Send Report' + (state.flight ? ' - ' + state.flight : '');
         try { if (sp) sp.innerHTML = buildReportHTML(); } catch(e) {}
+        // The report HTML carries its own toolbar at the top. Inside the modal the same
+        // actions live in the modal footer instead, so drop the inline one.
+        if (sp) { var inlineBar = sp.querySelector('.no-print'); if (inlineBar) inlineBar.remove(); }
         if (sm) sm.style.display = 'flex';
         // Popup was blocked, so wire the report's own "Download PDF" button (rendered
         // inline inside #send-report-pre) to capture just that container, not the
@@ -5521,8 +5527,8 @@ function renderPaxLoadTable() {
       }
       var doc = win.document;
       var captureRoot = rootEl || doc.body;
-      var btn = doc.getElementById('pts-download-pdf-btn');
-      var origLabel = btn ? btn.textContent : '';
+      var btn = doc.getElementById('pts-download-pdf-btn') || doc.getElementById('send-download-pdf-btn');
+      var origLabel = btn ? btn.innerHTML : '';
       if (btn) { btn.textContent = 'Generating PDF...'; btn.disabled = true; }
 
       var jsPDF = window.jspdf.jsPDF;
@@ -5654,9 +5660,9 @@ function renderPaxLoadTable() {
       renderBlock(0).then(function() {
         var flightPart = (state && state.flight) ? '_' + state.flight.replace(/[^A-Za-z0-9]/g, '') : '';
         pdf.save('PTS_Report' + flightPart + '.pdf');
-        if (btn) { btn.textContent = origLabel; btn.disabled = false; }
+        if (btn) { btn.innerHTML = origLabel; btn.disabled = false; }
       }).catch(function(err) {
-        if (btn) { btn.textContent = origLabel; btn.disabled = false; }
+        if (btn) { btn.innerHTML = origLabel; btn.disabled = false; }
         showToast('PDF generation failed: ' + err.message, 'red');
       });
     }
@@ -5816,6 +5822,11 @@ function renderPaxLoadTable() {
 
       // Send modal
       safeOn('send-modal-close',function(){ var sm=document.getElementById('send-modal'); if(sm)sm.style.display='none'; });
+      safeOn('send-download-pdf-btn',function(){
+        var sp=document.getElementById('send-report-pre');
+        if (typeof window.generatePDF === 'function') window.generatePDF();
+        else downloadPtsPdf(window, sp);
+      });
       safeOn('send-copy-btn',function(){
         var sp=document.getElementById('send-report-pre'); if(!sp)return;
         try{navigator.clipboard.writeText(sp.textContent);}catch(e){
