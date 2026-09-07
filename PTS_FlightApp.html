@@ -5240,23 +5240,34 @@ function renderPaxLoadTable() {
         // that actually need the room (like "Tag Number") into wrapping onto a second line.
         var fullRows = allCells.filter(function(row) { return row.length === numCols; });
         var rowsForWidth = fullRows.length ? fullRows : allCells;
+        // Columns whose longest value is short (record locators, tag numbers, seats, flight
+        // numbers, times) must never wrap onto a second line — the font is scaled down
+        // instead so the whole row still fits the page width.
+        var NOWRAP_MAX_CHARS = 24;
+        var colMaxChars = [];
         var colWidths = [];
         for(var c = 0; c < numCols; c++){
-          var maxWidth = 0;
+          var maxChars = 0;
           rowsForWidth.forEach(function(row) {
             var cell = (row[c] || '').trim();
-            var width = Math.max(30, cell.length * 7 + 12);
-            maxWidth = Math.max(maxWidth, width);
+            maxChars = Math.max(maxChars, cell.length);
           });
-          colWidths[c] = maxWidth;
+          colMaxChars[c] = maxChars;
+          colWidths[c] = Math.max(30, maxChars * 7 + 12);
         }
+        var colNoWrap = colMaxChars.map(function(n){ return n <= NOWRAP_MAX_CHARS; });
 
         // Convert the measured pixel widths into percentages so the table always scales to
         // fit the printable page width (Letter) instead of overflowing and being cut off.
         var totalWidth = colWidths.reduce(function(a,b){return a+b;},0) || 1;
         var colPcts = colWidths.map(function(w){ return (w / totalWidth) * 100; });
-        // Shrink the font as the table gets wider so more columns still fit legibly.
-        var fontSize = totalWidth > 1100 ? 7 : totalWidth > 850 ? 8 : totalWidth > 650 ? 9 : 11;
+        // Every column keeps its full proportional share, so scaling the font by the same
+        // ratio the table is being squeezed by guarantees no-wrap cells still fit.
+        var PRINTABLE_WIDTH = 730; // Letter minus margins, in CSS px
+        var scale = Math.min(1, PRINTABLE_WIDTH / totalWidth);
+        var fontSize = Math.max(5, Math.round(11 * scale * 10) / 10);
+        var padY = Math.max(1, Math.round(3 * scale));
+        var padX = Math.max(1, Math.round(4 * scale));
 
         var tableHTML = '<table style="border-collapse:collapse;table-layout:fixed;font-family:monospace;font-size:' + fontSize + 'px;border:1px solid #999;margin:10px 0;width:100%;max-width:100%;">';
         tableHTML += '<colgroup>' + colPcts.map(function(w){ return '<col style="width:' + w.toFixed(4) + '%;">'; }).join('') + '</colgroup>';
@@ -5270,7 +5281,10 @@ function renderPaxLoadTable() {
             var isLastCellInShortRow = (row.length < numCols) && (colIdx === row.length - 1);
             var span = isLastCellInShortRow ? (numCols - colIdx) : 1;
             var colspanAttr = span > 1 ? ' colspan="' + span + '"' : '';
-            tableHTML += '<td' + colspanAttr + ' style="border-right:1px solid #ccc;padding:3px 4px;white-space:normal;word-break:break-word;overflow-wrap:anywhere;' + fontWeight + 'background:' + bgColor + ';">' + cellContent + '</td>';
+            var wrapCss = (span === 1 && colNoWrap[colIdx] === false)
+              ? 'white-space:normal;word-break:break-word;overflow-wrap:anywhere;'
+              : 'white-space:nowrap;';
+            tableHTML += '<td' + colspanAttr + ' style="border-right:1px solid #ccc;padding:' + padY + 'px ' + padX + 'px;' + wrapCss + fontWeight + 'background:' + bgColor + ';">' + cellContent + '</td>';
           });
           tableHTML += '</tr>';
         });
