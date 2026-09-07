@@ -5130,7 +5130,7 @@ function renderPaxLoadTable() {
       function row(label,val){ return '<tr><td class="lbl">'+label+'</td><td class="val">'+val+'</td></tr>'; }
 
       // Flight header
-      var flightLabel = (s.flight||'') + (s.date ? '  ·  '+s.date : '');
+      var flightLabel = (s.flight||'') + (s.date ? '  ·  '+s.date : '') + (s.regn ? '  ·  '+s.regn : '') + (s.config ? '  ·  '+s.config : '');
 
       // Active pax loading row (Rev2 > Rev1 > Final)
       function paxRow(label, jk, wk, yk, infk, totk){
