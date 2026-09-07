@@ -369,6 +369,14 @@ document.addEventListener('DOMContentLoaded', function() {
         display: flex; align-items: center; gap: 8px;
       }
 
+      /* Modal variant: single-line notices, shrunk to fit the dialog width. */
+      .notice-card-compact {
+        font-size: 12px;
+        padding: 10px 12px;
+        white-space: nowrap;
+        justify-content: center;
+      }
+
       .pax-table { width: 100%; border-collapse: separate; border-spacing: 0; }
       .pax-table th { font-size: 0.7rem; font-weight: 700; color: var(--cx-teal); text-transform: uppercase; padding: 8px 4px; text-align: center; }
       .pax-table td { padding: 4px; }
@@ -1584,12 +1592,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
     <!-- NOTICES ACKNOWLEDGE MODAL (triggered by Last Pax Onboard) -->
     <div id="notices-ack-modal" class="modal-overlay" style="display:none;">
-      <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
+      <div class="modal-card" style="max-width:520px;padding:20px;text-align:center;">
         <div style="font-size:15px;font-weight:700;color:#991B1B;display:flex;align-items:center;justify-content:center;gap:6px;">
           <i data-lucide="alert-triangle" style="width:18px;height:18px;"></i> Important Notice
         </div>
-        <div class="notice-card" style="margin-top:14px;">Verify all locks have been raised before door close</div>
-        <div class="notice-card" style="margin-top:10px;">Re-confirm Final pax figure with ISM, and update if needed</div>
+        <div class="notice-card notice-card-compact" style="margin-top:14px;">Verify all locks have been raised before door close</div>
+        <div class="notice-card notice-card-compact" style="margin-top:10px;">Re-confirm Final pax figure with ISM, and update if needed</div>
         <div style="margin-top:18px;display:flex;justify-content:center;">
           <button id="notices-ack-ok" style="background:#EF4444;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">Acknowledge</button>
         </div>
