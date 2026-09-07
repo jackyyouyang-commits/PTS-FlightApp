@@ -1061,7 +1061,7 @@ document.addEventListener('DOMContentLoaded', function() {
           padding-left:8px!important;padding-right:8px!important;
         }
         .textarea-panel-wrapper textarea,
-        #staff-acc-textarea,#arr-ptm-textarea,#oir-textarea,#itd-tag-card-textarea,
+        #staff-acc-textarea,#arr-ptm-textarea,#arr-disruption-ppm-textarea,#oir-textarea,#itd-tag-card-textarea,
         #dep-lir-textarea,#crew-textarea,#dep-crew-textarea,#dep-gen-dec-textarea,
         #agent-pos-textarea,#f-remarks{
           width:100%!important;max-width:100%!important;min-width:0!important;
@@ -1791,6 +1791,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
          <i data-id="574" data-lucide="plane-landing" class="w-5 h-5"></i>
          <span data-id="575" class="text-[11px] font-semibold">Arrival PTM</span>
         </button>
+        <button data-id="573b" class="bottom-tab" data-tab="arr-disruption-ppm">
+         <i data-id="574b" data-lucide="alert-triangle" class="w-5 h-5"></i>
+         <span data-id="575b" class="text-[11px] font-semibold">Arrival Disruption PPM</span>
+        </button>
         <button data-id="612" class="bottom-tab" data-tab="itd-tag-card">
          <i data-id="613" data-lucide="file-text" class="w-5 h-5"></i>
          <span data-id="614" class="text-[11px] font-semibold">ITD Tag Card</span>
@@ -2173,6 +2177,22 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
       </div>
 
+      <!-- ========== TAB: ARRIVAL DISRUPTION PPM ========== -->
+      <div data-id="515b" id="tab-arr-disruption-ppm" class="tab-content tab-flex-panel">
+        <div data-id="516b" class="textarea-panel-wrapper">
+          <div data-id="517b" class="panel-header">
+            <h2 data-id="518b" style="font-size:18px;font-weight:700;margin:0;">Arrival Disruption PPM</h2>
+            <span data-id="519b" id="arr-disruption-ppm-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
+          </div>
+          <textarea data-id="520b" id="arr-disruption-ppm-textarea" placeholder="Paste Arrival Disruption PPM content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
+          <div data-id="521b" class="panel-footer">
+            <button data-id="521c" id="arr-disruption-ppm-paste-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
+            <button data-id="522b" id="arr-disruption-ppm-save-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
+            <button data-id="523b" id="arr-disruption-ppm-clear-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
+          </div>
+        </div>
+      </div>
+
       <!-- ========== TAB: ITD TAG CARD ========== -->
       <div data-id="615" id="tab-itd-tag-card" class="tab-content tab-flex-panel">
         <div data-id="616" class="textarea-panel-wrapper">
@@ -2343,6 +2363,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       clearDepCrew();
       clearStaffAcc();
       clearArrPTM();
+      clearArrDisruptionPPM();
       clearDepLIR();
       clearITDTagCard();
       clearDepGenDec();
@@ -3327,6 +3348,11 @@ function renderPaxLoadTable() {
       if(arrPtmVal.trim()) lines.push(arrPtmVal.trim());
       lines.push('');
 
+      sec('ARRIVAL DISRUPTION PPM');
+      var arrDisruptionPpmVal = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
+      if(arrDisruptionPpmVal.trim()) lines.push(arrDisruptionPpmVal.trim());
+      lines.push('');
+
       sec('ARRIVAL OIR');
       var oirVal = (document.getElementById('oir-textarea')||{}).value||'';
       if(oirVal.trim()) lines.push(oirVal.trim());
@@ -3403,7 +3429,7 @@ function renderPaxLoadTable() {
     // This lets a user paste a screenshot (e.g. from Snipping Tool) into the same box;
     // the image is captured as a data-URL and shown in a small gallery under the textarea,
     // and travels with saveToLocal/generateShareCode just like the textarea's text.
-    var PASTE_IMAGE_IDS = ['staff-acc-textarea','arr-ptm-textarea','itd-tag-card-textarea','oir-textarea',
+    var PASTE_IMAGE_IDS = ['staff-acc-textarea','arr-ptm-textarea','arr-disruption-ppm-textarea','itd-tag-card-textarea','oir-textarea',
       'dep-lir-textarea','crew-textarea','dep-crew-textarea','dep-gen-dec-textarea','agent-pos-textarea'];
     var pastedImages = {}; // textareaId -> array of image data-URLs
 
@@ -3482,6 +3508,7 @@ function renderPaxLoadTable() {
         // Include paste-tab content in share payload
         payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
         payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
+        payload._arr_disruption_ppm = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
         payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
         payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
         payload._dep_lir   = (document.getElementById('dep-lir-textarea')||{}).value||'';
@@ -3537,6 +3564,7 @@ function renderPaxLoadTable() {
         // Include paste-tab content in share payload
         payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
         payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
+        payload._arr_disruption_ppm = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
         payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
         payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
         payload._dep_lir   = (document.getElementById('dep-lir-textarea')||{}).value||'';
@@ -3582,7 +3610,7 @@ function renderPaxLoadTable() {
         if (data.depActual) Object.assign(depActual, data.depActual);
         // Restore paste-tab textarea content from shared payload
         (function(){
-          var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm',
+          var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm','arr-disruption-ppm-textarea':'_arr_disruption_ppm',
                    'oir-textarea':'_oir','itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir',
                    'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew',
                    'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos'};
@@ -4901,6 +4929,49 @@ function renderPaxLoadTable() {
     }
 
     // ===========================
+    // ARRIVAL DISRUPTION PPM FUNCTIONS
+    // ===========================
+    function saveArrDisruptionPPM() {
+      var val = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
+      try { localStorage.setItem('pts_arr_disruption_ppm', val); } catch(e) {}
+      lockArrDisruptionPPM();
+      showToast('Arrival Disruption PPM saved & locked', 'green');
+    }
+    function lockArrDisruptionPPM() {
+      var ta = document.getElementById('arr-disruption-ppm-textarea');
+      if (ta) { ta.setAttribute('readonly','readonly'); ta.style.background='#F9FAFB'; }
+      var badge = document.getElementById('arr-disruption-ppm-lock-badge');
+      if (badge) {
+        badge.style.display='inline-flex';
+        badge.innerHTML='\uD83D\uDD12 Locked <button id="arr-disruption-ppm-unlock-btn" class="lock-badge-btn" style="background:rgba(255,255,255,0.2);border:none;border-radius:99px;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer;margin-left:4px;">Unlock</button>';
+        var ubtn = document.getElementById('arr-disruption-ppm-unlock-btn');
+        if (ubtn) ubtn.addEventListener('click', function(){ unlockArrDisruptionPPM(); });
+      }
+      try { localStorage.setItem('pts_arr_disruption_ppm_locked','1'); } catch(e) {}
+    }
+    function unlockArrDisruptionPPM() {
+      var ta = document.getElementById('arr-disruption-ppm-textarea');
+      if (ta) { ta.removeAttribute('readonly'); ta.style.background=''; }
+      var badge = document.getElementById('arr-disruption-ppm-lock-badge');
+      if (badge) {
+        badge.style.display='inline-flex';
+        badge.innerHTML='\uD83D\uDD13 Unlocked <button id="arr-disruption-ppm-lock-btn" class="lock-badge-btn" style="background:rgba(255,255,255,0.2);border:none;border-radius:99px;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer;margin-left:4px;">Lock</button>';
+        var lbtn = document.getElementById('arr-disruption-ppm-lock-btn');
+        if (lbtn) lbtn.addEventListener('click', function(){ lockArrDisruptionPPM(); });
+      }
+      try { localStorage.setItem('pts_arr_disruption_ppm_locked','0'); } catch(e) {}
+    }
+    function clearArrDisruptionPPM() {
+      unlockArrDisruptionPPM();
+      var ta = document.getElementById('arr-disruption-ppm-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
+      var preview = document.getElementById('arr-disruption-ppm-textarea-preview'); if(preview) preview.remove();
+      try { localStorage.removeItem('pts_arr_disruption_ppm'); localStorage.removeItem('pts_arr_disruption_ppm_locked'); } catch(e) {}
+      var badge = document.getElementById('arr-disruption-ppm-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('arr-disruption-ppm-textarea');
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // ===========================
     // DEP LIR FUNCTIONS
     // ===========================
     function saveDepLIR() {
@@ -5097,6 +5168,7 @@ function renderPaxLoadTable() {
       function taVal(id){ var el=document.getElementById(id); return el&&el.value.trim()?el.value.trim():''; }
       var staffAccContent = taVal('staff-acc-textarea');
       var arrPtmContent   = taVal('arr-ptm-textarea');
+      var arrDisruptionPpmContent = taVal('arr-disruption-ppm-textarea');
       var itdTagCardContent = taVal('itd-tag-card-textarea');
       var oirContent      = taVal('oir-textarea');
       var depLirContent   = taVal('dep-lir-textarea');
@@ -5275,6 +5347,9 @@ function renderPaxLoadTable() {
 
         // === Page 3: Arrival PTM ===
         '<div class="page-break">'+preSection('Arrival PTM', arrPtmContent)+'</div>',
+
+        // === Page 3b: Arrival Disruption PPM ===
+        '<div class="page-break">'+htmlSection('Arrival Disruption PPM', formatITDTagCardTable(arrDisruptionPpmContent))+'</div>',
 
         // === Page 4: ITD Tag Card ===
         '<div class="page-break">'+htmlSection('ITD Tag Card', formatITDTagCardTable(itdTagCardContent))+'</div>',
@@ -5730,6 +5805,10 @@ function renderPaxLoadTable() {
       safeOn('arr-ptm-save-btn', saveArrPTM);
       safeOn('arr-ptm-clear-btn', clearArrPTM);
 
+      // Arrival Disruption PPM buttons
+      safeOn('arr-disruption-ppm-save-btn', saveArrDisruptionPPM);
+      safeOn('arr-disruption-ppm-clear-btn', clearArrDisruptionPPM);
+
       // DEP LIR buttons
       safeOn('dep-lir-save-btn', saveDepLIR);
       safeOn('dep-lir-clear-btn', clearDepLIR);
@@ -5775,6 +5854,7 @@ function renderPaxLoadTable() {
       // Paste from Excel buttons
       safeOn('staff-acc-paste-btn', function() { pasteFromExcel('staff-acc-textarea'); });
       safeOn('arr-ptm-paste-btn', function() { pasteFromExcel('arr-ptm-textarea'); });
+      safeOn('arr-disruption-ppm-paste-btn', function() { pasteFromExcel('arr-disruption-ppm-textarea'); });
       safeOn('itd-tag-card-paste-btn', function() { pasteFromExcel('itd-tag-card-textarea'); });
       safeOn('oir-paste-btn', function() { pasteFromExcel('oir-textarea'); });
       safeOn('dep-lir-paste-btn', function() { pasteFromExcel('dep-lir-textarea'); });
@@ -5868,7 +5948,7 @@ function renderPaxLoadTable() {
       if (restored) {
         // Restore paste-tab textarea content from local storage payload
         (function(){
-          var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm',
+          var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm','arr-disruption-ppm-textarea':'_arr_disruption_ppm',
                    'oir-textarea':'_oir','itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir',
                    'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew',
                    'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos'};
@@ -5961,6 +6041,15 @@ function renderPaxLoadTable() {
         var l='0'; try{l=localStorage.getItem('pts_arr_ptm_locked')||'0';}catch(e){}
         var ta=document.getElementById('arr-ptm-textarea'); if(ta&&v) ta.value=v;
         if(l==='1'&&v) lockArrPTM();
+      })();
+
+      // Restore Arrival Disruption PPM
+      if (!hashCode) (function(){
+        var v=''; try{v=localStorage.getItem('pts_arr_disruption_ppm')||'';}catch(e){}
+        var l='0'; try{l=localStorage.getItem('pts_arr_disruption_ppm_locked')||'0';}catch(e){}
+        var ta=document.getElementById('arr-disruption-ppm-textarea');
+        if(ta&&v) { ta.value=v; try { processPastedData(ta, v); } catch(e) {} }
+        if(l==='1'&&v) lockArrDisruptionPPM();
       })();
 
       // Restore DEP LIR
