@@ -5522,6 +5522,23 @@ function renderPaxLoadTable() {
     // owns the report DOM (the popup window, or the main window when the popup was blocked);
     // `rootEl` optionally scopes the capture to a specific element instead of the whole body
     // (needed for the in-page fallback, so we don't screenshot the entire app behind the modal).
+    // Builds the report file name, e.g. "CX810-867 07Sep YVRHKG Flight Info and PTS Report.pdf".
+    // The flight number's "/" is swapped for "-" because a slash is a path separator and
+    // would break the browser download.
+    function buildReportFileName() {
+      var parts = [];
+      var flight = (state && state.flight ? String(state.flight) : '').trim();
+      if (flight) parts.push(flight.replace(/[\\\/]+/g, '-'));
+      var d = parseFlightDateStr(state && state.date);
+      if (d) {
+        var mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        parts.push(('0' + d.getDate()).slice(-2) + mons[d.getMonth()]);
+      }
+      parts.push('YVRHKG');
+      parts.push('Flight Info and PTS Report');
+      return parts.join(' ').replace(/[<>:"|?*\x00-\x1f]/g, '') + '.pdf';
+    }
+
     function downloadPtsPdf(win, rootEl) {
       if (!win || !win.document || typeof html2canvas !== 'function' || !window.jspdf) {
         showToast('PDF library failed to load', 'red');
@@ -5660,8 +5677,7 @@ function renderPaxLoadTable() {
       }
 
       renderBlock(0).then(function() {
-        var flightPart = (state && state.flight) ? '_' + state.flight.replace(/[^A-Za-z0-9]/g, '') : '';
-        pdf.save('PTS_Report' + flightPart + '.pdf');
+        pdf.save(buildReportFileName());
         if (btn) { btn.innerHTML = origLabel; btn.disabled = false; }
       }).catch(function(err) {
         if (btn) { btn.innerHTML = origLabel; btn.disabled = false; }
