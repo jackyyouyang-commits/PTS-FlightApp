@@ -1890,9 +1890,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <!-- Navigation Menu for Precision Timing Schedules + Action Buttons -->
         <div style="position:sticky;top:0;z-index:10;background:#005C5C;border-bottom:2px solid #004545;padding:12px 16px;display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center;min-height:48px;box-shadow:0 2px 4px rgba(0,0,0,0.1);width:100%;box-sizing:border-box;">
           <!-- Navigation buttons -->
-          <button onclick="switchToTab('pts-schedule');setTimeout(function(){document.getElementById('arrival-pts').scrollIntoView({behavior:'smooth'});},60);" style="flex-shrink:0;padding:8px 14px;background:#00838F;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;">⏱ Arrival</button>
+          <button onclick="switchToTab('pts');setTimeout(function(){document.getElementById('flightinfo-arrival').scrollIntoView({behavior:'smooth',block:'start'});},60);" style="flex-shrink:0;padding:8px 14px;background:#00838F;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;">🛬 Arrival Info</button>
           <div class="nav-divider"></div>
-          <button onclick="switchToTab('pts-schedule');setTimeout(function(){document.getElementById('departure-pts').scrollIntoView({behavior:'smooth'});},60);" style="flex-shrink:0;padding:8px 14px;background:#00838F;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;">⏱ Departure</button>
+          <button onclick="switchToTab('pts');setTimeout(function(){document.getElementById('flightinfo-departure').scrollIntoView({behavior:'smooth',block:'start'});},60);" style="flex-shrink:0;padding:8px 14px;background:#00838F;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;">🛫 Departure Info</button>
           
           <!-- Divider -->
           <div class="nav-divider"></div>
@@ -1942,7 +1942,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div data-id="164" class="mt-3"><label data-id="165" class="field-label">Delay Code(s) ex HKG</label><input data-id="166" class="field-input sm" id="f-delayCode" data-key="delayCode" placeholder="e.g. FAC8 / IAK3"></div>
         </div>
 
-        <div data-id="167" class="section-hdr green text-center text-base tracking-widest" style="font-size:0.85rem;">Arrival</div>
+        <div data-id="167" id="flightinfo-arrival" class="section-hdr green text-center text-base tracking-widest" style="font-size:0.85rem;scroll-margin-top:80px;">Arrival</div>
 
         <div data-id="168" class="section-hdr">Arrival Crew</div>
         <div data-id="169" class="card">
@@ -2000,7 +2000,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="261" class="section-hdr green text-center text-base tracking-widest" style="font-size:0.85rem;">Departure</div>
+        <div data-id="261" id="flightinfo-departure" class="section-hdr green text-center text-base tracking-widest" style="font-size:0.85rem;scroll-margin-top:80px;">Departure</div>
 
         <div data-id="262" class="section-hdr">Departure Flight Info</div>
         <div data-id="263" class="card">
