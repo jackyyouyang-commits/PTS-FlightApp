@@ -6098,7 +6098,12 @@ function renderPaxLoadTable() {
         (function(){
           var m = document.getElementById('restore-success-modal');
           var t = document.getElementById('restore-success-text');
-          if (t) t.textContent = 'Flight Information successfully restored from ' + new Date(restored.savedAt).toLocaleString();
+          if (t) {
+            t.textContent = '';
+            t.appendChild(document.createTextNode('Flight Information successfully restored from'));
+            t.appendChild(document.createElement('br'));
+            t.appendChild(document.createTextNode(new Date(restored.savedAt).toLocaleString()));
+          }
           if (m) m.style.display = 'flex';
         })();
       } else {
