@@ -38,14 +38,16 @@ window.lucide = {
       'clipboard-copy': 'M20 8v14H8V8h12zM16 8V4H4v12h4M16 4l4 4',
       'timer': 'M12 22a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v4l3 2M9 2h6',
       'unlink': 'M18.84 12.25l1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71M5.17 11.75l-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71M8 2v3M2 8h3M16 19v3M19 16h3',
-      'alert-triangle': 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01'
+      'alert-triangle': 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01',
+      'ban': 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM4.93 4.93l14.14 14.14',
+      'rotate-ccw': 'M3 2v6h6M3.51 15a9 9 0 1 0 2.13-9.36L3 8'
     };
     document.querySelectorAll('[data-lucide]').forEach(function(el) {
       var name = el.getAttribute('data-lucide');
       var d = icons[name] || 'M12 12h.01';
       var w = el.style.width || el.className.match(/w-(\S+)/) && '16px' || '16px';
       var h = el.style.height || '16px';
-      el.outerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+
+      el.outerHTML = '<svg xmlns="http://www.w3.org/2000/svg"'+(el.id?' id="'+el.id+'"':'')+' width="'+w+'" height="'+h+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+
         (d.split('M').length > 1 ? '<path d="'+d+'"/>' : '<path d="'+d+'"/>')+'</svg>';
     });
   }
@@ -1573,6 +1575,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </div>
     </div>
 
+    <!-- REINSTATE FLIGHT CONFIRM MODAL -->
+    <div id="reinstate-flight-confirm-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
+        <div style="font-size:15px;font-weight:700;color:#1a6e4e;">Flight will be reinstated.</div>
+        <div style="margin-top:14px;color:#374151;font-size:13px;">Confirm?</div>
+        <div style="margin-top:18px;display:flex;gap:12px;justify-content:center;">
+          <button id="reinstate-flight-confirm-yes" style="background:#1a6e4e;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">Yes</button>
+          <button id="reinstate-flight-confirm-no" style="background:#F3F4F6;color:#111827;border:1px solid #E5E7EB;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;min-height:40px;">Disregard</button>
+        </div>
+      </div>
+    </div>
+
     <!-- SAVE SUCCESS MODAL -->
     <div id="save-success-modal" class="modal-overlay" style="display:none;">
       <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
@@ -1873,7 +1887,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear
           </button>
           <button id="btn-cancel-flight-nav" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-white text-xs font-semibold hover:bg-white/20 transition-colors flex-shrink-0" style="background:#7F1D1D;min-height:32px;white-space:nowrap;border:none;cursor:pointer;">
-            <i data-lucide="ban" class="w-3.5 h-3.5"></i> FX - Cancel
+            <i id="cancel-flight-icon-nav" data-lucide="ban" class="w-3.5 h-3.5"></i> <span id="cancel-flight-text-nav">FX - Cancel</span>
           </button>
         </div>
 
@@ -2404,26 +2418,80 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       if (modal) modal.style.display = 'flex';
     }
 
+    function openReinstateFlightModal() {
+      var modal = document.getElementById('reinstate-flight-confirm-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    // The FX button toggles: it cancels an active flight and reinstates a cancelled one.
+    function toggleCancelFlight() {
+      if (typeof state !== 'undefined' && state._flightCancelled) openReinstateFlightModal();
+      else openCancelFlightModal();
+    }
+
+    // Reflect the cancelled/active state on the FX button (label, icon and colour).
+    function syncCancelFlightButton() {
+      var btn = document.getElementById('btn-cancel-flight-nav');
+      var txt = document.getElementById('cancel-flight-text-nav');
+      var icon = document.getElementById('cancel-flight-icon-nav');
+      var cancelled = (typeof state !== 'undefined') && state._flightCancelled;
+      if (txt) txt.textContent = cancelled ? 'FX - Undo Cancel' : 'FX - Cancel';
+      if (btn) btn.style.background = cancelled ? '#1a6e4e' : '#7F1D1D';
+      if (icon) {
+        // createIcons() swaps the <i> for an <svg>, so rebuild a fresh placeholder each
+        // time rather than mutating an element that no longer carries data-lucide.
+        var ph = document.createElement('i');
+        ph.id = 'cancel-flight-icon-nav';
+        ph.className = 'w-3.5 h-3.5';
+        ph.setAttribute('data-lucide', cancelled ? 'rotate-ccw' : 'ban');
+        icon.parentNode.replaceChild(ph, icon);
+        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+      }
+    }
+
+    function persistFlightCancelState() {
+      try {
+        var raw = localStorage.getItem(PTS_SAVE_KEY);
+        var payload = raw ? JSON.parse(raw) : {};
+        payload.state = state;
+        payload.arrActual = (typeof arrActual !== 'undefined') ? arrActual : payload.arrActual;
+        payload.depActual = (typeof depActual !== 'undefined') ? depActual : payload.depActual;
+        payload.savedAt = new Date().toISOString();
+        localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(payload));
+      } catch(e) {}
+    }
+
     function doCancelFlight() {
       var modal = document.getElementById('cancel-flight-confirm-modal');
       if (modal) modal.style.display = 'none';
       if (typeof state !== 'undefined') {
         state._flightCancelled = true;
-        try {
-          var raw = localStorage.getItem(PTS_SAVE_KEY);
-          var payload = raw ? JSON.parse(raw) : {};
-          payload.state = state;
-          payload.arrActual = (typeof arrActual !== 'undefined') ? arrActual : payload.arrActual;
-          payload.depActual = (typeof depActual !== 'undefined') ? depActual : payload.depActual;
-          payload.savedAt = new Date().toISOString();
-          localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(payload));
-        } catch(e) {}
+        persistFlightCancelState();
       }
+      syncCancelFlightButton();
+      if (typeof renderAll === 'function') renderAll();
+      if (typeof updateETDCountdown === 'function') updateETDCountdown();
+    }
+
+    function doReinstateFlight() {
+      var modal = document.getElementById('reinstate-flight-confirm-modal');
+      if (modal) modal.style.display = 'none';
+      if (typeof state !== 'undefined') {
+        state._flightCancelled = false;
+        persistFlightCancelState();
+      }
+      syncCancelFlightButton();
+      if (typeof renderAll === 'function') renderAll();
       if (typeof updateETDCountdown === 'function') updateETDCountdown();
     }
 
     function disregardCancelFlight() {
       var modal = document.getElementById('cancel-flight-confirm-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function disregardReinstateFlight() {
+      var modal = document.getElementById('reinstate-flight-confirm-modal');
       if (modal) modal.style.display = 'none';
     }
 
@@ -5726,7 +5794,7 @@ function renderPaxLoadTable() {
       safeOn('btn-share-nav',  generateShareCode);
       safeOn('btn-email-nav',  openSendModal);
       safeOn('btn-clear-nav',  clearAll);
-      safeOn('btn-cancel-flight-nav', openCancelFlightModal);
+      safeOn('btn-cancel-flight-nav', toggleCancelFlight);
 
       // Header buttons (mobile)
       safeOn('btn-import-mob',  openImportModal);
@@ -5744,6 +5812,9 @@ function renderPaxLoadTable() {
       // Cancel flight confirm
       safeOn('cancel-flight-confirm-yes', doCancelFlight);
       safeOn('cancel-flight-confirm-no',  disregardCancelFlight);
+      safeOn('reinstate-flight-confirm-yes', doReinstateFlight);
+      safeOn('reinstate-flight-confirm-no',  disregardReinstateFlight);
+      syncCancelFlightButton();
       safeOn('save-success-ok', function() {
         var m = document.getElementById('save-success-modal');
         if (m) m.style.display = 'none';
@@ -6123,6 +6194,7 @@ function renderPaxLoadTable() {
        document.querySelectorAll('textarea[data-autoresize], textarea.autosize').forEach(function(t){ try{ autosizeTextarea(t); }catch(e){} });
       }
       } // end hashCode/restore branch
+      syncCancelFlightButton();
       updateHeaderFlightNum();
       updateClock();
       (function tick(){
