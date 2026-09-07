@@ -5801,6 +5801,7 @@ function renderPaxLoadTable() {
           }
 
           if (!isNaN(ul)) {
+            ul = ul * 100;
             // format to remove trailing .0 when integer
             var ulStr = (Math.round(ul) === ul) ? String(ul) : String(Number(ul.toFixed(2)));
             state.Q31 = ulStr;
