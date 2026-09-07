@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
       @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
       .section-hdr {
-        font-size: 0.7rem; font-weight: 700;
+        font-size: 0.8rem; font-weight: 700;
         letter-spacing: 0.08em; padding: 1px 2px; border-radius: 4px;
         margin-bottom: 1px; color: #fff; background: var(--cx-teal);
       }
@@ -438,7 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
       @media (max-width: 767px) {
         .etd-divider { margin: 0 4px; }
         .card { padding: 12px; }
-        .section-hdr { font-size: 0.65rem; padding: 6px 12px; }
+        .section-hdr { font-size: 0.75rem; padding: 6px 12px; }
         .pax-table input { min-height: 34px; font-size: 13px; }
         .pax-table th, .pax-table td:first-child { font-size: 0.65rem; }
         .ms-table td, .ms-table th { padding: 8px 8px; font-size: 12px; }
@@ -1736,10 +1736,21 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
         <p data-id="126" class="text-sm text-cx-grey mb-3">Copy this code and send it to a colleague. They can import it via the Import - Paste Code button.</p>
         <textarea data-id="127" id="share-code-output" class="field-input" readonly style="min-height:140px;font-size:11px;font-family:monospace;word-break:break-all;resize:vertical;"></textarea>
-        <div data-id="128" class="flex justify-end gap-3 mt-4">
+        <div class="flex justify-end mt-2">
           <button data-id="129" id="share-copy-btn" class="flex items-center gap-2 px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark transition-colors">
             <i data-id="130" data-lucide="clipboard-copy" class="w-4 h-4"></i> Copy Code
           </button>
+        </div>
+        <div class="border-t border-gray-200 mt-4 pt-4">
+          <p class="text-sm text-cx-grey mb-2">Or copy this link and open it on another device (e.g. iPad) &mdash; it auto-imports this data, no code paste needed.</p>
+          <input id="share-link-output" class="field-input" readonly style="font-size:11px;font-family:monospace;">
+          <div class="flex justify-end mt-2">
+            <button id="share-copy-link-btn" class="flex items-center gap-2 px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark transition-colors">
+              <i data-lucide="link" class="w-4 h-4"></i> Copy Link
+            </button>
+          </div>
+        </div>
+        <div data-id="128" class="flex justify-end gap-3 mt-4">
           <button data-id="131" id="share-close-btn" class="px-5 py-3 rounded-lg bg-gray-100 text-cx-grey-dark font-semibold text-sm min-h-[44px] hover:bg-gray-200">Close</button>
         </div>
       </div>
@@ -3525,11 +3536,25 @@ function renderPaxLoadTable() {
         var code = btoa(encodeURIComponent(JSON.stringify(payload)));
         var el = document.getElementById('share-code-output');
         if (el) el.value = code;
+        var linkEl = document.getElementById('share-link-output');
+        if (linkEl) {
+          var baseUrl = window.location.origin + window.location.pathname;
+          linkEl.value = baseUrl + '#pts=' + encodeURIComponent(code);
+        }
         var modal = document.getElementById('share-modal');
         if (modal) modal.style.display = 'flex';
       } catch(e) {
         showToast('Share code error', 'red');
       }
+    }
+
+    // Extracts a share code embedded in the URL hash, e.g. "#pts=<code>",
+    // so opening a shared link on another device auto-imports without pasting a code.
+    function getShareCodeFromHash() {
+      var h = window.location.hash || '';
+      var m = h.match(/#pts=([^&]+)/);
+      if (!m) return null;
+      try { return decodeURIComponent(m[1]); } catch(e) { return null; }
     }
 
     function loadShareCode(code) {
@@ -5639,6 +5664,14 @@ function renderPaxLoadTable() {
         }
         showToast('Code copied!','green');
       });
+      safeOn('share-copy-link-btn',function(){
+        var el=document.getElementById('share-link-output'); if(!el)return;
+        try{navigator.clipboard.writeText(el.value);}catch(e){
+          var ta5=document.createElement('textarea'); ta5.value=el.value;
+          document.body.appendChild(ta5); ta5.select(); document.execCommand('copy'); document.body.removeChild(ta5);
+        }
+        showToast('Link copied!','green');
+      });
 
       // Close modals on overlay click
       ['import-modal-k1l2','send-modal','share-modal'].forEach(function(id) {
@@ -5794,6 +5827,13 @@ function renderPaxLoadTable() {
     // INIT
     // ===========================
     function init() {
+      // Auto-import: if a share code is embedded in the URL (e.g. from "Copy Link"),
+      // load it directly instead of the normal localStorage restore flow.
+      var hashCode = getShareCodeFromHash();
+      if (hashCode && loadShareCode(hashCode)) {
+        try { saveToLocal(); } catch(e) {}
+        try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch(e) {}
+      } else {
       var restored = restoreFromLocal();
       if (restored) {
         // Restore paste-tab textarea content from local storage payload
@@ -5836,6 +5876,7 @@ function renderPaxLoadTable() {
        // ensure autosize textareas (e.g., Doorside) start as single-line if empty
        document.querySelectorAll('textarea[data-autoresize], textarea.autosize').forEach(function(t){ try{ autosizeTextarea(t); }catch(e){} });
       }
+      } // end hashCode/restore branch
       updateHeaderFlightNum();
       updateClock();
       (function tick(){
@@ -5853,7 +5894,7 @@ function renderPaxLoadTable() {
       }
 
       // Restore OIR
-      (function(){
+      if (!hashCode) (function(){
         var oirVal = ''; try { oirVal = localStorage.getItem('pts_oir')||''; } catch(e){}
         var oirLocked = ''; try { oirLocked = localStorage.getItem('pts_oir_locked')||'0'; } catch(e){}
         var ta = document.getElementById('oir-textarea'); if(ta && oirVal) ta.value = oirVal;
@@ -5861,7 +5902,7 @@ function renderPaxLoadTable() {
       })();
 
       // Restore Crew List
-      (function(){
+      if (!hashCode) (function(){
         var crewVal = ''; try { crewVal = localStorage.getItem('pts_crew')||''; } catch(e){}
         var crewLocked = ''; try { crewLocked = localStorage.getItem('pts_crew_locked')||'0'; } catch(e){}
         var ta = document.getElementById('crew-textarea'); if(ta && crewVal) ta.value = crewVal;
@@ -5869,7 +5910,7 @@ function renderPaxLoadTable() {
       })();
 
       // Restore Departure Crew List
-      (function(){
+      if (!hashCode) (function(){
         var v=''; try{v=localStorage.getItem('pts_dep_crew')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_dep_crew_locked')||'0';}catch(e){}
         var ta=document.getElementById('dep-crew-textarea'); if(ta&&v) ta.value=v;
@@ -5877,7 +5918,7 @@ function renderPaxLoadTable() {
       })();
 
       // Restore Staff Acceptance
-      (function(){
+      if (!hashCode) (function(){
         var v=''; try{v=localStorage.getItem('pts_staff_acc')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_staff_acc_locked')||'0';}catch(e){}
         var ta=document.getElementById('staff-acc-textarea'); if(ta&&v) ta.value=v;
@@ -5885,7 +5926,7 @@ function renderPaxLoadTable() {
       })();
 
       // Restore Arrival PTM
-      (function(){
+      if (!hashCode) (function(){
         var v=''; try{v=localStorage.getItem('pts_arr_ptm')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_arr_ptm_locked')||'0';}catch(e){}
         var ta=document.getElementById('arr-ptm-textarea'); if(ta&&v) ta.value=v;
@@ -5893,7 +5934,7 @@ function renderPaxLoadTable() {
       })();
 
       // Restore DEP LIR
-      (function(){
+      if (!hashCode) (function(){
         var v=''; try{v=localStorage.getItem('pts_dep_lir')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_dep_lir_locked')||'0';}catch(e){}
         var ta=document.getElementById('dep-lir-textarea'); if(ta&&v) ta.value=v;
