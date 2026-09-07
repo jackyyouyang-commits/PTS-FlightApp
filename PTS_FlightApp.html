@@ -5246,7 +5246,7 @@ function renderPaxLoadTable() {
         // Columns whose longest value is short (record locators, tag numbers, seats, flight
         // numbers, times) must never wrap onto a second line — the font is scaled down
         // instead so the whole row still fits the page width.
-        var NOWRAP_MAX_CHARS = 24;
+        var NOWRAP_MAX_CHARS = 34;
         var colMaxChars = [];
         var colWidths = [];
         for(var c = 0; c < numCols; c++){
@@ -5256,7 +5256,9 @@ function renderPaxLoadTable() {
             maxChars = Math.max(maxChars, cell.length);
           });
           colMaxChars[c] = maxChars;
-          colWidths[c] = Math.max(30, maxChars * 7 + 12);
+          // 7.8px/char at the base 11px monospace size leaves headroom over the real glyph
+          // advance (~6.6px) so a no-wrap value is never clipped by rounding or padding.
+          colWidths[c] = Math.max(30, maxChars * 7.8 + 16);
         }
         var colNoWrap = colMaxChars.map(function(n){ return n <= NOWRAP_MAX_CHARS; });
 
@@ -5268,7 +5270,7 @@ function renderPaxLoadTable() {
         // ratio the table is being squeezed by guarantees no-wrap cells still fit.
         var PRINTABLE_WIDTH = 730; // Letter minus margins, in CSS px
         var scale = Math.min(1, PRINTABLE_WIDTH / totalWidth);
-        var fontSize = Math.max(5, Math.round(11 * scale * 10) / 10);
+        var fontSize = Math.max(5, Math.floor(11 * scale * 10) / 10);
         var padY = Math.max(1, Math.round(3 * scale));
         var padX = Math.max(1, Math.round(4 * scale));
 
