@@ -5787,9 +5787,23 @@ function renderPaxLoadTable() {
       safeOn('agent-pos-remove-pdf-btn', removeAgentPosPdf);
       (function(){ var pdfInput = document.getElementById('agent-pos-pdf-input'); if (pdfInput) pdfInput.addEventListener('change', handleAgentPosPdfSelected); })();
 
+      // Show the underload warning only after leaving one of the weight fields
+      document.getElementById('tab-pts').addEventListener('focusout', function(e) {
+        var key = e.target && e.target.getAttribute && e.target.getAttribute('data-key');
+        if (['dep_mzfw','dep_ezfw','dep_azfw'].indexOf(key) < 0) return;
+        var mzfw = parseFloat(state.dep_mzfw);
+        var ul = parseFloat(state.Q31);
+        if (isNaN(ul) || isNaN(mzfw) || ul <= mzfw) return;
+        if (window._underloadWarnShown) return;
+        window._underloadWarnShown = true;
+        var uwv = document.getElementById('underload-warning-value');
+        if (uwv) uwv.textContent = state.Q31;
+        var uwm = document.getElementById('underload-warning-modal');
+        if (uwm) uwm.style.display = 'flex';
+      });
+
       // Delegated input listener on #tab-pts
-      document.getElementById('tab-pts').addEventListener('input', function(e) {
-        var el = e.target;
+      document.getElementById('tab-pts').addEventListener('input', function(e) {        var el = e.target;
         var key = el.getAttribute('data-key');
         if (!key) return;
         state[key] = el.value;
@@ -5823,18 +5837,8 @@ function renderPaxLoadTable() {
           }
           var ulEl = document.getElementById('f-dep_underload');
           if (ulEl) ulEl.value = state.Q31;
-          // Warn once when the computed underload exceeds MZFW
-          if (!isNaN(ul) && !isNaN(mzfw) && ul > mzfw) {
-            if (!window._underloadWarnShown) {
-              window._underloadWarnShown = true;
-              var uwv = document.getElementById('underload-warning-value');
-              if (uwv) uwv.textContent = state.Q31;
-              var uwm = document.getElementById('underload-warning-modal');
-              if (uwm) uwm.style.display = 'flex';
-            }
-          } else {
-            window._underloadWarnShown = false;
-          }
+          // Re-arm the warning whenever the underload drops back within MZFW
+          if (isNaN(ul) || isNaN(mzfw) || ul <= mzfw) window._underloadWarnShown = false;
         }
         if (key === 'dep_std') { renderActivities(); updateETDCountdown(); }
         if (['dep_etd','dep_board_time','dep_eta_hkg','dep_sta_hkg'].indexOf(key) >= 0) {
