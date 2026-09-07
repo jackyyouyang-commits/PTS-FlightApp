@@ -1582,6 +1582,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </div>
     </div>
 
+    <!-- NOTICES ACKNOWLEDGE MODAL (triggered by Last Pax Onboard) -->
+    <div id="notices-ack-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
+        <div style="font-size:15px;font-weight:700;color:#991B1B;">Notices</div>
+        <div class="notice-card" style="margin-top:14px;">Verify Locks Raised Before Close!!!</div>
+        <div class="notice-card" style="margin-top:10px;">Re-confirm Final Pax Figure with ISM!!!</div>
+        <div style="margin-top:18px;display:flex;justify-content:center;">
+          <button id="notices-ack-ok" style="background:#EF4444;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">Acknowledge</button>
+        </div>
+      </div>
+    </div>
+
     <!-- REINSTATE FLIGHT CONFIRM MODAL -->
     <div id="reinstate-flight-confirm-modal" class="modal-overlay" style="display:none;">
       <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
@@ -2586,7 +2598,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       defects:'', remarks:'',
       _locked: false,
       _badgeVisible: false,
-      _flightCancelled: false
+      _flightCancelled: false, _noticesAcked: false
     };
 
     var arrActual = {};
@@ -2830,17 +2842,47 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     // ===========================
     // LOG TIME
     // ===========================
+    // Index of 'Last Pax Onboard' in depActivities — logging it prompts the crew to
+    // acknowledge the pre-departure notices.
+    var LAST_PAX_ONBOARD_IDX = 20;
+
+    function showNoticesAckModal() {
+      var m = document.getElementById('notices-ack-modal');
+      if (m) m.style.display = 'flex';
+    }
+    function dismissNoticesAckModal() {
+      var m = document.getElementById('notices-ack-modal');
+      if (m) m.style.display = 'none';
+      if (typeof state !== 'undefined') {
+        state._noticesAcked = true;
+        persistFlightCancelState();
+      }
+    }
+    // Only prompt on the transition into a logged time, and only once per flight.
+    function maybePromptNotices(type, idx, hadTime) {
+      if (type !== 'dep' || idx !== LAST_PAX_ONBOARD_IDX) return;
+      if (hadTime) return;
+      if (typeof state !== 'undefined' && state._noticesAcked) return;
+      showNoticesAckModal();
+    }
+
     function logTime(type, idx) {
       var now = new Date();
       var t = pad(now.getHours()) + ':' + pad(now.getMinutes());
+      var hadTime = (type === 'arr') ? !!arrActual[idx] : !!depActual[idx];
       if (type === 'arr') arrActual[idx] = t;
       else depActual[idx] = t;
       renderActivities();
       updateETDCountdown();
+      maybePromptNotices(type, idx, hadTime);
     }
     function resetTime(type, idx) {
       if (type === 'arr') delete arrActual[idx];
       else delete depActual[idx];
+      // Clearing the time re-arms the prompt for the next log.
+      if (type === 'dep' && idx === LAST_PAX_ONBOARD_IDX && typeof state !== 'undefined') {
+        state._noticesAcked = false;
+      }
       renderActivities();
       updateETDCountdown();
     }
@@ -3119,8 +3161,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             var parts = n.split(':');
             var hh = parseInt(parts[0],10), mm = parseInt(parts[1],10), ss = parts[2] ? parseInt(parts[2],10) : null;
             if (hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59 && (ss === null || (ss >= 0 && ss <= 59))) {
+              var hadTime = (type === 'arr') ? !!arrActual[idx] : !!depActual[idx];
               if (type === 'arr') arrActual[idx] = n; else depActual[idx] = n;
               renderActivities(); updateETDCountdown();
+              maybePromptNotices(type, idx, hadTime);
             } else { showToast('Time out of range (HH 0-23, MM/SS 0-59)', 'red'); }
           }
 
@@ -5828,6 +5872,7 @@ function renderPaxLoadTable() {
       safeOn('cancel-flight-confirm-no',  disregardCancelFlight);
       safeOn('reinstate-flight-confirm-yes', doReinstateFlight);
       safeOn('reinstate-flight-confirm-no',  disregardReinstateFlight);
+      safeOn('notices-ack-ok', dismissNoticesAckModal);
       syncCancelFlightButton();
       safeOn('save-success-ok', function() {
         var m = document.getElementById('save-success-modal');
