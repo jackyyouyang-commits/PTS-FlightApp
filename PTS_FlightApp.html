@@ -5186,6 +5186,7 @@ function renderPaxLoadTable() {
         .join('');
 
       var css = [
+        '@page{size:letter;margin:0.4in;}',
         '*{box-sizing:border-box;margin:0;padding:0;}',
         'body{font-family:Arial,sans-serif;font-size:12px;color:#111;background:#fff;}',
         'h1{font-size:16px;font-weight:800;color:#1e3a5f;margin-bottom:2px;}',
@@ -5193,12 +5194,18 @@ function renderPaxLoadTable() {
         '.section{margin-bottom:18px;break-inside:avoid;}',
         '.section h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;',
         '  color:#fff;background:#1e3a5f;padding:4px 8px;border-radius:4px 4px 0 0;margin-bottom:0;}',
-        'table{width:100%;border-collapse:collapse;border:1px solid #e5e7eb;}',
+        'table{width:100%;max-width:100%;border-collapse:collapse;border:1px solid #e5e7eb;}',
         'td{padding:4px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top;}',
         '.lbl{width:38%;font-weight:600;color:#374151;white-space:nowrap;}',
         '.val{color:#111;}',
         'tr:last-child td{border-bottom:none;}',
         '.page-break{break-before:page;page-break-before:always;padding-top:16px;}',
+        // Wide data tables (ITD Tag Card, Arrival Disruption PPM) can be taller than one
+        // page. Allow them to flow onto following pages instead of being clipped, while
+        // keeping individual rows intact.
+        '.section.wide{break-inside:auto;page-break-inside:auto;}',
+        '.section.wide table{break-inside:auto;page-break-inside:auto;}',
+        '.section.wide tr{break-inside:avoid;page-break-inside:avoid;}',
         '.pre-content{white-space:pre-wrap;font-family:monospace;font-size:11px;',
         '  border:1px solid #e5e7eb;padding:10px;background:#fafafa;border-radius:0 0 4px 4px;',
         '  min-height:40px;line-height:1.5;}',
@@ -5244,11 +5251,18 @@ function renderPaxLoadTable() {
           colWidths[c] = maxWidth;
         }
 
-        var tableHTML = '<table style="border-collapse:collapse;table-layout:fixed;font-family:monospace;font-size:11px;border:1px solid #999;margin:10px 0;width:' + colWidths.reduce(function(a,b){return a+b;},0) + 'px;">';
-        tableHTML += '<colgroup>' + colWidths.map(function(w){ return '<col style="width:' + w + 'px;">'; }).join('') + '</colgroup>';
+        // Convert the measured pixel widths into percentages so the table always scales to
+        // fit the printable page width (Letter) instead of overflowing and being cut off.
+        var totalWidth = colWidths.reduce(function(a,b){return a+b;},0) || 1;
+        var colPcts = colWidths.map(function(w){ return (w / totalWidth) * 100; });
+        // Shrink the font as the table gets wider so more columns still fit legibly.
+        var fontSize = totalWidth > 1100 ? 7 : totalWidth > 850 ? 8 : totalWidth > 650 ? 9 : 11;
+
+        var tableHTML = '<table style="border-collapse:collapse;table-layout:fixed;font-family:monospace;font-size:' + fontSize + 'px;border:1px solid #999;margin:10px 0;width:100%;max-width:100%;">';
+        tableHTML += '<colgroup>' + colPcts.map(function(w){ return '<col style="width:' + w.toFixed(4) + '%;">'; }).join('') + '</colgroup>';
         tableHTML += '<tbody>';
         allCells.forEach(function(row, rowIdx) {
-          tableHTML += '<tr style="border-bottom:1px solid #ccc;">';
+          tableHTML += '<tr style="border-bottom:1px solid #ccc;break-inside:avoid;page-break-inside:avoid;">';
           row.forEach(function(cell, colIdx) {
             var cellContent = cell.trim() || '&nbsp;';
             var bgColor = rowIdx === 0 ? '#e0e0e0' : '#fff';
@@ -5256,7 +5270,7 @@ function renderPaxLoadTable() {
             var isLastCellInShortRow = (row.length < numCols) && (colIdx === row.length - 1);
             var span = isLastCellInShortRow ? (numCols - colIdx) : 1;
             var colspanAttr = span > 1 ? ' colspan="' + span + '"' : '';
-            tableHTML += '<td' + colspanAttr + ' style="border-right:1px solid #ccc;padding:6px;white-space:nowrap;overflow:hidden;' + fontWeight + 'background:' + bgColor + ';">' + cellContent + '</td>';
+            tableHTML += '<td' + colspanAttr + ' style="border-right:1px solid #ccc;padding:3px 4px;white-space:normal;word-break:break-word;overflow-wrap:anywhere;' + fontWeight + 'background:' + bgColor + ';">' + cellContent + '</td>';
           });
           tableHTML += '</tr>';
         });
@@ -5351,10 +5365,10 @@ function renderPaxLoadTable() {
         '<div class="page-break">'+preSection('Arrival PTM', arrPtmContent)+'</div>',
 
         // === Page 3b: Arrival Disruption PPM ===
-        '<div class="page-break">'+htmlSection('Arrival Disruption PPM', formatITDTagCardTable(arrDisruptionPpmContent))+'</div>',
+        '<div class="page-break">'+htmlSection('Arrival Disruption PPM', formatITDTagCardTable(arrDisruptionPpmContent), 'wide')+'</div>',
 
         // === Page 4: ITD Tag Card ===
-        '<div class="page-break">'+htmlSection('ITD Tag Card', formatITDTagCardTable(itdTagCardContent))+'</div>',
+        '<div class="page-break">'+htmlSection('ITD Tag Card', formatITDTagCardTable(itdTagCardContent), 'wide')+'</div>',
 
         // === Page 5: Arrival Offloading Instruction ===
         '<div class="page-break">'+preSection('Arrival Offloading Instruction', oirContent)+'</div>',
@@ -5520,6 +5534,67 @@ function renderPaxLoadTable() {
         return true;
       });
       if (blocks.length === 0) blocks = [captureRoot];
+
+      // Wide data tables (ITD Tag Card, Arrival Disruption PPM) can be much taller than a
+      // page. Rendering them as one tall image and slicing by raw pixels cuts straight
+      // through a row. Instead, split the table into chunks that each fit on a page, at
+      // real row boundaries, and repeat the header row on every chunk.
+      blocks = (function splitWideBlocks(list) {
+        var out = [];
+        list.forEach(function(block) {
+          var section = (block.classList && block.classList.contains('wide')) ? block : block.querySelector && block.querySelector('.section.wide');
+          var table = section && section.querySelector('table');
+          var blockWidth = block.offsetWidth || usableWidth;
+          // Convert the page's usable height (pt) into CSS px in the report document.
+          var maxCssHeight = usableHeight * blockWidth / usableWidth;
+          if (!table || block.offsetHeight <= maxCssHeight) { out.push(block); return; }
+
+          var rows = Array.prototype.slice.call(table.querySelectorAll('tr'));
+          if (rows.length < 2) { out.push(block); return; }
+          var headerRow = rows[0];
+          var headerHeight = headerRow.offsetHeight || 0;
+          // Reserve room for the section title bar and padding around the table.
+          var chrome = block.offsetHeight - table.offsetHeight + headerHeight + 24;
+          var budget = maxCssHeight - chrome;
+          if (budget <= 0) { out.push(block); return; }
+
+          var chunks = [];
+          var current = [];
+          var used = 0;
+          rows.slice(1).forEach(function(tr) {
+            var h = tr.offsetHeight || 0;
+            if (current.length && used + h > budget) { chunks.push(current); current = []; used = 0; }
+            current.push(tr);
+            used += h;
+          });
+          if (current.length) chunks.push(current);
+          if (chunks.length <= 1) { out.push(block); return; }
+
+          var parent = block.parentNode;
+          var replacements = chunks.map(function(chunkRows) {
+            var clone = block.cloneNode(false);
+            clone.className = block.className;
+            var sectionClone = section.cloneNode(false);
+            var h2 = section.querySelector('h2');
+            if (h2) sectionClone.appendChild(h2.cloneNode(true));
+            var wrap = table.parentNode.cloneNode(false);
+            var tableClone = table.cloneNode(false);
+            var colgroup = table.querySelector('colgroup');
+            if (colgroup) tableClone.appendChild(colgroup.cloneNode(true));
+            var tbody = doc.createElement('tbody');
+            tbody.appendChild(headerRow.cloneNode(true));
+            chunkRows.forEach(function(tr) { tbody.appendChild(tr.cloneNode(true)); });
+            tableClone.appendChild(tbody);
+            wrap.appendChild(tableClone);
+            sectionClone.appendChild(wrap);
+            clone.appendChild(sectionClone);
+            return clone;
+          });
+          replacements.forEach(function(el) { parent.insertBefore(el, block); out.push(el); });
+          parent.removeChild(block);
+        });
+        return out;
+      })(blocks);
 
       var y = margin;
       var startedFirstPage = false;
