@@ -279,6 +279,17 @@ document.addEventListener('DOMContentLoaded', function() {
         font-weight: 700;
       }
       .bottom-tab:not(.active) { color: #9CA3AF; }
+      /* Vertical divider between tabs, matching the header's .etd-divider look. */
+      .bottom-tab + .bottom-tab::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1px;
+        height: 28px;
+        background: #E5E7EB;
+      }
       /* Remove the old ::after indicator since we use border-top now */
       .bottom-tab.active::after { display: none; }
 
