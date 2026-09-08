@@ -5416,25 +5416,35 @@ function renderPaxLoadTable() {
       var totalWeight = colWeights.reduce(function(sum, width) { return sum + width; }, 0);
       var fontSize = numCols <= 4 ? 13 : (numCols <= 6 ? 11 : (numCols <= 8 ? 9 : 8));
       var cellPadding = numCols <= 4 ? 8 : (numCols <= 8 ? 5 : 3);
-      var tableHTML = '<table style="width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;font-family:monospace;font-size:' + fontSize + 'px;line-height:1.35;">';
-      tableHTML += '<colgroup>';
-      colWeights.forEach(function(width) {
-        tableHTML += '<col style="width:' + ((width / totalWeight) * 100).toFixed(3) + '%;">';
-      });
-      tableHTML += '</colgroup>';
-      
-      allCells.forEach(function(row, rowIdx) {
-        tableHTML += '<tr data-pasted-row="' + rowIdx + '" style="transition:background-color 0.3s ease;">';
-        for (var idx = 0; idx < numCols; idx++) {
-          var cell = row[idx] || '';
-          var cellContent = cell === '' ? '&nbsp;' : escapeCell(cell);
-          tableHTML += '<td style="border:1px solid #ccc;padding:' + cellPadding + 'px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;min-width:0;text-align:left;vertical-align:top;">' +
-            cellContent + '</td>';
-        }
-        tableHTML += '</tr>';
-      });
-      
-      tableHTML += '</table>';
+      var previewHTML;
+      if (numCols === 1) {
+        previewHTML = '<pre style="margin:0;font-family:monospace;font-size:13px;line-height:1.45;tab-size:8;">';
+        lines.forEach(function(line, rowIdx) {
+          previewHTML += '<span data-pasted-row="' + rowIdx + '" style="display:block;transition:background-color 0.3s ease;">'
+            + (line === '' ? '&nbsp;' : escapeCell(line)) + '</span>';
+        });
+        previewHTML += '</pre>';
+      } else {
+        previewHTML = '<table style="width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;font-family:monospace;font-size:' + fontSize + 'px;line-height:1.35;">';
+        previewHTML += '<colgroup>';
+        colWeights.forEach(function(width) {
+          previewHTML += '<col style="width:' + ((width / totalWeight) * 100).toFixed(3) + '%;">';
+        });
+        previewHTML += '</colgroup>';
+
+        allCells.forEach(function(row, rowIdx) {
+          previewHTML += '<tr data-pasted-row="' + rowIdx + '" style="transition:background-color 0.3s ease;">';
+          for (var idx = 0; idx < numCols; idx++) {
+            var cell = row[idx] || '';
+            var cellContent = cell === '' ? '&nbsp;' : escapeCell(cell);
+            previewHTML += '<td style="border:1px solid #ccc;padding:' + cellPadding + 'px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;min-width:0;text-align:left;vertical-align:top;">' +
+              cellContent + '</td>';
+          }
+          previewHTML += '</tr>';
+        });
+
+        previewHTML += '</table>';
+      }
       
       // Find or create preview container
       var previewId = textarea.id + '-preview';
@@ -5446,7 +5456,7 @@ function renderPaxLoadTable() {
         preview.style.cssText = 'flex:1 1 0;width:100%;max-width:100%;min-width:0;border:1px solid #ddd;border-radius:6px;padding:clamp(4px,1.5vw,12px);background:#f9fafb;max-height:none;overflow-x:hidden;overflow-y:auto;box-sizing:border-box;';
         textarea.parentNode.insertBefore(preview, textarea);
       }
-      preview.innerHTML = '<div class="operational-paste-content">' + tableHTML + '</div>';
+      preview.innerHTML = '<div class="operational-paste-content">' + previewHTML + '</div>';
       preview.style.display = 'block';
       fitOperationalPastePreview(preview);
       
@@ -5718,7 +5728,7 @@ function renderPaxLoadTable() {
 
           var preview = document.getElementById('dep-lir-textarea-preview');
           var richPreview = document.getElementById('dep-lir-textarea-rich-preview');
-          var matchRow = preview && preview.querySelector('tr[data-pasted-row="' + lineIndex + '"]');
+          var matchRow = preview && preview.querySelector('[data-pasted-row="' + lineIndex + '"]');
           if (!matchRow && richPreview) matchRow = findRichDepLirMatch(richPreview, containerCode, query);
           if (matchRow) {
             matchRow.classList.add('dep-lir-search-match');
