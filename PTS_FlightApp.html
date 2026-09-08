@@ -4423,49 +4423,16 @@ function renderPaxLoadTable() {
         if (daysSinceFlight < 0) daysSinceFlight = 0;
       }
 
-      // Calculate delay from precision timing schedule (if actual > target)
+      // Calculate the final delay only from the logged ATD milestone.
       var delayMinutes = 0;
       try {
-        if (typeof depActual !== 'undefined') {
-          var maxActualAbsMin = null;
-          for (var daKey in depActual) { 
-            if (depActual[daKey]) { 
-              var actualTime = parseTime(depActual[daKey]);
-              if (actualTime != null) {
-                var actualAbsMin = daysSinceFlight * 1440 + actualTime;
-                if (daysSinceFlight === 0 && stdMin != null && actualTime < stdMin - 120) {
-                  // No date field to anchor to - fall back to the same-day "assume next day"
-                  // heuristic used elsewhere when the actual clock time wraps past midnight.
-                  actualAbsMin += 24*60;
-                }
-                if (maxActualAbsMin == null || actualAbsMin > maxActualAbsMin) {
-                  maxActualAbsMin = actualAbsMin;
-                }
-              }
-            }
-          }
-          // If actual > STD target, calculate delay
-          if (maxActualAbsMin != null && stdMin != null && maxActualAbsMin > stdMin) {
-            delayMinutes = maxActualAbsMin - stdMin;
-          }
+        var loggedAtdMin = depActual && depActual[25] ? parseTime(depActual[25]) : null;
+        if (loggedAtdMin != null && stdMin != null) {
+          var actualAtdAbsMin = daysSinceFlight * 1440 + loggedAtdMin;
+          if (daysSinceFlight === 0 && loggedAtdMin < stdMin - 120) actualAtdAbsMin += 1440;
+          if (actualAtdAbsMin > stdMin) delayMinutes = actualAtdAbsMin - stdMin;
         }
       } catch (e) { delayMinutes = 0; }
-
-      // Live disruption: even with no actual logged yet, once real "now" has passed the
-      // scheduled STD (flight Date + STD time combined), the flight is already late - so
-      // the badge should show a continuously growing delay, not wait for an actual entry.
-      try {
-        var atdAlreadyLogged = depActual && depActual[25];
-        if (!atdAlreadyLogged && stdMin != null) {
-          var stdFdMid = fd ? new Date(fd.getFullYear(), fd.getMonth(), fd.getDate(), 0,0,0,0)
-                            : new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0,0);
-          var stdTargetMsLive = stdFdMid.getTime() + stdMin*60*1000;
-          if (nowMs > stdTargetMsLive) {
-            var liveDelayMinutes = Math.floor((nowMs - stdTargetMsLive) / 60000);
-            if (liveDelayMinutes > delayMinutes) delayMinutes = liveDelayMinutes;
-          }
-        }
-      } catch (e) { /* keep prior delayMinutes */ }
 
       // STD field disruption badge - flags whenever a logged actual (ultimately ATD) runs later
       // than the scheduled STD, independent of the ETD countdown display above.
@@ -4558,8 +4525,7 @@ function renderPaxLoadTable() {
         // to the flight day puts it >12h in the past, roll it forward a day.
         if (atdTableMin !== null && (nowMs - etdTargetMs) > 12*3600*1000) etdTargetMs += 86400000;
       }
-      // Shared disruption string built from the date-aware delayMinutes computed above, so
-      // the header ETD/Departed widget and the STD field badge always agree.
+      // The numeric disruption is final only after ATD is logged.
       var headerDisruptionStr = '';
       if (delayMinutes > 0) {
         var hdDelayH = Math.floor(delayMinutes/60);
@@ -4582,52 +4548,9 @@ function renderPaxLoadTable() {
         var diffSec = Math.round((etdTargetMs - nowMs)/1000);
 
         if (diffSec < 0) {
-          // Past ETD - check all three disruption scenarios
-          // Only show "Departed" if ATD (index 25) is logged, not any other activity
-          var atdLogged = depActual && depActual[25]; // ATD is at index 25 in depActivities
-          var hasDepActual = atdLogged;
-          var maxActualMin = null;
-          
-          try {
-            if (typeof depActual !== 'undefined') {
-              for (var daKey in depActual) { 
-                if (depActual[daKey]) { 
-                  var actualTime = parseTime(depActual[daKey]);
-                  if (actualTime != null) {
-                    // If actual time is much earlier than STD (e.g., 01:53 vs 14:55), assume it's next day
-                    if (stdMin != null && actualTime < stdMin - 120) {
-                      actualTime += 24*60; // add 24 hours in minutes
-                    }
-                    if (maxActualMin == null || actualTime > maxActualMin) {
-                      maxActualMin = actualTime;
-                    }
-                  }
-                }
-              }
-            }
-          } catch (e) { hasDepActual = false; }
-
-          // Determine disruption message
-          var disruptionStr = '';
-          
-          // Scenario 3: Actual ATD > ATD target (which is STD)
-          if (maxActualMin != null && stdMin != null && maxActualMin > stdMin) {
-            var delayMinsAct = maxActualMin - stdMin;
-            var delayHAct = Math.floor(delayMinsAct/60);
-            var delayMAct = delayMinsAct % 60;
-            disruptionStr = '<br><span style="font-size:0.75em;opacity:0.9;">Disruption: Delay +' + pad(delayHAct) + ':' + pad(delayMAct) + '</span>';
-          }
-          // Scenario 2: Past ETD and no actual logged - show Disruption: Delay
-          else if (!hasDepActual) {
-            disruptionStr = '<br><span style="font-size:0.75em;opacity:0.9;">Disruption: Delay</span>';
-          }
-
-          if (hasDepActual) {
-            el.innerHTML = '<span style="color:#fff;">Departed</span>' + disruptionStr + etaLine;
-          } else {
-            var departureTimeHtml = '<span style="color:#fff;">Departs at:</span> <span style="color:#fff">' + departsAtStr() + '</span>';
-            el.innerHTML = departureTimeHtml + disruptionStr + etaLine;
-          }
+          var departureTimeHtml = '<span style="color:#fff;">Departs at:</span> <span style="color:#fff">' + departsAtStr() + '</span>';
+          var disruptionStr = '<br><span style="font-size:0.75em;opacity:0.9;">Disruption: Delay</span>';
+          el.innerHTML = departureTimeHtml + disruptionStr + etaLine;
           el.style.color = '#fff';
           return;
         }
@@ -4653,9 +4576,7 @@ function renderPaxLoadTable() {
           if (ed > 0) atdLateBy = ed;
         }
         if (atdLateBy !== null) {
-          var delayH = Math.floor(atdLateBy/60);
-          var delayM = atdLateBy % 60;
-          delayStr = '<br><span style="font-size:0.75em;opacity:0.9;">Disruption: Delay +' + pad(delayH) + ':' + pad(delayM) + '</span>';
+          delayStr = '<br><span style="font-size:0.75em;opacity:0.9;">Disruption: Delay</span>';
           el.style.color = '#FCA5A5';
         } else {
           el.style.color = '#fff';
