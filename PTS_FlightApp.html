@@ -1122,6 +1122,24 @@ document.addEventListener('DOMContentLoaded', function() {
         input,select,textarea,.field-input{max-width:100%!important;box-sizing:border-box!important;}
         .pasted-image-gallery{width:100%!important;max-width:100%!important;box-sizing:border-box!important;}
         .pasted-image-item img{max-width:100px!important;max-height:100px!important;}
+        .operational-paste-content{
+          width:max-content;
+          min-width:100%;
+          transform-origin:top left;
+        }
+        .operational-paste-content table{
+          width:max-content!important;
+          min-width:100%!important;
+          max-width:none!important;
+          table-layout:auto!important;
+        }
+        .operational-paste-content td,
+        .operational-paste-content th,
+        .operational-paste-content pre{
+          white-space:pre!important;
+          overflow-wrap:normal!important;
+          word-break:normal!important;
+        }
       }
       @media (max-width: 480px) {
         .summary-five-across {
@@ -3751,6 +3769,33 @@ function renderPaxLoadTable() {
       return doc.body.innerHTML;
     }
 
+    function fitOperationalPastePreview(preview) {
+      if (!preview) return;
+      var content = preview.querySelector('.operational-paste-content');
+      if (!content) return;
+      content.style.zoom = '';
+      if (!window.matchMedia('(max-width: 767px)').matches) return;
+      requestAnimationFrame(function() {
+        var availableWidth = preview.clientWidth
+          - (parseFloat(getComputedStyle(preview).paddingLeft) || 0)
+          - (parseFloat(getComputedStyle(preview).paddingRight) || 0);
+        var naturalWidth = content.scrollWidth;
+        if (availableWidth > 0 && naturalWidth > availableWidth) {
+          content.style.zoom = availableWidth / naturalWidth;
+        }
+      });
+    }
+
+    function fitAllOperationalPastePreviews() {
+      PASTE_IMAGE_IDS.forEach(function(textareaId) {
+        fitOperationalPastePreview(
+          document.getElementById(textareaId + '-preview')
+          || document.getElementById(textareaId + '-rich-preview')
+        );
+      });
+    }
+    window.addEventListener('resize', fitAllOperationalPastePreviews);
+
     function renderRichContent(textareaId) {
       var ta = document.getElementById(textareaId);
       if (!ta) return;
@@ -3769,13 +3814,17 @@ function renderPaxLoadTable() {
         preview.style.cssText = 'flex:1 1 0;width:100%;max-width:100%;min-width:0;overflow:auto;padding:12px;background:#fff;border-bottom:1px solid #ddd;box-sizing:border-box;font-family:Arial,sans-serif;font-size:13px;line-height:1.45;';
         ta.parentNode.insertBefore(preview, ta);
       }
-      preview.innerHTML = richHtml;
+      preview.innerHTML = '<div class="operational-paste-content">' + richHtml + '</div>';
       preview.style.display = '';
       preview.querySelectorAll('table').forEach(function(table) {
         table.style.maxWidth = '100%';
         table.style.boxSizing = 'border-box';
       });
+      preview.querySelectorAll('img').forEach(function(image) {
+        if (!image.complete) image.addEventListener('load', function() { fitOperationalPastePreview(preview); }, { once: true });
+      });
       ta.style.display = 'none';
+      fitOperationalPastePreview(preview);
     }
 
     function processRichContentPaste(textareaId, html, text) {
@@ -5397,8 +5446,9 @@ function renderPaxLoadTable() {
         preview.style.cssText = 'flex:1 1 0;width:100%;max-width:100%;min-width:0;border:1px solid #ddd;border-radius:6px;padding:clamp(4px,1.5vw,12px);background:#f9fafb;max-height:none;overflow-x:hidden;overflow-y:auto;box-sizing:border-box;';
         textarea.parentNode.insertBefore(preview, textarea);
       }
-      preview.innerHTML = tableHTML;
+      preview.innerHTML = '<div class="operational-paste-content">' + tableHTML + '</div>';
       preview.style.display = 'block';
+      fitOperationalPastePreview(preview);
       
       // Hide the textarea and show preview only
       textarea.style.display = 'none';
@@ -7538,6 +7588,7 @@ function renderPaxLoadTable() {
         b.style.color=on?'#005c5c':'';b.style.borderTop=on?'3px solid #005c5c':'';b.style.fontWeight=on?'700':'';b.style.background=on?'rgba(0,92,92,0.07)':'';
       });
       if(tabId==='summary'){try{refreshSummarySpans();}catch(e){}}
+      requestAnimationFrame(fitAllOperationalPastePreviews);
     }
     function wireNavTabs(){
       document.querySelectorAll('.bottom-tab').forEach(function(btn){
