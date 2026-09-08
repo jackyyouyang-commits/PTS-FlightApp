@@ -4625,12 +4625,8 @@ function renderPaxLoadTable() {
           if (hasDepActual) {
             el.innerHTML = '<span style="color:#fff;">Departed</span>' + disruptionStr + etaLine;
           } else {
-            var pastSec = Math.abs(diffSec);
-            // Only blink if no disruption (ETD == STD). If ETD > STD, don't blink
-            var shouldBlink = (stdMin == null || etdMin == null || etdMin <= stdMin);
-            var blinkClass = shouldBlink ? 'blink-countdown' : '';
-            var countdownHtml = '<span style="color:#fff;">Departs at:</span> <span class="' + blinkClass + '" style="color:#FCA5A5">' + departsAtStr() + '</span>';
-            el.innerHTML = countdownHtml + disruptionStr + etaLine;
+            var departureTimeHtml = '<span style="color:#fff;">Departs at:</span> <span style="color:#FCA5A5">' + departsAtStr() + '</span>';
+            el.innerHTML = departureTimeHtml + disruptionStr + etaLine;
           }
           el.style.color = '#fff';
           return;
