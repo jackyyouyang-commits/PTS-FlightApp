@@ -1608,6 +1608,19 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </div>
     </div>
 
+    <!-- NOTOC REMINDER MODAL (triggered by Cockpit Crew Onboard) -->
+    <div id="notoc-reminder-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-card" style="max-width:520px;padding:20px;text-align:center;">
+        <div style="font-size:18px;font-weight:700;color:#991B1B;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <i data-lucide="alert-triangle" style="width:20px;height:20px;"></i> Reminder!!
+        </div>
+        <div class="notice-card notice-card-compact" style="margin-top:14px;">Any NOTOC for this flight? Check with TCO to ensure NOTOC completed</div>
+        <div style="margin-top:18px;display:flex;justify-content:center;">
+          <button id="notoc-reminder-ok" style="background:#EF4444;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">Acknowledge</button>
+        </div>
+      </div>
+    </div>
+
     <!-- REINSTATE FLIGHT CONFIRM MODAL -->
     <div id="reinstate-flight-confirm-modal" class="modal-overlay" style="display:none;">
       <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
@@ -2603,7 +2616,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       defects:'', remarks:'',
       _locked: false,
       _badgeVisible: false,
-      _flightCancelled: false, _noticesAcked: false
+      _flightCancelled: false, _noticesAcked: false, _notocReminderAcked: false
     };
 
     var arrActual = {};
@@ -2847,10 +2860,22 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     // ===========================
     // LOG TIME
     // ===========================
-    // Index of 'Last Pax Onboard' in depActivities — logging it prompts the crew to
-    // acknowledge the pre-departure notices.
+    // Logging these milestones prompts the corresponding operational reminder.
+    var COCKPIT_CREW_ONBOARD_IDX = 3;
     var LAST_PAX_ONBOARD_IDX = 20;
 
+    function showNotocReminderModal() {
+      var m = document.getElementById('notoc-reminder-modal');
+      if (m) m.style.display = 'flex';
+    }
+    function dismissNotocReminderModal() {
+      var m = document.getElementById('notoc-reminder-modal');
+      if (m) m.style.display = 'none';
+      if (typeof state !== 'undefined') {
+        state._notocReminderAcked = true;
+        persistFlightCancelState();
+      }
+    }
     function showNoticesAckModal() {
       var m = document.getElementById('notices-ack-modal');
       if (m) m.style.display = 'flex';
@@ -2865,10 +2890,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     }
     // Only prompt on the transition into a logged time, and only once per flight.
     function maybePromptNotices(type, idx, hadTime) {
-      if (type !== 'dep' || idx !== LAST_PAX_ONBOARD_IDX) return;
-      if (hadTime) return;
-      if (typeof state !== 'undefined' && state._noticesAcked) return;
-      showNoticesAckModal();
+      if (type !== 'dep' || hadTime) return;
+      if (idx === COCKPIT_CREW_ONBOARD_IDX) {
+        if (typeof state !== 'undefined' && state._notocReminderAcked) return;
+        showNotocReminderModal();
+      } else if (idx === LAST_PAX_ONBOARD_IDX) {
+        if (typeof state !== 'undefined' && state._noticesAcked) return;
+        showNoticesAckModal();
+      }
     }
 
     function logTime(type, idx) {
@@ -2884,9 +2913,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     function resetTime(type, idx) {
       if (type === 'arr') delete arrActual[idx];
       else delete depActual[idx];
-      // Clearing the time re-arms the prompt for the next log.
-      if (type === 'dep' && idx === LAST_PAX_ONBOARD_IDX && typeof state !== 'undefined') {
-        state._noticesAcked = false;
+      // Clearing a reminder milestone re-arms its prompt for the next log.
+      if (type === 'dep' && typeof state !== 'undefined') {
+        if (idx === COCKPIT_CREW_ONBOARD_IDX) state._notocReminderAcked = false;
+        if (idx === LAST_PAX_ONBOARD_IDX) state._noticesAcked = false;
       }
       renderActivities();
       updateETDCountdown();
@@ -6166,6 +6196,7 @@ function renderPaxLoadTable() {
       safeOn('reinstate-flight-confirm-yes', doReinstateFlight);
       safeOn('reinstate-flight-confirm-no',  disregardReinstateFlight);
       safeOn('notices-ack-ok', dismissNoticesAckModal);
+      safeOn('notoc-reminder-ok', dismissNotocReminderModal);
       syncCancelFlightButton();
       safeOn('save-success-ok', function() {
         var m = document.getElementById('save-success-modal');
