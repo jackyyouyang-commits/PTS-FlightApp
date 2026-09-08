@@ -3545,11 +3545,6 @@ function renderPaxLoadTable() {
       if(crewArrVal.trim()) lines.push(crewArrVal.trim());
       lines.push('');
 
-      sec('CREW LIST - DEPARTURE');
-      var crewDepVal = (document.getElementById('dep-crew-textarea')||{}).value||'';
-      if(crewDepVal.trim()) lines.push(crewDepVal.trim());
-      lines.push('');
-
       sec('DEPARTURE PTS');
       depActivities.forEach(function(act,i){
         var logged=depActual[i];
@@ -5534,7 +5529,6 @@ function renderPaxLoadTable() {
       var oirContent      = taVal('oir-textarea');
       var depLirContent   = taVal('dep-lir-textarea');
       var crewArrContent  = taVal('crew-textarea');
-      var crewDepContent  = taVal('dep-crew-textarea');
       var depGenDecContent = taVal('dep-gen-dec-textarea');
       var agentPosHasPdf = (typeof agentPosPdfData !== 'undefined' && !!agentPosPdfData);
       var agentPosContent = agentPosHasPdf ? '' : taVal('agent-pos-textarea');
@@ -5762,9 +5756,6 @@ function renderPaxLoadTable() {
 
         // === Page 7: Arrival Crew List ===
         '<div class="page-break">'+preSection('Arrival Crew List', crewArrContent)+'</div>',
-
-        // === Page 7b: Departure Crew List ===
-        '<div class="page-break">'+preSection('Departure Crew List', crewDepContent)+'</div>',
 
         // === Page 8: Departure Gen Dec ===
         '<div class="page-break">'+preSection('Departure Gen Dec', depGenDecContent)+'</div>',
