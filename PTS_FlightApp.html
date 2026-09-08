@@ -11,6 +11,8 @@
     <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjM2IiBmaWxsPSIjMWUzYTVmIi8+PHRleHQgeD0iNTAlIiB5PSI1NSUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iODQiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZmlsbD0iI2ZmZiI+8J+UizwvdGV4dD48L3N2Zz4=">
     <link rel="manifest" href="manifest.webmanifest">
     <title>Flight Details and Precision Timing Schedule</title>
+    <script src="lz-string.min.js"></script>
+    <script src="qrcode.min.js"></script>
     <!-- Google Fonts removed for offline use -->
 <script>
 // Lucide offline stub - replaces CDN icons with simple SVG equivalents
@@ -1799,28 +1801,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </div>
     </div>
 
-    <!-- SHARE CODE MODAL -->
+    <!-- SHARE QR MODAL -->
     <div data-id="120" id="share-modal" class="modal-overlay" style="display:none;">
-      <div data-id="121" class="modal-card">
+      <div data-id="121" class="modal-card" style="max-width:520px;">
         <div data-id="122" class="flex items-center justify-between mb-4">
-          <h2 data-id="123" class="text-lg font-bold text-cx-teal-dark">Share Code</h2>
+          <h2 data-id="123" class="text-lg font-bold text-cx-teal-dark">Share by QR Code</h2>
           <button data-id="124" id="share-modal-close" class="p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"><i data-id="125" data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
         </div>
-        <p data-id="126" class="text-sm text-cx-grey mb-3">Copy this code and send it to a colleague. They can import it via the Import - Paste Code button.</p>
-        <textarea data-id="127" id="share-code-output" class="field-input" readonly style="min-height:140px;font-size:11px;font-family:monospace;word-break:break-all;resize:vertical;"></textarea>
-        <div class="flex justify-end mt-2">
-          <button data-id="129" id="share-copy-btn" class="flex items-center gap-2 px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark transition-colors">
-            <i data-id="130" data-lucide="clipboard-copy" class="w-4 h-4"></i> Copy Code
-          </button>
-        </div>
-        <div class="border-t border-gray-200 mt-4 pt-4">
-          <p class="text-sm text-cx-grey mb-2">Or copy this link and open it on another device (e.g. iPad) &mdash; it auto-imports this data, no code paste needed.</p>
-          <input id="share-link-output" class="field-input" readonly style="font-size:11px;font-family:monospace;">
-          <div class="flex justify-end mt-2">
-            <button id="share-copy-link-btn" class="flex items-center gap-2 px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark transition-colors">
-              <i data-lucide="link" class="w-4 h-4"></i> Copy Link
-            </button>
-          </div>
+        <p data-id="126" class="text-sm text-cx-grey mb-3 text-center">Scan this QR code on another device to open the app and load the flight data automatically.</p>
+        <div id="share-qr-output" style="display:flex;justify-content:center;align-items:center;min-height:280px;padding:12px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;"></div>
+        <div id="share-qr-error" style="display:none;margin-top:12px;padding:10px 12px;border-radius:8px;background:#FEE2E2;color:#991B1B;font-size:13px;font-weight:600;text-align:center;"></div>
+        <div id="share-qr-image-note" style="display:none;margin-top:10px;color:#92400E;background:#FEF3C7;padding:8px 10px;border-radius:8px;font-size:12px;text-align:center;">
+          Pasted images are not included in the QR code.
         </div>
         <div data-id="128" class="flex justify-end gap-3 mt-4">
           <button data-id="131" id="share-close-btn" class="px-5 py-3 rounded-lg bg-gray-100 text-cx-grey-dark font-semibold text-sm min-h-[44px] hover:bg-gray-200">Close</button>
@@ -3709,12 +3701,13 @@ function renderPaxLoadTable() {
     }
 
     // ===========================
-    // SHARE CODE
+    // SHARE QR CODE
     // ===========================
     function generateShareCode() {
       try {
         var payload = { v: 1, state: state, arrActual: arrActual, depActual: depActual };
-        // Include paste-tab content in share payload
+        // Include text-based paste-tab content. Images are deliberately excluded because
+        // even one image is larger than the maximum capacity of a QR code.
         payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
         payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
         payload._arr_disruption_ppm = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
@@ -3725,26 +3718,70 @@ function renderPaxLoadTable() {
         payload._dep_crew  = (document.getElementById('dep-crew-textarea')||{}).value||'';
         payload._dep_gen_dec = (document.getElementById('dep-gen-dec-textarea')||{}).value||'';
         payload._agent_pos   = (document.getElementById('agent-pos-textarea')||{}).value||'';
-        payload._images = pastedImages;
-        var code = btoa(encodeURIComponent(JSON.stringify(payload)));
-        var el = document.getElementById('share-code-output');
-        if (el) el.value = code;
-        var linkEl = document.getElementById('share-link-output');
-        if (linkEl) {
-          var baseUrl = window.location.origin + window.location.pathname;
-          linkEl.value = baseUrl + '#pts=' + encodeURIComponent(code);
+        payload._images = [];
+
+        if (typeof LZString === 'undefined' || typeof qrcode === 'undefined') {
+          throw new Error('QR libraries unavailable');
+        }
+
+        var compressed = LZString.compressToEncodedURIComponent(JSON.stringify(payload));
+        var baseUrl = (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+          ? window.location.origin + window.location.pathname
+          : 'https://jackyyouyang-commits.github.io/PTS-FlightApp/PTS_FlightApp.html';
+        var shareUrl = baseUrl + '#pts2=' + compressed;
+        var qrEl = document.getElementById('share-qr-output');
+        var errorEl = document.getElementById('share-qr-error');
+        var imageNote = document.getElementById('share-qr-image-note');
+        if (qrEl) qrEl.innerHTML = '';
+        if (errorEl) {
+          errorEl.style.display = 'none';
+          errorEl.textContent = '';
+        }
+        if (imageNote) imageNote.style.display = pastedImages && pastedImages.length ? 'block' : 'none';
+
+        var qr = qrcode(0, 'L');
+        qr.addData(shareUrl, 'Byte');
+        qr.make();
+        if (qrEl) {
+          qrEl.innerHTML = qr.createSvgTag({
+            cellSize: 4,
+            margin: 16,
+            scalable: true,
+            alt: 'QR code containing the shared flight data',
+            title: 'Scan to load flight data'
+          });
+          var svg = qrEl.querySelector('svg');
+          if (svg) {
+            svg.style.width = 'min(100%, 420px)';
+            svg.style.height = 'auto';
+            svg.style.display = 'block';
+          }
         }
         var modal = document.getElementById('share-modal');
         if (modal) modal.style.display = 'flex';
       } catch(e) {
-        showToast('Share code error', 'red');
+        var modal = document.getElementById('share-modal');
+        var qrEl = document.getElementById('share-qr-output');
+        var errorEl = document.getElementById('share-qr-error');
+        if (qrEl) qrEl.innerHTML = '';
+        if (errorEl) {
+          errorEl.textContent = String(e).indexOf('code length overflow') >= 0
+            ? 'There is too much text data for one QR code. Clear large pasted tables and try again.'
+            : 'Unable to generate the QR code on this device.';
+          errorEl.style.display = 'block';
+        }
+        if (modal) modal.style.display = 'flex';
+        showToast('QR code error', 'red');
       }
     }
 
-    // Extracts a share code embedded in the URL hash, e.g. "#pts=<code>",
-    // so opening a shared link on another device auto-imports without pasting a code.
+    // Extracts either the compressed QR payload or a legacy share code from the URL.
     function getShareCodeFromHash() {
       var h = window.location.hash || '';
+      var compressed = h.match(/#pts2=([^&]+)/);
+      if (compressed) {
+        try { return 'lz:' + decodeURIComponent(compressed[1]); } catch(e) { return null; }
+      }
       var m = h.match(/#pts=([^&]+)/);
       if (!m) return null;
       try { return decodeURIComponent(m[1]); } catch(e) { return null; }
@@ -3752,7 +3789,15 @@ function renderPaxLoadTable() {
 
     function loadShareCode(code) {
       try {
-        var json = decodeURIComponent(atob(code.trim()));
+        var trimmed = code.trim();
+        var json;
+        if (trimmed.indexOf('lz:') === 0) {
+          if (typeof LZString === 'undefined') throw new Error('Compression library unavailable');
+          json = LZString.decompressFromEncodedURIComponent(trimmed.slice(3));
+          if (!json) throw new Error('Invalid compressed share data');
+        } else {
+          json = decodeURIComponent(atob(trimmed));
+        }
         var data = JSON.parse(json);
         if (data.state) {
           Object.keys(data.state).forEach(function(k) {
@@ -3787,7 +3832,7 @@ function renderPaxLoadTable() {
         refreshSummarySpans();
         refreshFinalLoading();
         lockFields(); // Auto-lock after import
-        showToast('Share code loaded!', 'green');
+        showToast('Shared flight loaded!', 'green');
         return true;
       } catch(e) {
         showToast('Invalid share code', 'red');
@@ -6028,23 +6073,7 @@ function renderPaxLoadTable() {
       // Share modal
       safeOn('share-modal-close',function(){ var m=document.getElementById('share-modal'); if(m)m.style.display='none'; });
       safeOn('share-close-btn',function(){ var m=document.getElementById('share-modal'); if(m)m.style.display='none'; });
-      safeOn('share-copy-btn',function(){
-        var el=document.getElementById('share-code-output'); if(!el)return;
-        try{navigator.clipboard.writeText(el.value);}catch(e){
-          var ta4=document.createElement('textarea'); ta4.value=el.value;
-          document.body.appendChild(ta4); ta4.select(); document.execCommand('copy'); document.body.removeChild(ta4);
-        }
-        showToast('Code copied!','green');
-      });
       safeOn('underload-warning-ok',function(){ var m=document.getElementById('underload-warning-modal'); if(m)m.style.display='none'; });
-      safeOn('share-copy-link-btn',function(){
-        var el=document.getElementById('share-link-output'); if(!el)return;
-        try{navigator.clipboard.writeText(el.value);}catch(e){
-          var ta5=document.createElement('textarea'); ta5.value=el.value;
-          document.body.appendChild(ta5); ta5.select(); document.execCommand('copy'); document.body.removeChild(ta5);
-        }
-        showToast('Link copied!','green');
-      });
 
       // Close modals on overlay click
       ['import-modal-k1l2','send-modal','share-modal'].forEach(function(id) {
@@ -6222,8 +6251,7 @@ function renderPaxLoadTable() {
     // INIT
     // ===========================
     function init() {
-      // Auto-import: if a share code is embedded in the URL (e.g. from "Copy Link"),
-      // load it directly instead of the normal localStorage restore flow.
+      // Auto-import shared data from a scanned QR URL (legacy share links still work).
       var hashCode = getShareCodeFromHash();
       if (hashCode && loadShareCode(hashCode)) {
         try { saveToLocal(); } catch(e) {}
