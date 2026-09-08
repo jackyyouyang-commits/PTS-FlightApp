@@ -439,6 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .blink-countdown { display:inline-block; color:#FCA5A5; animation: blink-hold 3s steps(2, start) infinite; }
       .pasted-image-gallery { display:flex; flex-wrap:wrap; gap:8px; padding:8px 12px; background:#F9FAFB; border-left:1px solid #E5E7EB; border-right:1px solid #E5E7EB; }
       .pasted-image-gallery:empty { display:none; padding:0; border:none; }
+      .dep-lir-search-match { background:#FFFF00!important; outline:3px solid #F59E0B; outline-offset:-2px; }
       .pasted-image-item { position:relative; display:inline-block; }
       .pasted-image-item img { max-width:140px; max-height:140px; border-radius:6px; border:1px solid #D1D5DB; display:block; cursor:zoom-in; }
       .pasted-image-item .pi-remove { position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%; background:#EF4444; color:#fff; border:none; font-size:12px; line-height:20px; text-align:center; cursor:pointer; padding:0; }
@@ -2320,6 +2321,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div data-id="537" class="panel-header">
             <h2 data-id="538" style="font-size:18px;font-weight:700;margin:0;">Departure Onload</h2>
             <span data-id="539" id="dep-lir-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
+          </div>
+          <div style="display:flex;gap:8px;padding:12px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;align-items:center;flex-wrap:wrap;">
+            <input id="dep-lir-search-input" type="text" placeholder="Container #..." autocomplete="off" style="width:240px;max-width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;font-family:monospace;"/>
+            <button id="dep-lir-clear-search-btn" style="background:#6B7280;color:#fff;border:none;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Clear Search</button>
+            <div id="dep-lir-search-result" style="padding:0 12px;font-size:20px;font-weight:700;color:#1f2937;min-width:150px;text-align:left;">Ready to search...</div>
           </div>
           <textarea data-id="540" id="dep-lir-textarea" style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
           <div data-id="541" class="panel-footer">
@@ -5405,6 +5411,68 @@ function renderPaxLoadTable() {
       return '';
     }
 
+    function clearDepLirSearchHighlight() {
+      document.querySelectorAll('#dep-lir-textarea-preview .dep-lir-search-match, #dep-lir-textarea-rich-preview .dep-lir-search-match').forEach(function(row) {
+        row.classList.remove('dep-lir-search-match');
+      });
+    }
+
+    function searchDepLirContainer(searchTerm) {
+      var textarea = document.getElementById('dep-lir-textarea');
+      var resultDiv = document.getElementById('dep-lir-search-result');
+      var query = String(searchTerm || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      clearDepLirSearchHighlight();
+
+      if (!query) {
+        resultDiv.textContent = 'Ready to search...';
+        resultDiv.style.color = '#1f2937';
+        return;
+      }
+      if (!textarea || !textarea.value) {
+        resultDiv.textContent = 'No data to search';
+        resultDiv.style.color = '#ef4444';
+        return;
+      }
+
+      var lines = textarea.value.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+      for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+        var line = lines[lineIndex];
+        var upperLine = line.toUpperCase();
+        var containerPattern = /\b[A-Z]{3}\d{4,6}[A-Z]{2}\b/g;
+        var containerMatch;
+        while ((containerMatch = containerPattern.exec(upperLine)) !== null) {
+          var containerCode = containerMatch[0];
+          if (containerCode.replace(/[^A-Z0-9]/g, '').indexOf(query) < 0) continue;
+          var beforeContainer = line.slice(0, containerMatch.index);
+          var positionMatch = beforeContainer.match(/([A-Z0-9]+)\s*[|\u2502\t,;:/-]*\s*$/i);
+          if (!positionMatch) continue;
+
+          var position = positionMatch[1].toUpperCase();
+          resultDiv.textContent = 'Position: ' + position;
+          resultDiv.style.color = '#059669';
+
+          var preview = document.getElementById('dep-lir-textarea-preview');
+          var richPreview = document.getElementById('dep-lir-textarea-rich-preview');
+          var matchRow = preview && preview.querySelector('tr[data-pasted-row="' + lineIndex + '"]');
+          if (!matchRow && richPreview) {
+            matchRow = Array.from(richPreview.querySelectorAll('tr')).find(function(row) {
+              return row.textContent.toUpperCase().replace(/[^A-Z0-9]/g, '').indexOf(containerCode) >= 0;
+            });
+          }
+          if (matchRow) {
+            matchRow.classList.add('dep-lir-search-match');
+            setTimeout(function() {
+              matchRow.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            }, 50);
+          }
+          return;
+        }
+      }
+
+      resultDiv.textContent = 'Not found';
+      resultDiv.style.color = '#ef4444';
+    }
+
     // ===========================
     // OIR FUNCTIONS
     // ===========================
@@ -5762,6 +5830,8 @@ function renderPaxLoadTable() {
       var ta = document.getElementById('dep-lir-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('dep-lir-textarea-preview'); if(preview) preview.remove();
       clearRichContent('dep-lir-textarea');
+      var searchInput = document.getElementById('dep-lir-search-input'); if(searchInput) searchInput.value='';
+      var searchResult = document.getElementById('dep-lir-search-result'); if(searchResult) { searchResult.textContent='Ready to search...'; searchResult.style.color='#1f2937'; }
       try { localStorage.removeItem('pts_dep_lir'); localStorage.removeItem('pts_dep_lir_locked'); } catch(e) {}
       var badge = document.getElementById('dep-lir-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('dep-lir-textarea');
@@ -6894,6 +6964,16 @@ function renderPaxLoadTable() {
       // DEP LIR buttons
       safeOn('dep-lir-save-btn', saveDepLIR);
       safeOn('dep-lir-clear-btn', clearDepLIR);
+      var depLirSearchInput = document.getElementById('dep-lir-search-input');
+      if (depLirSearchInput) {
+        depLirSearchInput.addEventListener('input', function() { searchDepLirContainer(this.value); });
+      }
+      safeOn('dep-lir-clear-search-btn', function() {
+        if (depLirSearchInput) depLirSearchInput.value = '';
+        searchDepLirContainer('');
+        var preview = document.getElementById('dep-lir-textarea-preview') || document.getElementById('dep-lir-textarea-rich-preview');
+        if (preview) preview.scrollTop = 0;
+      });
 
       // ITD Tag Card clear
       safeOn('itd-tag-card-save-btn', function() { saveSimpleContentTab('itd-tag-card-textarea', 'itd-tag-card-lock-badge', 'ITD Tag Card'); });
