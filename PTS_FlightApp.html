@@ -1730,15 +1730,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     <div data-id="70" id="import-modal-k1l2" class="modal-overlay" style="display:none;">
       <div data-id="71" class="modal-card">
         <div data-id="72" class="flex items-center justify-between mb-4">
-          <h2 data-id="73" class="text-lg font-bold text-cx-teal-dark">Import Flight Information</h2>
+          <h2 data-id="73" class="text-lg font-bold text-cx-teal-dark">Upload Flight Data</h2>
           <button data-id="74" id="modal-close-m3n4" class="p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"><i data-id="75" data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
         </div>
-        <div data-id="76" class="text-sm text-cx-grey mb-4 space-y-1.5">
-          <div data-id="77" class="flex items-start gap-2"><span data-id="78" class="font-bold text-cx-teal flex-shrink-0">1.</span> Open your PTS Excel sheet</div>
-          <div data-id="79" class="flex items-start gap-2"><span data-id="80" class="font-bold text-cx-teal flex-shrink-0">2.</span> Press <kbd data-id="81" class="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono border border-gray-200">Ctrl+A</kbd> to select all, then <kbd data-id="82" class="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono border border-gray-200">Ctrl+C</kbd> to copy</div>
-          <div data-id="83" class="flex items-start gap-2"><span data-id="84" class="font-bold text-cx-teal flex-shrink-0">3.</span> Click in the box below and press <kbd data-id="85" class="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono border border-gray-200">Ctrl+V</kbd> to paste</div>
-        </div>
-        <textarea data-id="86" id="import-textarea-o5p6" class="field-input" style="min-height:220px;font-family:Arial,sans-serif;font-size:14px;resize:vertical;overflow:auto;" placeholder="Paste your Excel data here (Ctrl+V or Cmd+V)..."></textarea>
+        <textarea data-id="86" id="import-textarea-o5p6" class="field-input" style="min-height:220px;font-family:Arial,sans-serif;font-size:14px;resize:vertical;overflow:auto;" placeholder="Ready to Import"></textarea>
         <div data-id="87" id="import-preview" style="margin-top:8px;font-size:13px;color:#6B7280;line-height:1.6;min-height:24px;"></div>
         <div data-id="88" id="import-status-q7r8" class="mt-3 text-sm" style="display:none;"></div>
         <div data-id="89" id="import-preview-container" class="mt-3" style="display:none;">
@@ -1752,7 +1747,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <div data-id="102" id="import-initial-buttons" class="flex justify-end gap-3 mt-4">
           <div data-id="105" class="flex gap-3">
             <button data-id="106" id="modal-cancel-s9t0" class="px-5 py-3 rounded-lg text-white font-semibold text-sm min-h-[44px]" style="background:#1a6e4e;">Cancel</button>
-            <button data-id="107" id="modal-import-u1v2" class="px-5 py-3 rounded-lg text-white font-semibold text-sm min-h-[44px]" style="background:#1a6e4e;">Parse &amp; Fill Fields</button>
+            <button data-id="107" id="modal-import-u1v2" class="px-5 py-3 rounded-lg text-white font-semibold text-sm min-h-[44px]" style="background:#1a6e4e;">Upload Data</button>
           </div>
         </div>
       </div>
@@ -1804,7 +1799,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <div data-id="128" class="flex justify-end gap-3 mt-4">
           <button id="share-scan-btn" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark">Scan QR Code to Connect</button>
           <button id="share-stop-scan-btn" style="display:none;" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark">Stop Scanning</button>
-          <button data-id="131" id="share-close-btn" class="px-5 py-3 rounded-lg bg-gray-100 text-cx-grey-dark font-semibold text-sm min-h-[44px] hover:bg-gray-200">Close</button>
+          <button data-id="131" id="share-close-btn" class="px-5 py-3 rounded-lg text-white font-semibold text-sm min-h-[44px]" style="background:#1a6e4e;">Close</button>
         </div>
       </div>
     </div>
