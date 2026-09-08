@@ -439,7 +439,10 @@ document.addEventListener('DOMContentLoaded', function() {
       .blink-countdown { display:inline-block; color:#FCA5A5; animation: blink-hold 3s steps(2, start) infinite; }
       .pasted-image-gallery { display:flex; flex-wrap:wrap; gap:8px; padding:8px 12px; background:#F9FAFB; border-left:1px solid #E5E7EB; border-right:1px solid #E5E7EB; }
       .pasted-image-gallery:empty { display:none; padding:0; border:none; }
-      .dep-lir-search-match { background:#FFFF00!important; color:#111!important; outline:3px solid #F59E0B; outline-offset:-2px; }
+      .dep-lir-search-match,
+      .dep-lir-search-match > td,
+      .dep-lir-search-match > th { background:#FFFF00!important; color:#111!important; outline-color:#F59E0B; }
+      .dep-lir-search-match { outline:3px solid #F59E0B; outline-offset:-2px; }
       .pasted-image-item { position:relative; display:inline-block; }
       .pasted-image-item img { max-width:140px; max-height:140px; border-radius:6px; border:1px solid #D1D5DB; display:block; cursor:zoom-in; }
       .pasted-image-item .pi-remove { position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%; background:#EF4444; color:#fff; border:none; font-size:12px; line-height:20px; text-align:center; cursor:pointer; padding:0; }
@@ -5459,11 +5462,19 @@ function renderPaxLoadTable() {
 
     function scrollDepLirMatchIntoView(preview, matchElement) {
       if (!preview || !matchElement) return;
-      var previewRect = preview.getBoundingClientRect();
-      var matchRect = matchElement.getBoundingClientRect();
-      var targetTop = preview.scrollTop + (matchRect.top - previewRect.top) - (preview.clientHeight / 2) + (matchRect.height / 2);
-      if (typeof preview.scrollTo === 'function') preview.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
-      else preview.scrollTop = Math.max(0, targetTop);
+      function centerWithin(container) {
+        if (!container) return;
+        var containerRect = container.getBoundingClientRect();
+        var elementRect = matchElement.getBoundingClientRect();
+        var targetTop = container.scrollTop + (elementRect.top - containerRect.top) - (container.clientHeight / 2) + (elementRect.height / 2);
+        targetTop = Math.max(0, targetTop);
+        container.scrollTop = targetTop;
+      }
+
+      centerWithin(preview);
+      setTimeout(function() {
+        centerWithin(document.getElementById('main-content-w3x4'));
+      }, 100);
     }
 
     function searchDepLirContainer(searchTerm) {
