@@ -1689,6 +1689,17 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </div>
     </div>
 
+    <!-- CONNECT SUCCESS MODAL -->
+    <div id="connect-success-modal" class="modal-overlay" style="display:none;z-index:220;">
+      <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
+        <div style="font-size:15px;font-weight:700;color:#1a6e4e;">Flight Data Successfully Retrieved</div>
+        <div style="font-size:14px;color:#4B5563;margin-top:8px;">Click OK to acknowledge.</div>
+        <div style="margin-top:18px;display:flex;justify-content:center;">
+          <button id="connect-success-ok" style="background:#1a6e4e;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">OK</button>
+        </div>
+      </div>
+    </div>
+
     <div data-id="7" id="app-shell">
 
     <!-- HEADER -->
@@ -4400,7 +4411,7 @@ function renderPaxLoadTable() {
       return shareCodeFromScannedValue(window.location.hash || '');
     }
 
-    function applyConnectPayload(data, successMessage) {
+    function applyConnectPayload(data, successMessage, showRetrievedModal) {
       if (!data || !data.state || typeof data.state !== 'object') throw new Error('Invalid PTS transfer data');
       Object.keys(data.state).forEach(function(k) {
         if (k in state) state[k] = data.state[k] || '';
@@ -4454,7 +4465,12 @@ function renderPaxLoadTable() {
       refreshSummarySpans();
       refreshFinalLoading();
       lockFields();
-      showToast(successMessage || 'Shared flight loaded!', 'green');
+      if (showRetrievedModal) {
+        var successModal = document.getElementById('connect-success-modal');
+        if (successModal) successModal.style.display = 'flex';
+      } else {
+        showToast(successMessage || 'Shared flight loaded!', 'green');
+      }
       return true;
     }
 
@@ -4470,7 +4486,7 @@ function renderPaxLoadTable() {
           json = decodeURIComponent(atob(trimmed));
         }
         var data = JSON.parse(json);
-        return applyConnectPayload(data, 'Shared flight loaded!');
+        return applyConnectPayload(data, '', true);
       } catch(e) {
         showToast('Invalid share code', 'red');
         return false;
@@ -6985,6 +7001,10 @@ function renderPaxLoadTable() {
       });
       safeOn('restore-success-ok', function() {
         var m = document.getElementById('restore-success-modal');
+        if (m) m.style.display = 'none';
+      });
+      safeOn('connect-success-ok', function() {
+        var m = document.getElementById('connect-success-modal');
         if (m) m.style.display = 'none';
       });
 
