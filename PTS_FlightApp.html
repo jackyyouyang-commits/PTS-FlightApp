@@ -6310,6 +6310,11 @@ function renderPaxLoadTable() {
           .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       }
       function v(k){ return (s[k]&&String(s[k]).trim()) ? escapeReportValue(s[k]) : ''; }
+      function multilineValue(k) {
+        return (s[k] && String(s[k]).trim())
+          ? escapeReportValue(s[k]).replace(/\r\n?|\n/g, '<br>')
+          : '';
+      }
       function numOrZero(x){ return parseInt(x)||0; }
       function row(label,val){ return '<tr><td class="lbl">'+label+'</td><td class="val">'+val+'</td></tr>'; }
 
@@ -6566,8 +6571,8 @@ function renderPaxLoadTable() {
           row('Total Bags',v('dep_total_bags'))+row('Crew Bags',v('dep_crew_bags'))+
           row('STRL',v('dep_strl'))+row('WCH',v('dep_wch'))+row('Carry-On',v('dep_carry_on'))
         ),
-        section('Defects', row('Defects',v('defects'))),
-        section('Remarks', row('Remarks', (v('remarks')!=='' ? String(s.remarks).replace(/</g,'&lt;').replace(/\n/g,'<br>') : ''))),
+        section('Defects', row('Defects',multilineValue('defects'))),
+        section('Remarks', row('Remarks',multilineValue('remarks'))),
         section('Catering Order',
           row('CAT J',v('dep_cat_j'))+row('CAT W',v('dep_cat_w'))+row('CAT Y',v('dep_cat_y'))
         ),
