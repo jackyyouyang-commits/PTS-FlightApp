@@ -3097,6 +3097,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             '</span>';
         }
         var variance = '\u2014';
+        var varianceIsLate = false;
         if (target !== null && logged) {
           var actualMin = parseTime(logged);
           if (actualMin !== null) {
@@ -3113,6 +3114,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
               while (actualAbs - targetAbs < -360) actualAbs += 1440;
             }
             var diffMin = actualAbs - targetAbs;
+            varianceIsLate = diffMin > 0;
             var sign = diffMin >= 0 ? '+' : '-';
             var absMin = Math.abs(diffMin);
             var h = Math.floor(absMin / 60);
@@ -3123,7 +3125,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           }
         }
         var targetTdStyle = (shift > 0 && target !== null) ? ' style="color:#DC2626;font-weight:700;"' : '';
-        var varianceColor = (variance.charAt(0) === '+') ? '#DC2626' : '#059669';
+        var varianceColor = varianceIsLate ? '#DC2626' : '#059669';
         html += '<tr><td>' + act.name + '</td><td' + targetTdStyle + '>' + targetStr + '</td><td>' + actualCell + '</td><td style="text-align:center;font-weight:600;color:' + varianceColor + ';">' + variance + '</td></tr>';
       }
       tbody.innerHTML = html;
