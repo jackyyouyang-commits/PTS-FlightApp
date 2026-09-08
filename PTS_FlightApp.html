@@ -3675,9 +3675,17 @@ function renderPaxLoadTable() {
     var PASTE_IMAGE_IDS = ['staff-acc-textarea','arr-ptm-textarea','arr-bnl-textarea','arr-disruption-ppm-textarea','itd-tag-card-textarea','oir-textarea',
       'dep-lir-textarea','crew-textarea','dep-crew-textarea','dep-gen-dec-textarea','agent-pos-textarea','ramp-roster-textarea'];
     var pastedImages = {}; // textareaId -> array of image data-URLs
-    var arrivalBnlRichHtml = '';
+    var contentRichHtml = {}; // textareaId -> sanitized rich clipboard HTML
 
-    function sanitizeArrivalBnlHtml(html) {
+    function richContentStorageKey(textareaId) {
+      return 'pts_' + textareaId.replace(/-textarea$/, '').replace(/-/g, '_') + '_html';
+    }
+
+    function textContentStorageKey(textareaId) {
+      return richContentStorageKey(textareaId).replace(/_html$/, '');
+    }
+
+    function sanitizePastedHtml(html) {
       var doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
       doc.querySelectorAll('script,style,iframe,object,embed,link,meta,form,input,button').forEach(function(el) { el.remove(); });
       var allowedTags = ['A','ABBR','B','BLOCKQUOTE','BR','CAPTION','CENTER','CITE','CODE','COL','COLGROUP','DD','DEL','DIV','DL','DT','EM','FONT','H1','H2','H3','H4','H5','H6','HR','I','IMG','LI','OL','P','PRE','S','SMALL','SPAN','STRIKE','STRONG','SUB','SUP','TABLE','TBODY','TD','TFOOT','TH','THEAD','TR','U','UL'];
@@ -3697,24 +3705,26 @@ function renderPaxLoadTable() {
       return doc.body.innerHTML;
     }
 
-    function renderArrivalBnlRichContent() {
-      var ta = document.getElementById('arr-bnl-textarea');
+    function renderRichContent(textareaId) {
+      var ta = document.getElementById(textareaId);
       if (!ta) return;
-      var tablePreview = document.getElementById('arr-bnl-textarea-preview');
+      var tablePreview = document.getElementById(textareaId + '-preview');
       if (tablePreview) tablePreview.remove();
-      var preview = document.getElementById('arr-bnl-rich-preview');
-      if (!arrivalBnlRichHtml) {
+      var preview = document.getElementById(textareaId + '-rich-preview');
+      var richHtml = contentRichHtml[textareaId] || '';
+      if (!richHtml) {
         if (preview) preview.remove();
         ta.style.display = '';
         return;
       }
       if (!preview) {
         preview = document.createElement('div');
-        preview.id = 'arr-bnl-rich-preview';
+        preview.id = textareaId + '-rich-preview';
         preview.style.cssText = 'flex:1 1 0;width:100%;max-width:100%;min-width:0;overflow:auto;padding:12px;background:#fff;border-bottom:1px solid #ddd;box-sizing:border-box;font-family:Arial,sans-serif;font-size:13px;line-height:1.45;';
         ta.parentNode.insertBefore(preview, ta);
       }
-      preview.innerHTML = arrivalBnlRichHtml;
+      preview.innerHTML = richHtml;
+      preview.style.display = '';
       preview.querySelectorAll('table').forEach(function(table) {
         table.style.maxWidth = '100%';
         table.style.boxSizing = 'border-box';
@@ -3722,24 +3732,89 @@ function renderPaxLoadTable() {
       ta.style.display = 'none';
     }
 
-    function processArrivalBnlRichPaste(html, text) {
-      var sanitized = sanitizeArrivalBnlHtml(html);
+    function processRichContentPaste(textareaId, html, text) {
+      removeImportedPdfForTextarea(textareaId);
+      var sanitized = sanitizePastedHtml(html);
       if (!sanitized.trim()) {
-        processArrivalBnlPlainPaste(text);
+        processPlainContentPaste(textareaId, text);
         return;
       }
-      arrivalBnlRichHtml = sanitized;
-      var ta = document.getElementById('arr-bnl-textarea');
+      contentRichHtml[textareaId] = sanitized;
+      var ta = document.getElementById(textareaId);
       ta.value = text || new DOMParser().parseFromString(sanitized, 'text/html').body.innerText || '';
-      renderArrivalBnlRichContent();
+      renderRichContent(textareaId);
       ta.dispatchEvent(new Event('input', { bubbles: true }));
-      showToast('Arrival BNL formatting preserved. Click Save & Lock to confirm.', 'blue');
+      showToast('Formatting preserved. Click Save & Lock to confirm.', 'blue');
     }
 
-    function processArrivalBnlPlainPaste(text) {
-      arrivalBnlRichHtml = '';
-      renderArrivalBnlRichContent();
-      processPastedData(document.getElementById('arr-bnl-textarea'), text || '', false);
+    function processPlainContentPaste(textareaId, text) {
+      removeImportedPdfForTextarea(textareaId);
+      contentRichHtml[textareaId] = '';
+      renderRichContent(textareaId);
+      processPastedData(document.getElementById(textareaId), text || '', false);
+    }
+
+    function removeImportedPdfForTextarea(textareaId) {
+      if (textareaId === 'dep-gen-dec-textarea' && contentPdfImports.depGenDec.data) removeContentPdf('depGenDec');
+      else if (textareaId === 'agent-pos-textarea' && agentPosPdfData) removeAgentPosPdf();
+      else if (textareaId === 'ramp-roster-textarea' && contentPdfImports.rampRoster.data) removeContentPdf('rampRoster');
+    }
+
+    function saveRichContent(textareaId) {
+      try { localStorage.setItem(richContentStorageKey(textareaId), contentRichHtml[textareaId] || ''); } catch(e) {}
+    }
+
+    function clearRichContent(textareaId) {
+      contentRichHtml[textareaId] = '';
+      renderRichContent(textareaId);
+      try { localStorage.removeItem(richContentStorageKey(textareaId)); } catch(e) {}
+    }
+
+    function restoreRichContent(payload) {
+      var savedRich = payload && payload._rich_html && typeof payload._rich_html === 'object' ? payload._rich_html : {};
+      PASTE_IMAGE_IDS.forEach(function(textareaId) {
+        var html = savedRich[textareaId] || '';
+        if (textareaId === 'arr-bnl-textarea' && !html && payload && payload._arr_bnl_html) html = payload._arr_bnl_html;
+        contentRichHtml[textareaId] = html ? sanitizePastedHtml(html) : '';
+        renderRichContent(textareaId);
+      });
+    }
+
+    function setSimpleContentLock(textareaId, badgeId, locked) {
+      var ta = document.getElementById(textareaId);
+      if (ta) {
+        if (locked) ta.setAttribute('readonly', 'readonly');
+        else ta.removeAttribute('readonly');
+        ta.style.background = locked ? '#F9FAFB' : '';
+      }
+      var badge = document.getElementById(badgeId);
+      if (badge) {
+        badge.style.display = 'inline-flex';
+        badge.innerHTML = (locked ? '\uD83D\uDD12 Locked ' : '\uD83D\uDD13 Unlocked ') +
+          '<button type="button" class="lock-badge-btn" style="background:rgba(255,255,255,0.2);border:none;border-radius:99px;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer;margin-left:4px;">' +
+          (locked ? 'Unlock' : 'Lock') + '</button>';
+        var btn = badge.querySelector('button');
+        if (btn) btn.onclick = function() { setSimpleContentLock(textareaId, badgeId, !locked); };
+      }
+      try { localStorage.setItem(textContentStorageKey(textareaId) + '_locked', locked ? '1' : '0'); } catch(e) {}
+    }
+
+    function saveSimpleContentTab(textareaId, badgeId, label) {
+      var ta = document.getElementById(textareaId);
+      try { localStorage.setItem(textContentStorageKey(textareaId), ta ? ta.value : ''); } catch(e) {}
+      saveRichContent(textareaId);
+      saveStandaloneContentPdf(textareaId);
+      setSimpleContentLock(textareaId, badgeId, true);
+      showToast(label + ' saved & locked', 'green');
+    }
+
+    function saveStandaloneContentPdf(textareaId) {
+      var data = '';
+      if (textareaId === 'dep-gen-dec-textarea') data = contentPdfImports.depGenDec.data || '';
+      else if (textareaId === 'agent-pos-textarea') data = agentPosPdfData || '';
+      else if (textareaId === 'ramp-roster-textarea') data = contentPdfImports.rampRoster.data || '';
+      if (!data) return;
+      try { localStorage.setItem(textContentStorageKey(textareaId) + '_pdf', data); } catch(e) {}
     }
 
     function renderPastedImageGallery(id) {
@@ -3780,13 +3855,11 @@ function renderPaxLoadTable() {
       if (!ta || ta._imagePasteAttached) return;
       ta._imagePasteAttached = true;
       ta.addEventListener('paste', function(e) {
-        if (id === 'arr-bnl-textarea') {
-          var richHtml = e.clipboardData && e.clipboardData.getData('text/html');
-          if (richHtml) {
-            e.preventDefault();
-            processArrivalBnlRichPaste(richHtml, e.clipboardData.getData('text/plain'));
-            return;
-          }
+        var richHtml = e.clipboardData && e.clipboardData.getData('text/html');
+        if (richHtml) {
+          e.preventDefault();
+          processRichContentPaste(id, richHtml, e.clipboardData.getData('text/plain'));
+          return;
         }
         var items = (e.clipboardData && e.clipboardData.items) || [];
         var handled = false;
@@ -3826,7 +3899,8 @@ function renderPaxLoadTable() {
         payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
         payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
         payload._arr_bnl   = (document.getElementById('arr-bnl-textarea')||{}).value||'';
-        payload._arr_bnl_html = arrivalBnlRichHtml;
+        payload._rich_html = contentRichHtml;
+        payload._arr_bnl_html = contentRichHtml['arr-bnl-textarea'] || '';
         payload._arr_disruption_ppm = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
         payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
         payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
@@ -4147,7 +4221,8 @@ function renderPaxLoadTable() {
         payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
         payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
         payload._arr_bnl   = (document.getElementById('arr-bnl-textarea')||{}).value||'';
-        payload._arr_bnl_html = arrivalBnlRichHtml;
+        payload._rich_html = contentRichHtml;
+        payload._arr_bnl_html = contentRichHtml['arr-bnl-textarea'] || '';
         payload._arr_disruption_ppm = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
         payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
         payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
@@ -4253,8 +4328,7 @@ function renderPaxLoadTable() {
               try { processPastedData(ta, ta.value, true); } catch(e) {}
             }
           });
-          arrivalBnlRichHtml = data._arr_bnl_html ? sanitizeArrivalBnlHtml(data._arr_bnl_html) : '';
-          renderArrivalBnlRichContent();
+          restoreRichContent(data);
         })();
         if (data._images) { pastedImages = data._images; PASTE_IMAGE_IDS.forEach(renderPastedImageGallery); }
         updateUnderloadFromWeights();
@@ -4989,35 +5063,12 @@ function renderPaxLoadTable() {
         console.error('Textarea not found:', textareaId);
         return;
       }
-      if (textareaId === 'arr-bnl-textarea') {
-        pasteArrivalBnlContent();
-        return;
-      }
-      
-      // Try Clipboard API first
-      if (navigator.clipboard && navigator.clipboard.readText) {
-        console.log('Trying Clipboard API...');
-        textarea.focus();
-        
-        setTimeout(function() {
-          navigator.clipboard.readText().then(function(data) {
-            console.log('Clipboard API succeeded');
-            processPastedData(textarea, data);
-          }).catch(function(err) {
-            console.error('Clipboard API failed:', err.name);
-            // Fallback to modal paste dialog
-            showPasteModal(textarea);
-          });
-        }, 50);
-      } else {
-        // Fallback to modal paste dialog
-        showPasteModal(textarea);
-      }
+      pasteRichContent(textareaId);
     }
 
-    function pasteArrivalBnlContent() {
+    function pasteRichContent(textareaId) {
       if (!navigator.clipboard || !navigator.clipboard.read) {
-        showArrivalBnlPasteModal();
+        showRichPasteModal(textareaId);
         return;
       }
       navigator.clipboard.read().then(function(items) {
@@ -5031,21 +5082,25 @@ function renderPaxLoadTable() {
           : Promise.resolve('');
         return Promise.all([htmlPromise, textPromise]);
       }).then(function(content) {
-        if (content[0]) processArrivalBnlRichPaste(content[0], content[1]);
-        else if (content[1]) processArrivalBnlPlainPaste(content[1]);
+        if (content[0]) processRichContentPaste(textareaId, content[0], content[1]);
+        else if (content[1]) processPlainContentPaste(textareaId, content[1]);
         else throw new Error('Clipboard has no supported content');
       }).catch(function() {
-        showArrivalBnlPasteModal();
+        showRichPasteModal(textareaId);
       });
     }
 
-    function showArrivalBnlPasteModal() {
+    function showRichPasteModal(textareaId) {
+      var textarea = document.getElementById(textareaId);
+      var panel = textarea && textarea.closest('.textarea-panel-wrapper');
+      var heading = panel && panel.querySelector('.panel-header h2, .panel-header h3');
+      var label = heading ? heading.textContent.trim() : 'Content';
       var modal = document.createElement('div');
       modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;padding:16px;';
       var box = document.createElement('div');
       box.style.cssText = 'background:#fff;border-radius:8px;padding:20px;width:100%;max-width:700px;box-shadow:0 4px 6px rgba(0,0,0,0.1);';
-      box.innerHTML = '<h2 style="margin:0 0 10px;font-size:18px;color:#333;">Paste Arrival BNL</h2>' +
-        '<p style="margin:0 0 10px;color:#666;font-size:14px;">Paste the formatted BNL content into the box below, then click Import.</p>';
+      box.innerHTML = '<h2 style="margin:0 0 10px;font-size:18px;color:#333;">Paste ' + label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</h2>' +
+        '<p style="margin:0 0 10px;color:#666;font-size:14px;">Paste the formatted content into the box below, then click Import.</p>';
       var editor = document.createElement('div');
       editor.contentEditable = 'true';
       editor.style.cssText = 'width:100%;height:260px;overflow:auto;padding:10px;border:1px solid #ccc;border-radius:4px;background:#fff;box-sizing:border-box;font-family:Arial,sans-serif;font-size:13px;';
@@ -5059,7 +5114,7 @@ function renderPaxLoadTable() {
           showToast('Please paste data first', 'orange');
           return;
         }
-        processArrivalBnlRichPaste(editor.innerHTML, editor.innerText);
+        processRichContentPaste(textareaId, editor.innerHTML, editor.innerText);
         modal.remove();
       };
       var cancelBtn = document.createElement('button');
@@ -5356,6 +5411,7 @@ function renderPaxLoadTable() {
     function saveOIR() {
       var val = document.getElementById('oir-textarea').value;
       try { localStorage.setItem('pts_oir', val); } catch(e) {}
+      saveRichContent('oir-textarea');
       lockOIR();
       showToast('OIR saved & locked', 'green');
     }
@@ -5387,6 +5443,7 @@ function renderPaxLoadTable() {
       unlockOIR();
       var ta = document.getElementById('oir-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('oir-textarea-preview'); if(preview) preview.remove();
+      clearRichContent('oir-textarea');
       try { localStorage.removeItem('pts_oir'); localStorage.removeItem('pts_oir_locked'); } catch(e) {}
       var badge = document.getElementById('oir-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('oir-textarea');
@@ -5399,6 +5456,7 @@ function renderPaxLoadTable() {
     function saveCrew() {
       var val = document.getElementById('crew-textarea').value;
       try { localStorage.setItem('pts_crew', val); } catch(e) {}
+      saveRichContent('crew-textarea');
       lockCrew();
       showToast('Crew List saved & locked', 'green');
     }
@@ -5430,6 +5488,7 @@ function renderPaxLoadTable() {
       unlockCrew();
       var ta = document.getElementById('crew-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('crew-textarea-preview'); if(preview) preview.remove();
+      clearRichContent('crew-textarea');
       try { localStorage.removeItem('pts_crew'); localStorage.removeItem('pts_crew_locked'); } catch(e) {}
       var badge = document.getElementById('crew-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('crew-textarea');
@@ -5442,6 +5501,7 @@ function renderPaxLoadTable() {
     function saveDepCrew() {
       var val = document.getElementById('dep-crew-textarea').value;
       try { localStorage.setItem('pts_dep_crew', val); } catch(e) {}
+      saveRichContent('dep-crew-textarea');
       lockDepCrew();
       showToast('Dep Crew List saved & locked', 'green');
     }
@@ -5473,6 +5533,7 @@ function renderPaxLoadTable() {
       unlockDepCrew();
       var ta = document.getElementById('dep-crew-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('dep-crew-textarea-preview'); if(preview) preview.remove();
+      clearRichContent('dep-crew-textarea');
       try { localStorage.removeItem('pts_dep_crew'); localStorage.removeItem('pts_dep_crew_locked'); } catch(e) {}
       var badge = document.getElementById('dep-crew-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('dep-crew-textarea');
@@ -5485,6 +5546,7 @@ function renderPaxLoadTable() {
     function saveStaffAcc() {
       var val = document.getElementById('staff-acc-textarea').value;
       try { localStorage.setItem('pts_staff_acc', val); } catch(e) {}
+      saveRichContent('staff-acc-textarea');
       lockStaffAcc();
       showToast('Staff Acceptance saved & locked', 'green');
     }
@@ -5516,6 +5578,7 @@ function renderPaxLoadTable() {
       unlockStaffAcc();
       var ta = document.getElementById('staff-acc-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('staff-acc-textarea-preview'); if(preview) preview.remove();
+      clearRichContent('staff-acc-textarea');
       try { localStorage.removeItem('pts_staff_acc'); localStorage.removeItem('pts_staff_acc_locked'); } catch(e) {}
       var badge = document.getElementById('staff-acc-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('staff-acc-textarea');
@@ -5528,6 +5591,7 @@ function renderPaxLoadTable() {
     function saveArrPTM() {
       var val = document.getElementById('arr-ptm-textarea').value;
       try { localStorage.setItem('pts_arr_ptm', val); } catch(e) {}
+      saveRichContent('arr-ptm-textarea');
       lockArrPTM();
       showToast('Arrival PTM saved & locked', 'green');
     }
@@ -5559,6 +5623,7 @@ function renderPaxLoadTable() {
       unlockArrPTM();
       var ta = document.getElementById('arr-ptm-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('arr-ptm-textarea-preview'); if(preview) preview.remove();
+      clearRichContent('arr-ptm-textarea');
       try { localStorage.removeItem('pts_arr_ptm'); localStorage.removeItem('pts_arr_ptm_locked'); } catch(e) {}
       var badge = document.getElementById('arr-ptm-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('arr-ptm-textarea');
@@ -5570,10 +5635,8 @@ function renderPaxLoadTable() {
     // ===========================
     function saveArrBNL() {
       var val = document.getElementById('arr-bnl-textarea').value;
-      try {
-        localStorage.setItem('pts_arr_bnl', val);
-        localStorage.setItem('pts_arr_bnl_html', arrivalBnlRichHtml);
-      } catch(e) {}
+      try { localStorage.setItem('pts_arr_bnl', val); } catch(e) {}
+      saveRichContent('arr-bnl-textarea');
       lockArrBNL();
       showToast('Arrival BNL saved & locked', 'green');
     }
@@ -5605,11 +5668,9 @@ function renderPaxLoadTable() {
       unlockArrBNL();
       var ta = document.getElementById('arr-bnl-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('arr-bnl-textarea-preview'); if(preview) preview.remove();
-      var richPreview = document.getElementById('arr-bnl-rich-preview'); if(richPreview) richPreview.remove();
-      arrivalBnlRichHtml = '';
+      clearRichContent('arr-bnl-textarea');
       try {
         localStorage.removeItem('pts_arr_bnl');
-        localStorage.removeItem('pts_arr_bnl_html');
         localStorage.removeItem('pts_arr_bnl_locked');
       } catch(e) {}
       var badge = document.getElementById('arr-bnl-lock-badge'); if(badge) badge.style.display='none';
@@ -5623,6 +5684,7 @@ function renderPaxLoadTable() {
     function saveArrDisruptionPPM() {
       var val = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
       try { localStorage.setItem('pts_arr_disruption_ppm', val); } catch(e) {}
+      saveRichContent('arr-disruption-ppm-textarea');
       lockArrDisruptionPPM();
       showToast('Arrival Disruption PPM saved & locked', 'green');
     }
@@ -5654,6 +5716,7 @@ function renderPaxLoadTable() {
       unlockArrDisruptionPPM();
       var ta = document.getElementById('arr-disruption-ppm-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('arr-disruption-ppm-textarea-preview'); if(preview) preview.remove();
+      clearRichContent('arr-disruption-ppm-textarea');
       try { localStorage.removeItem('pts_arr_disruption_ppm'); localStorage.removeItem('pts_arr_disruption_ppm_locked'); } catch(e) {}
       var badge = document.getElementById('arr-disruption-ppm-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('arr-disruption-ppm-textarea');
@@ -5666,6 +5729,7 @@ function renderPaxLoadTable() {
     function saveDepLIR() {
       var val = document.getElementById('dep-lir-textarea').value;
       try { localStorage.setItem('pts_dep_lir', val); } catch(e) {}
+      saveRichContent('dep-lir-textarea');
       lockDepLIR();
       showToast('DEP LIR saved & locked', 'green');
     }
@@ -5697,6 +5761,7 @@ function renderPaxLoadTable() {
       unlockDepLIR();
       var ta = document.getElementById('dep-lir-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('dep-lir-textarea-preview'); if(preview) preview.remove();
+      clearRichContent('dep-lir-textarea');
       try { localStorage.removeItem('pts_dep_lir'); localStorage.removeItem('pts_dep_lir_locked'); } catch(e) {}
       var badge = document.getElementById('dep-lir-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('dep-lir-textarea');
@@ -5705,20 +5770,27 @@ function renderPaxLoadTable() {
 
     // ITD Tag Card - simple clear (no lock/unlock needed if not implemented)
     function clearITDTagCard() {
+      setSimpleContentLock('itd-tag-card-textarea', 'itd-tag-card-lock-badge', false);
       var ta = document.getElementById('itd-tag-card-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('itd-tag-card-textarea-preview'); if(preview) preview.remove();
+      clearRichContent('itd-tag-card-textarea');
       var searchInput = document.getElementById('itd-search-input'); if(searchInput) { searchInput.value=''; }
       var searchResult = document.getElementById('itd-search-result'); if(searchResult) { searchResult.textContent='Ready to search...'; searchResult.style.color='#1f2937'; }
-      try { localStorage.removeItem('pts_itd_tag_card'); } catch(e) {}
+      try { localStorage.removeItem('pts_itd_tag_card'); localStorage.removeItem('pts_itd_tag_card_locked'); } catch(e) {}
+      var badge = document.getElementById('itd-tag-card-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('itd-tag-card-textarea');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // Departure Gen Dec - simple clear
     function clearDepGenDec() {
+      setSimpleContentLock('dep-gen-dec-textarea', 'dep-gen-dec-lock-badge', false);
       var ta = document.getElementById('dep-gen-dec-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('dep-gen-dec-textarea-preview'); if(preview) preview.remove();
-      try { localStorage.removeItem('pts_dep_gen_dec'); } catch(e) {}
+      clearRichContent('dep-gen-dec-textarea');
+      try { localStorage.removeItem('pts_dep_gen_dec'); localStorage.removeItem('pts_dep_gen_dec_locked'); } catch(e) {}
+      try { localStorage.removeItem('pts_dep_gen_dec_pdf'); } catch(e) {}
+      var badge = document.getElementById('dep-gen-dec-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('dep-gen-dec-textarea');
       removeContentPdf('depGenDec');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
@@ -5726,9 +5798,13 @@ function renderPaxLoadTable() {
 
     // Agent Positions - simple clear
     function clearAgentPos() {
+      setSimpleContentLock('agent-pos-textarea', 'agent-pos-lock-badge', false);
       var ta = document.getElementById('agent-pos-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('agent-pos-textarea-preview'); if(preview) preview.remove();
-      try { localStorage.removeItem('pts_agent_pos'); } catch(e) {}
+      clearRichContent('agent-pos-textarea');
+      try { localStorage.removeItem('pts_agent_pos'); localStorage.removeItem('pts_agent_pos_locked'); } catch(e) {}
+      try { localStorage.removeItem('pts_agent_pos_pdf'); } catch(e) {}
+      var badge = document.getElementById('agent-pos-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('agent-pos-textarea');
       removeAgentPosPdf();
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
@@ -5740,6 +5816,8 @@ function renderPaxLoadTable() {
     function saveRampRoster() {
       var val = (document.getElementById('ramp-roster-textarea')||{}).value||'';
       try { localStorage.setItem('pts_ramp_roster', val); } catch(e) {}
+      saveRichContent('ramp-roster-textarea');
+      saveStandaloneContentPdf('ramp-roster-textarea');
       lockRampRoster();
       showToast('Ramp Roster saved & locked', 'green');
     }
@@ -5771,7 +5849,9 @@ function renderPaxLoadTable() {
       unlockRampRoster();
       var ta = document.getElementById('ramp-roster-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('ramp-roster-textarea-preview'); if(preview) preview.remove();
+      clearRichContent('ramp-roster-textarea');
       try { localStorage.removeItem('pts_ramp_roster'); localStorage.removeItem('pts_ramp_roster_locked'); } catch(e) {}
+      try { localStorage.removeItem('pts_ramp_roster_pdf'); } catch(e) {}
       var badge = document.getElementById('ramp-roster-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('ramp-roster-textarea');
       removeContentPdf('rampRoster');
@@ -5785,7 +5865,7 @@ function renderPaxLoadTable() {
         viewerId: 'dep-gen-dec-pdf-viewer',
         inputId: 'dep-gen-dec-pdf-input',
         removeButtonId: 'dep-gen-dec-remove-pdf-btn',
-        data: null, images: [], renderPromise: null
+        data: null, images: [], renderPromise: null, renderError: null
       },
       rampRoster: {
         label: 'Ramp Roster',
@@ -5793,9 +5873,29 @@ function renderPaxLoadTable() {
         viewerId: 'ramp-roster-pdf-viewer',
         inputId: 'ramp-roster-pdf-input',
         removeButtonId: 'ramp-roster-remove-pdf-btn',
-        data: null, images: [], renderPromise: null
+        data: null, images: [], renderPromise: null, renderError: null
       }
     };
+
+    function setPdfContentVisibility(textareaId, pdfVisible) {
+      var ta = document.getElementById(textareaId);
+      var tablePreview = document.getElementById(textareaId + '-preview');
+      var richPreview = document.getElementById(textareaId + '-rich-preview');
+      if (pdfVisible) {
+        if (ta) ta.style.display = 'none';
+        if (tablePreview) tablePreview.style.display = 'none';
+        if (richPreview) richPreview.style.display = 'none';
+        return;
+      }
+      if (contentRichHtml[textareaId]) {
+        renderRichContent(textareaId);
+      } else if (tablePreview && ta && ta.value) {
+        tablePreview.style.display = 'block';
+        ta.style.display = 'none';
+      } else if (ta) {
+        ta.style.display = '';
+      }
+    }
 
     function openContentPdfPicker(key) {
       var slot = contentPdfImports[key];
@@ -5808,17 +5908,19 @@ function renderPaxLoadTable() {
       if (!slot) return;
       slot.data = dataUrl;
       slot.images = [];
+      slot.renderError = null;
       var ta = document.getElementById(slot.textareaId);
       var viewer = document.getElementById(slot.viewerId);
       var removeBtn = document.getElementById(slot.removeButtonId);
       if (viewer) { viewer.src = dataUrl; viewer.style.display = ''; }
-      if (ta) ta.style.display = 'none';
+      setPdfContentVisibility(slot.textareaId, true);
       if (removeBtn) removeBtn.style.display = '';
       slot.renderPromise = renderPdfDataUrlToImages(dataUrl).then(function(pages) {
         slot.images = pages.map(function(page) { return page.dataUrl; });
       }).catch(function(err) {
         console.error('Failed to render imported ' + slot.label + ' PDF for report:', err);
         slot.images = [];
+        slot.renderError = err;
       });
     }
 
@@ -5828,14 +5930,16 @@ function renderPaxLoadTable() {
       slot.data = null;
       slot.images = [];
       slot.renderPromise = null;
+      slot.renderError = null;
       var ta = document.getElementById(slot.textareaId);
       var viewer = document.getElementById(slot.viewerId);
       var removeBtn = document.getElementById(slot.removeButtonId);
       var input = document.getElementById(slot.inputId);
       if (viewer) { viewer.src = ''; viewer.style.display = 'none'; }
-      if (ta) ta.style.display = '';
+      setPdfContentVisibility(slot.textareaId, false);
       if (removeBtn) removeBtn.style.display = 'none';
       if (input) input.value = '';
+      try { localStorage.removeItem(textContentStorageKey(slot.textareaId) + '_pdf'); } catch(e) {}
     }
 
     function handleContentPdfSelected(key, evt) {
@@ -5864,6 +5968,7 @@ function renderPaxLoadTable() {
     var agentPosPdfData = null; // data URL of the imported PDF, persisted via saveToLocal/restoreFromLocal
     var agentPosPdfImages = []; // rasterized page images ({dataUrl,width,height}) of agentPosPdfData, used to embed the PDF's actual pages inside the report's content box
     var agentPosPdfRenderPromise = null; // in-flight/most-recent render, so report generation can wait for it if needed
+    var agentPosPdfRenderError = null;
 
     function openAgentPosPdfPicker() {
       var input = document.getElementById('agent-pos-pdf-input');
@@ -5876,16 +5981,18 @@ function renderPaxLoadTable() {
       var viewer = document.getElementById('agent-pos-pdf-viewer');
       var removeBtn = document.getElementById('agent-pos-remove-pdf-btn');
       if (viewer) { viewer.src = dataUrl; viewer.style.display = ''; }
-      if (ta) ta.style.display = 'none';
+      setPdfContentVisibility('agent-pos-textarea', true);
       if (removeBtn) removeBtn.style.display = '';
       // Pre-render the PDF's pages to images now so they're ready by the time a report is
       // generated (openSendModal also awaits this promise as a safety net if it's still running).
       agentPosPdfImages = [];
+      agentPosPdfRenderError = null;
       agentPosPdfRenderPromise = renderPdfDataUrlToImages(dataUrl).then(function(pages) {
         agentPosPdfImages = pages.map(function(p) { return p.dataUrl; });
       }).catch(function(err) {
         console.error('Failed to render imported Agent Positions PDF for report:', err);
         agentPosPdfImages = [];
+        agentPosPdfRenderError = err;
       });
     }
 
@@ -5893,14 +6000,16 @@ function renderPaxLoadTable() {
       agentPosPdfData = null;
       agentPosPdfImages = [];
       agentPosPdfRenderPromise = null;
+      agentPosPdfRenderError = null;
       var ta = document.getElementById('agent-pos-textarea');
       var viewer = document.getElementById('agent-pos-pdf-viewer');
       var removeBtn = document.getElementById('agent-pos-remove-pdf-btn');
       var input = document.getElementById('agent-pos-pdf-input');
       if (viewer) { viewer.src = ''; viewer.style.display = 'none'; }
-      if (ta) ta.style.display = '';
+      setPdfContentVisibility('agent-pos-textarea', false);
       if (removeBtn) removeBtn.style.display = 'none';
       if (input) input.value = '';
+      try { localStorage.removeItem('pts_agent_pos_pdf'); } catch(e) {}
     }
 
     function handleAgentPosPdfSelected(evt) {
@@ -5985,11 +6094,10 @@ function renderPaxLoadTable() {
       );
 
       // Textarea content helpers
-      function taVal(id){ var el=document.getElementById(id); return el&&el.value.trim()?el.value.trim():''; }
+      function taVal(id){ var el=document.getElementById(id); return el&&el.value?el.value:''; }
       var staffAccContent = taVal('staff-acc-textarea');
       var arrPtmContent   = taVal('arr-ptm-textarea');
       var arrBnlContent   = taVal('arr-bnl-textarea');
-      var arrBnlRichContent = arrivalBnlRichHtml;
       var arrDisruptionPpmContent = taVal('arr-disruption-ppm-textarea');
       var itdTagCardContent = taVal('itd-tag-card-textarea');
       var oirContent      = taVal('oir-textarea');
@@ -6035,6 +6143,9 @@ function renderPaxLoadTable() {
         '.section.wide{break-inside:auto;page-break-inside:auto;}',
         '.section.wide table{break-inside:auto;page-break-inside:auto;}',
         '.section.wide tr{break-inside:avoid;page-break-inside:avoid;}',
+        '.rich-content{max-width:100%;overflow:hidden;}',
+        '.rich-content table{max-width:100%;}',
+        '.pasted-report-image{display:block;width:auto;max-width:100%;height:auto;margin:10px auto;break-inside:avoid;page-break-inside:avoid;}',
         '.pre-content{white-space:pre-wrap;font-family:monospace;font-size:11px;',
         '  border:1px solid #e5e7eb;padding:10px;background:#fafafa;border-radius:0 0 4px 4px;',
         '  min-height:40px;line-height:1.5;}',
@@ -6123,10 +6234,24 @@ function renderPaxLoadTable() {
         return tableHTML;
       }
       function preSection(title, content, extraClass){
-        return '<div class="section'+(extraClass?' '+extraClass:'')+'"><h2>'+title+'</h2><div class="pre-content">'+(content?content.replace(/</g,'&lt;').replace(/>/g,'&gt;'):'')+'</div></div>';
+        return '<div class="section'+(extraClass?' '+extraClass:'')+'"><h2>'+title+'</h2><div class="pre-content">'+(content?escapeReportValue(content):'')+'</div></div>';
       }
       function htmlSection(title, htmlContent, extraClass){
         return '<div class="section'+(extraClass?' '+extraClass:'')+'"><h2>'+title+'</h2><div style="padding:8px;background:#fff;">'+(htmlContent||'')+'</div></div>';
+      }
+      function pastedReportImages(textareaId) {
+        return (pastedImages[textareaId] || []).map(function(src) {
+          return '<img class="pasted-report-image" src="' + src + '">';
+        }).join('');
+      }
+      function contentReportSection(title, textareaId, plainContent, formattedPlainHtml) {
+        var richHtml = contentRichHtml[textareaId] || '';
+        var imagesHtml = pastedReportImages(textareaId);
+        if (!richHtml && !imagesHtml && !formattedPlainHtml) return preSection(title, plainContent);
+        var bodyHtml = richHtml
+          ? '<div class="rich-content">' + richHtml + '</div>'
+          : (formattedPlainHtml || '<div class="pre-content">' + escapeReportValue(plainContent) + '</div>');
+        return htmlSection(title, bodyHtml + imagesHtml, 'wide');
       }
 
       var body = [
@@ -6213,37 +6338,37 @@ function renderPaxLoadTable() {
         depPtsHtml ? section('Departure Precision Timing Schedule', depPtsHtml) : section('Departure Precision Timing Schedule', ''),
 
         // === Page 2: Staff Acceptance ===
-        '<div class="page-break">'+preSection('Staff Acceptance', staffAccContent)+'</div>',
+        '<div class="page-break">'+contentReportSection('Staff Acceptance', 'staff-acc-textarea', staffAccContent)+'</div>',
 
         // === Page 3: Arrival PTM ===
-        '<div class="page-break">'+preSection('Arrival PTM', arrPtmContent)+'</div>',
+        '<div class="page-break">'+contentReportSection('Arrival PTM', 'arr-ptm-textarea', arrPtmContent)+'</div>',
 
         // === Page 3a: Arrival BNL ===
-        '<div class="page-break">'+(arrBnlRichContent ? htmlSection('Arrival BNL', arrBnlRichContent, 'wide') : preSection('Arrival BNL', arrBnlContent))+'</div>',
+        '<div class="page-break">'+contentReportSection('Arrival BNL', 'arr-bnl-textarea', arrBnlContent)+'</div>',
 
         // === Page 3b: Arrival Disruption PPM ===
-        '<div class="page-break">'+htmlSection('Arrival Disruption PPM', formatITDTagCardTable(arrDisruptionPpmContent), 'wide')+'</div>',
+        '<div class="page-break">'+contentReportSection('Arrival Disruption PPM', 'arr-disruption-ppm-textarea', arrDisruptionPpmContent)+'</div>',
 
         // === Page 4: ITD Tag Card ===
-        '<div class="page-break">'+htmlSection('ITD Tag Card', formatITDTagCardTable(itdTagCardContent), 'wide')+'</div>',
+        '<div class="page-break">'+contentReportSection('ITD Tag Card', 'itd-tag-card-textarea', itdTagCardContent)+'</div>',
 
         // === Page 5: Arrival Offloading Instruction ===
-        '<div class="page-break">'+preSection('Arrival Offloading Instruction', oirContent)+'</div>',
+        '<div class="page-break">'+contentReportSection('Arrival Offloading Instruction', 'oir-textarea', oirContent)+'</div>',
 
         // === Page 6: Departure Onloading Instruction ===
-        '<div class="page-break">'+preSection('Departure Onloading Instruction', depLirContent)+'</div>',
+        '<div class="page-break">'+contentReportSection('Departure Onloading Instruction', 'dep-lir-textarea', depLirContent)+'</div>',
 
         // === Page 7: Arrival Crew List ===
-        '<div class="page-break">'+preSection('Arrival Crew List', crewArrContent)+'</div>',
+        '<div class="page-break">'+contentReportSection('Arrival Crew List', 'crew-textarea', crewArrContent)+'</div>',
 
         // === Page 8: Departure Gen Dec ===
-        '<div class="page-break">'+(depGenDecHasPdf ? htmlSection('Departure Gen Dec', depGenDecImagesHtml || '<div class="pre-content">Loading imported PDF preview…</div>') : preSection('Departure Gen Dec', depGenDecContent))+'</div>',
+        '<div class="page-break">'+(depGenDecHasPdf ? htmlSection('Departure Gen Dec', depGenDecImagesHtml || '<div class="pre-content">Loading imported PDF preview…</div>') : contentReportSection('Departure Gen Dec', 'dep-gen-dec-textarea', depGenDecContent))+'</div>',
 
         // === Page 9: Agent Positions & Roster ===
-        '<div class="page-break">'+(agentPosHasPdf ? htmlSection('Agent Positions & Roster', agentPosImagesHtml || '<div class="pre-content">Loading imported PDF preview…</div>') : preSection('Agent Positions & Roster', agentPosContent))+'</div>',
+        '<div class="page-break">'+(agentPosHasPdf ? htmlSection('Agent Positions & Roster', agentPosImagesHtml || '<div class="pre-content">Loading imported PDF preview…</div>') : contentReportSection('Agent Positions & Roster', 'agent-pos-textarea', agentPosContent))+'</div>',
 
         // === Page 10: Ramp Roster ===
-        '<div class="page-break">'+(rampRosterHasPdf ? htmlSection('Ramp Roster', rampRosterImagesHtml || '<div class="pre-content">Loading imported PDF preview…</div>') : preSection('Ramp Roster', rampRosterContent))+'</div>'
+        '<div class="page-break">'+(rampRosterHasPdf ? htmlSection('Ramp Roster', rampRosterImagesHtml || '<div class="pre-content">Loading imported PDF preview…</div>') : contentReportSection('Ramp Roster', 'ramp-roster-textarea', rampRosterContent))+'</div>'
       ].join('\n');
 
       return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PTS Report '+(s.flight||'')+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
@@ -6258,11 +6383,20 @@ function renderPaxLoadTable() {
         contentPdfImports.depGenDec.renderPromise,
         contentPdfImports.rampRoster.renderPromise
       ].filter(Boolean);
+      function openAfterPdfRender() {
+        if (agentPosPdfRenderError || contentPdfImports.depGenDec.renderError || contentPdfImports.rampRoster.renderError) {
+          showToast('An imported PDF could not be rendered. Remove it or import it again.', 'red');
+          return;
+        }
+        doOpenSendModal();
+      }
       if (pendingPdfRenders.length) {
-        Promise.all(pendingPdfRenders.map(function(p) { return p.catch(function() {}); })).then(doOpenSendModal);
+        Promise.all(pendingPdfRenders).then(openAfterPdfRender).catch(function() {
+          showToast('An imported PDF could not be rendered. Remove it or import it again.', 'red');
+        });
         return;
       }
-      doOpenSendModal();
+      openAfterPdfRender();
     }
 
     function doOpenSendModal() {
@@ -6762,6 +6896,7 @@ function renderPaxLoadTable() {
       safeOn('dep-lir-clear-btn', clearDepLIR);
 
       // ITD Tag Card clear
+      safeOn('itd-tag-card-save-btn', function() { saveSimpleContentTab('itd-tag-card-textarea', 'itd-tag-card-lock-badge', 'ITD Tag Card'); });
       safeOn('itd-tag-card-clear-btn', clearITDTagCard);
 
       // ITD Tag Card search
@@ -6794,9 +6929,11 @@ function renderPaxLoadTable() {
       }
 
       // Departure Gen Dec clear
+      safeOn('dep-gen-dec-save-btn', function() { saveSimpleContentTab('dep-gen-dec-textarea', 'dep-gen-dec-lock-badge', 'Departure Gen Dec'); });
       safeOn('dep-gen-dec-clear-btn', clearDepGenDec);
 
       // Agent Positions clear
+      safeOn('agent-pos-save-btn', function() { saveSimpleContentTab('agent-pos-textarea', 'agent-pos-lock-badge', 'Agent Positions'); });
       safeOn('agent-pos-clear-btn', clearAgentPos);
 
       // Ramp Roster buttons
@@ -6901,10 +7038,7 @@ function renderPaxLoadTable() {
               try { processPastedData(ta, ta.value, true); } catch(e) {}
             }
           });
-          if (restored._arr_bnl_html) {
-            arrivalBnlRichHtml = sanitizeArrivalBnlHtml(restored._arr_bnl_html);
-            renderArrivalBnlRichContent();
-          }
+          restoreRichContent(restored);
         })();
         if (restored._images) pastedImages = restored._images;
         if (restored._agent_pos_pdf) showAgentPosPdf(restored._agent_pos_pdf);
@@ -7004,13 +7138,8 @@ function renderPaxLoadTable() {
       // Restore Arrival BNL
       if (!hashCode) (function(){
         var v=''; try{v=localStorage.getItem('pts_arr_bnl')||'';}catch(e){}
-        var rich=''; try{rich=localStorage.getItem('pts_arr_bnl_html')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_arr_bnl_locked')||'0';}catch(e){}
         var ta=document.getElementById('arr-bnl-textarea'); if(ta&&v) ta.value=v;
-        if(rich && !arrivalBnlRichHtml) {
-          arrivalBnlRichHtml=sanitizeArrivalBnlHtml(rich);
-          renderArrivalBnlRichContent();
-        }
         if(l==='1'&&v) lockArrBNL();
       })();
 
@@ -7039,6 +7168,48 @@ function renderPaxLoadTable() {
         if(ta&&v) { ta.value=v; try { processPastedData(ta, v, true); } catch(e) {} }
         if(l==='1'&&v) lockRampRoster();
       })();
+
+      if (!hashCode) {
+        var standaloneDepGenPdf = '';
+        var standaloneAgentPosPdf = '';
+        var standaloneRampPdf = '';
+        try {
+          standaloneDepGenPdf = localStorage.getItem('pts_dep_gen_dec_pdf') || '';
+          standaloneAgentPosPdf = localStorage.getItem('pts_agent_pos_pdf') || '';
+          standaloneRampPdf = localStorage.getItem('pts_ramp_roster_pdf') || '';
+        } catch(e) {}
+        if (!contentPdfImports.depGenDec.data && standaloneDepGenPdf) showContentPdf('depGenDec', standaloneDepGenPdf);
+        if (!agentPosPdfData && standaloneAgentPosPdf) showAgentPosPdf(standaloneAgentPosPdf);
+        if (!contentPdfImports.rampRoster.data && standaloneRampPdf) showContentPdf('rampRoster', standaloneRampPdf);
+        [
+          ['itd-tag-card-textarea', 'itd-tag-card-lock-badge'],
+          ['dep-gen-dec-textarea', 'dep-gen-dec-lock-badge'],
+          ['agent-pos-textarea', 'agent-pos-lock-badge']
+        ].forEach(function(item) {
+          var textareaId = item[0];
+          var ta = document.getElementById(textareaId);
+          var value = '';
+          var locked = '0';
+          try {
+            value = localStorage.getItem(textContentStorageKey(textareaId)) || '';
+            locked = localStorage.getItem(textContentStorageKey(textareaId) + '_locked') || '0';
+          } catch(e) {}
+          if (ta && !ta.value && value) {
+            ta.value = value;
+            try { processPastedData(ta, value, true); } catch(e) {}
+          }
+          if (locked === '1' && (value || (ta && ta.value))) setSimpleContentLock(textareaId, item[1], true);
+        });
+        PASTE_IMAGE_IDS.forEach(function(textareaId) {
+          if (contentRichHtml[textareaId]) return;
+          var html = '';
+          try { html = localStorage.getItem(richContentStorageKey(textareaId)) || ''; } catch(e) {}
+          if (html) {
+            contentRichHtml[textareaId] = sanitizePastedHtml(html);
+            renderRichContent(textareaId);
+          }
+        });
+      }
 
       refreshSummarySpans();
       refreshFinalLoading();
