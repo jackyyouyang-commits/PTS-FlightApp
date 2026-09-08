@@ -1,5 +1,10 @@
 # Third-party notices
 
+## jsQR 1.4.0
+
+Licensed under the Apache License 2.0. The complete license text is included
+in `jsqr.LICENSE`.
+
 ## qrcode-generator 1.4.4
 
 MIT License

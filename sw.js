@@ -1,11 +1,12 @@
 /* PTS Flight App service worker - offline cache */
-var CACHE = 'pts-flightapp-v2';
+var CACHE = 'pts-flightapp-v3';
 var ASSETS = [
   './',
   './PTS_FlightApp.html',
   './manifest.webmanifest',
   './lz-string.min.js',
-  './qrcode.min.js'
+  './qrcode.min.js',
+  './jsqr.js'
 ];
 
 self.addEventListener('install', function(e) {

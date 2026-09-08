@@ -13,6 +13,7 @@
     <title>Flight Details and Precision Timing Schedule</title>
     <script src="lz-string.min.js"></script>
     <script src="qrcode.min.js"></script>
+    <script src="jsqr.js"></script>
     <!-- Google Fonts removed for offline use -->
 <script>
 // Lucide offline stub - replaces CDN icons with simple SVG equivalents
@@ -1788,11 +1789,21 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
         <p data-id="126" class="text-sm text-cx-grey mb-3 text-center">Scan QR Code on another device to load flight information</p>
         <div id="share-qr-output" style="display:flex;justify-content:center;align-items:center;min-height:190px;padding:12px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;"></div>
+        <div id="share-scanner" style="display:none;">
+          <div style="position:relative;overflow:hidden;border-radius:12px;background:#111;aspect-ratio:4/3;">
+            <video id="share-scanner-video" playsinline muted style="display:block;width:100%;height:100%;object-fit:cover;"></video>
+            <div style="position:absolute;inset:12%;border:3px solid #fff;border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,.25);pointer-events:none;"></div>
+          </div>
+          <canvas id="share-scanner-canvas" style="display:none;"></canvas>
+          <div id="share-scanner-status" role="status" style="margin-top:10px;color:#374151;font-size:13px;font-weight:600;text-align:center;">Point the camera at a PTS Connect QR code.</div>
+        </div>
         <div id="share-qr-error" style="display:none;margin-top:12px;padding:10px 12px;border-radius:8px;background:#FEE2E2;color:#991B1B;font-size:13px;font-weight:600;text-align:center;"></div>
         <div id="share-qr-image-note" style="display:none;margin-top:10px;color:#92400E;background:#FEF3C7;padding:8px 10px;border-radius:8px;font-size:12px;text-align:center;">
           Pasted images are not included in the QR code.
         </div>
         <div data-id="128" class="flex justify-end gap-3 mt-4">
+          <button id="share-scan-btn" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark">Scan QR Code to Connect</button>
+          <button id="share-stop-scan-btn" style="display:none;" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark">Stop Scanning</button>
           <button data-id="131" id="share-close-btn" class="px-5 py-3 rounded-lg bg-gray-100 text-cx-grey-dark font-semibold text-sm min-h-[44px] hover:bg-gray-200">Close</button>
         </div>
       </div>
@@ -3674,6 +3685,146 @@ function renderPaxLoadTable() {
     // ===========================
     // SHARE QR CODE
     // ===========================
+    var qrScannerStream = null;
+    var qrScannerFrame = 0;
+    var qrScannerRunning = false;
+    var qrScannerRequestId = 0;
+
+    function stopQrScanner() {
+      qrScannerRequestId++;
+      qrScannerRunning = false;
+      if (qrScannerFrame) {
+        cancelAnimationFrame(qrScannerFrame);
+        qrScannerFrame = 0;
+      }
+      if (qrScannerStream) {
+        qrScannerStream.getTracks().forEach(function(track) { track.stop(); });
+        qrScannerStream = null;
+      }
+      var video = document.getElementById('share-scanner-video');
+      if (video) {
+        video.pause();
+        video.srcObject = null;
+      }
+      var scanner = document.getElementById('share-scanner');
+      var qrOutput = document.getElementById('share-qr-output');
+      var scanBtn = document.getElementById('share-scan-btn');
+      var stopBtn = document.getElementById('share-stop-scan-btn');
+      if (scanner) scanner.style.display = 'none';
+      if (qrOutput) qrOutput.style.display = 'flex';
+      if (scanBtn) scanBtn.style.display = '';
+      if (stopBtn) stopBtn.style.display = 'none';
+    }
+
+    function closeShareModal() {
+      stopQrScanner();
+      var modal = document.getElementById('share-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function shareCodeFromScannedValue(value) {
+      var text = String(value || '').trim();
+      var hash = '';
+      if (!text) return null;
+      if (text.charAt(0) === '#') {
+        hash = text;
+      } else {
+        try { hash = new URL(text, window.location.href).hash; } catch(e) { return null; }
+      }
+      var compressed = hash.match(/#pts2=([^&]+)/);
+      if (compressed) {
+        try { return 'lz:' + decodeURIComponent(compressed[1]); } catch(e) { return null; }
+      }
+      var legacy = hash.match(/#pts=([^&]+)/);
+      if (!legacy) return null;
+      try { return decodeURIComponent(legacy[1]); } catch(e) { return null; }
+    }
+
+    function scanQrCameraFrame() {
+      if (!qrScannerRunning) return;
+      var video = document.getElementById('share-scanner-video');
+      var canvas = document.getElementById('share-scanner-canvas');
+      var status = document.getElementById('share-scanner-status');
+      if (video && canvas && video.readyState >= video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        var context = canvas.getContext('2d', { willReadFrequently: true });
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        var image = context.getImageData(0, 0, canvas.width, canvas.height);
+        var result = jsQR(image.data, image.width, image.height, { inversionAttempts: 'attemptBoth' });
+        if (result && result.data) {
+          var shareCode = shareCodeFromScannedValue(result.data);
+          if (shareCode) {
+            stopQrScanner();
+            var modal = document.getElementById('share-modal');
+            if (modal) modal.style.display = 'none';
+            loadShareCode(shareCode);
+            return;
+          }
+          if (status) status.textContent = 'That is not a PTS Connect QR code. Try another code.';
+        }
+      }
+      qrScannerFrame = requestAnimationFrame(scanQrCameraFrame);
+    }
+
+    function startQrScanner() {
+      var errorEl = document.getElementById('share-qr-error');
+      var status = document.getElementById('share-scanner-status');
+      if (errorEl) {
+        errorEl.style.display = 'none';
+        errorEl.textContent = '';
+      }
+      if (typeof jsQR === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        if (errorEl) {
+          errorEl.textContent = window.isSecureContext
+            ? 'Camera scanning is not supported by this browser.'
+            : 'Camera access requires the secure published version of this app.';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      var scanner = document.getElementById('share-scanner');
+      var qrOutput = document.getElementById('share-qr-output');
+      var scanBtn = document.getElementById('share-scan-btn');
+      var stopBtn = document.getElementById('share-stop-scan-btn');
+      if (scanner) scanner.style.display = 'block';
+      if (qrOutput) qrOutput.style.display = 'none';
+      if (scanBtn) scanBtn.style.display = 'none';
+      if (stopBtn) stopBtn.style.display = '';
+      if (status) status.textContent = 'Allow camera access, then point at a PTS Connect QR code.';
+
+      var requestId = ++qrScannerRequestId;
+      navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: 'environment' } }
+      }).then(function(stream) {
+        if (requestId !== qrScannerRequestId) {
+          stream.getTracks().forEach(function(track) { track.stop(); });
+          return null;
+        }
+        qrScannerStream = stream;
+        var video = document.getElementById('share-scanner-video');
+        if (!video) throw new Error('Scanner video unavailable');
+        video.srcObject = stream;
+        return video.play().then(function() { return stream; });
+      }).then(function(stream) {
+        if (!stream || requestId !== qrScannerRequestId) return;
+        qrScannerRunning = true;
+        if (status) status.textContent = 'Point the camera at a PTS Connect QR code.';
+        scanQrCameraFrame();
+      }).catch(function(error) {
+        if (requestId !== qrScannerRequestId) return;
+        stopQrScanner();
+        if (errorEl) {
+          errorEl.textContent = error && error.name === 'NotAllowedError'
+            ? 'Camera access was denied. Allow camera access in your browser settings and try again.'
+            : 'Unable to open the camera on this device.';
+          errorEl.style.display = 'block';
+        }
+      });
+    }
+
     function generateShareCode() {
       try {
         var payload = { v: 1, state: state, arrActual: arrActual, depActual: depActual };
@@ -3748,14 +3899,7 @@ function renderPaxLoadTable() {
 
     // Extracts either the compressed QR payload or a legacy share code from the URL.
     function getShareCodeFromHash() {
-      var h = window.location.hash || '';
-      var compressed = h.match(/#pts2=([^&]+)/);
-      if (compressed) {
-        try { return 'lz:' + decodeURIComponent(compressed[1]); } catch(e) { return null; }
-      }
-      var m = h.match(/#pts=([^&]+)/);
-      if (!m) return null;
-      try { return decodeURIComponent(m[1]); } catch(e) { return null; }
+      return shareCodeFromScannedValue(window.location.hash || '');
     }
 
     function loadShareCode(code) {
@@ -6022,8 +6166,10 @@ function renderPaxLoadTable() {
       });
 
       // Share modal
-      safeOn('share-modal-close',function(){ var m=document.getElementById('share-modal'); if(m)m.style.display='none'; });
-      safeOn('share-close-btn',function(){ var m=document.getElementById('share-modal'); if(m)m.style.display='none'; });
+      safeOn('share-modal-close', closeShareModal);
+      safeOn('share-close-btn', closeShareModal);
+      safeOn('share-scan-btn', startQrScanner);
+      safeOn('share-stop-scan-btn', stopQrScanner);
       safeOn('underload-warning-ok',function(){ var m=document.getElementById('underload-warning-modal'); if(m)m.style.display='none'; });
 
       // Close modals on overlay click
@@ -6031,7 +6177,10 @@ function renderPaxLoadTable() {
         var overlay = document.getElementById(id);
         if (overlay) {
           overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) overlay.style.display = 'none';
+            if (e.target === overlay) {
+              if (overlay.id === 'share-modal') stopQrScanner();
+              overlay.style.display = 'none';
+            }
           });
         }
       });
