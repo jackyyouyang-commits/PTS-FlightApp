@@ -2354,8 +2354,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             <span data-id="598" id="dep-gen-dec-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
           </div>
           <textarea data-id="599" id="dep-gen-dec-textarea" placeholder="Paste Departure Gen Dec content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
+          <iframe id="dep-gen-dec-pdf-viewer" title="Departure Gen Dec PDF preview" style="display:none;width:100%;flex:1 1 0;min-height:120px;border:none;box-sizing:border-box;"></iframe>
+          <input type="file" id="dep-gen-dec-pdf-input" accept="application/pdf" style="display:none;">
           <div data-id="600" class="panel-footer">
             <button data-id="600a" id="dep-gen-dec-paste-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
+            <button id="dep-gen-dec-import-pdf-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Import PDF</button>
+            <button id="dep-gen-dec-remove-pdf-btn" style="display:none;background:#EF4444;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Remove PDF</button>
             <button data-id="601" id="dep-gen-dec-save-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
             <button data-id="602" id="dep-gen-dec-clear-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -2390,8 +2394,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             <span id="ramp-roster-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
           </div>
           <textarea id="ramp-roster-textarea" placeholder="Paste Ramp Roster content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
+          <iframe id="ramp-roster-pdf-viewer" title="Ramp Roster PDF preview" style="display:none;width:100%;flex:1 1 0;min-height:120px;border:none;box-sizing:border-box;"></iframe>
+          <input type="file" id="ramp-roster-pdf-input" accept="application/pdf" style="display:none;">
           <div class="panel-footer">
             <button id="ramp-roster-paste-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
+            <button id="ramp-roster-import-pdf-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Import PDF</button>
+            <button id="ramp-roster-remove-pdf-btn" style="display:none;background:#EF4444;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Remove PDF</button>
             <button id="ramp-roster-save-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
             <button id="ramp-roster-clear-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
           </div>
@@ -3750,6 +3758,8 @@ function renderPaxLoadTable() {
         payload._ramp_roster = (document.getElementById('ramp-roster-textarea')||{}).value||'';
         payload._images = pastedImages;
         payload._agent_pos_pdf = agentPosPdfData || '';
+        payload._dep_gen_dec_pdf = contentPdfImports.depGenDec.data || '';
+        payload._ramp_roster_pdf = contentPdfImports.rampRoster.data || '';
         localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(payload));
         var saveModal = document.getElementById('save-success-modal');
         if (saveModal) saveModal.style.display = 'flex';
@@ -5513,6 +5523,7 @@ function renderPaxLoadTable() {
       var preview = document.getElementById('dep-gen-dec-textarea-preview'); if(preview) preview.remove();
       try { localStorage.removeItem('pts_dep_gen_dec'); } catch(e) {}
       clearPastedImages('dep-gen-dec-textarea');
+      removeContentPdf('depGenDec');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
@@ -5566,7 +5577,88 @@ function renderPaxLoadTable() {
       try { localStorage.removeItem('pts_ramp_roster'); localStorage.removeItem('pts_ramp_roster_locked'); } catch(e) {}
       var badge = document.getElementById('ramp-roster-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('ramp-roster-textarea');
+      removeContentPdf('rampRoster');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    var contentPdfImports = {
+      depGenDec: {
+        label: 'Departure Gen Dec',
+        textareaId: 'dep-gen-dec-textarea',
+        viewerId: 'dep-gen-dec-pdf-viewer',
+        inputId: 'dep-gen-dec-pdf-input',
+        removeButtonId: 'dep-gen-dec-remove-pdf-btn',
+        data: null, images: [], renderPromise: null
+      },
+      rampRoster: {
+        label: 'Ramp Roster',
+        textareaId: 'ramp-roster-textarea',
+        viewerId: 'ramp-roster-pdf-viewer',
+        inputId: 'ramp-roster-pdf-input',
+        removeButtonId: 'ramp-roster-remove-pdf-btn',
+        data: null, images: [], renderPromise: null
+      }
+    };
+
+    function openContentPdfPicker(key) {
+      var slot = contentPdfImports[key];
+      var input = slot && document.getElementById(slot.inputId);
+      if (input) input.click();
+    }
+
+    function showContentPdf(key, dataUrl) {
+      var slot = contentPdfImports[key];
+      if (!slot) return;
+      slot.data = dataUrl;
+      slot.images = [];
+      var ta = document.getElementById(slot.textareaId);
+      var viewer = document.getElementById(slot.viewerId);
+      var removeBtn = document.getElementById(slot.removeButtonId);
+      if (viewer) { viewer.src = dataUrl; viewer.style.display = ''; }
+      if (ta) ta.style.display = 'none';
+      if (removeBtn) removeBtn.style.display = '';
+      slot.renderPromise = renderPdfDataUrlToImages(dataUrl).then(function(pages) {
+        slot.images = pages.map(function(page) { return page.dataUrl; });
+      }).catch(function(err) {
+        console.error('Failed to render imported ' + slot.label + ' PDF for report:', err);
+        slot.images = [];
+      });
+    }
+
+    function removeContentPdf(key) {
+      var slot = contentPdfImports[key];
+      if (!slot) return;
+      slot.data = null;
+      slot.images = [];
+      slot.renderPromise = null;
+      var ta = document.getElementById(slot.textareaId);
+      var viewer = document.getElementById(slot.viewerId);
+      var removeBtn = document.getElementById(slot.removeButtonId);
+      var input = document.getElementById(slot.inputId);
+      if (viewer) { viewer.src = ''; viewer.style.display = 'none'; }
+      if (ta) ta.style.display = '';
+      if (removeBtn) removeBtn.style.display = 'none';
+      if (input) input.value = '';
+    }
+
+    function handleContentPdfSelected(key, evt) {
+      var slot = contentPdfImports[key];
+      var file = evt.target.files && evt.target.files[0];
+      if (!slot || !file) return;
+      if (file.type !== 'application/pdf') {
+        showToast('Please select a PDF file', 'red');
+        evt.target.value = '';
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        showContentPdf(key, e.target.result);
+        showToast(slot.label + ' PDF imported', 'green');
+      };
+      reader.onerror = function() {
+        showToast('Failed to read PDF file', 'red');
+      };
+      reader.readAsDataURL(file);
     }
 
     // ===========================
@@ -5705,8 +5797,10 @@ function renderPaxLoadTable() {
       var oirContent      = taVal('oir-textarea');
       var depLirContent   = taVal('dep-lir-textarea');
       var crewArrContent  = taVal('crew-textarea');
-      var depGenDecContent = taVal('dep-gen-dec-textarea');
-      var rampRosterContent = taVal('ramp-roster-textarea');
+      var depGenDecHasPdf = !!contentPdfImports.depGenDec.data;
+      var depGenDecContent = depGenDecHasPdf ? '' : taVal('dep-gen-dec-textarea');
+      var rampRosterHasPdf = !!contentPdfImports.rampRoster.data;
+      var rampRosterContent = rampRosterHasPdf ? '' : taVal('ramp-roster-textarea');
       var agentPosHasPdf = (typeof agentPosPdfData !== 'undefined' && !!agentPosPdfData);
       var agentPosContent = agentPosHasPdf ? '' : taVal('agent-pos-textarea');
       // When a PDF is imported, embed its actual rendered pages as images directly inside
@@ -5714,6 +5808,13 @@ function renderPaxLoadTable() {
       var agentPosImagesHtml = (typeof agentPosPdfImages !== 'undefined' ? agentPosPdfImages : [])
         .map(function(src, i, arr) { return '<img src="'+src+'" style="width:100%;display:block;'+(i<arr.length-1?'margin-bottom:8px;':'')+'">'; })
         .join('');
+      function importedPdfImagesHtml(slot) {
+        return slot.images.map(function(src, i, arr) {
+          return '<img src="'+src+'" style="width:100%;display:block;'+(i<arr.length-1?'margin-bottom:8px;':'')+'">';
+        }).join('');
+      }
+      var depGenDecImagesHtml = importedPdfImagesHtml(contentPdfImports.depGenDec);
+      var rampRosterImagesHtml = importedPdfImagesHtml(contentPdfImports.rampRoster);
 
       var css = [
         '@page{size:letter;margin:0.4in;}',
@@ -5938,13 +6039,13 @@ function renderPaxLoadTable() {
         '<div class="page-break">'+preSection('Arrival Crew List', crewArrContent)+'</div>',
 
         // === Page 8: Departure Gen Dec ===
-        '<div class="page-break">'+preSection('Departure Gen Dec', depGenDecContent)+'</div>',
+        '<div class="page-break">'+(depGenDecHasPdf ? htmlSection('Departure Gen Dec', depGenDecImagesHtml || '<div class="pre-content">Loading imported PDF preview…</div>') : preSection('Departure Gen Dec', depGenDecContent))+'</div>',
 
         // === Page 9: Agent Positions & Roster ===
         '<div class="page-break">'+(agentPosHasPdf ? htmlSection('Agent Positions & Roster', agentPosImagesHtml || '<div class="pre-content">Loading imported PDF preview…</div>') : preSection('Agent Positions & Roster', agentPosContent))+'</div>',
 
         // === Page 10: Ramp Roster ===
-        '<div class="page-break">'+preSection('Ramp Roster', rampRosterContent)+'</div>'
+        '<div class="page-break">'+(rampRosterHasPdf ? htmlSection('Ramp Roster', rampRosterImagesHtml || '<div class="pre-content">Loading imported PDF preview…</div>') : preSection('Ramp Roster', rampRosterContent))+'</div>'
       ].join('\n');
 
       return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PTS Report '+(s.flight||'')+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
@@ -5954,8 +6055,13 @@ function renderPaxLoadTable() {
       // If a PDF was just imported and its pages are still being rendered to images, wait
       // for that to finish first so the report embeds the real pages, not the "Loading..."
       // placeholder.
-      if (typeof agentPosPdfRenderPromise !== 'undefined' && agentPosPdfRenderPromise) {
-        agentPosPdfRenderPromise.then(doOpenSendModal, doOpenSendModal);
+      var pendingPdfRenders = [
+        typeof agentPosPdfRenderPromise !== 'undefined' ? agentPosPdfRenderPromise : null,
+        contentPdfImports.depGenDec.renderPromise,
+        contentPdfImports.rampRoster.renderPromise
+      ].filter(Boolean);
+      if (pendingPdfRenders.length) {
+        Promise.all(pendingPdfRenders.map(function(p) { return p.catch(function() {}); })).then(doOpenSendModal);
         return;
       }
       doOpenSendModal();
@@ -6010,8 +6116,7 @@ function renderPaxLoadTable() {
       }
     }
 
-    // Lazily loads PDF.js (only needed if the Agent Positions tab has an imported PDF to
-    // embed in the report) so the app doesn't pay for it on every load.
+    // Lazily loads PDF.js only when an imported PDF needs to be embedded in the report.
     function ensurePdfJsLoaded() {
       if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
       if (window._pdfJsLoadPromise) return window._pdfJsLoadPromise;
@@ -6030,8 +6135,7 @@ function renderPaxLoadTable() {
       return window._pdfJsLoadPromise;
     }
 
-    // Rasterizes every page of the imported Agent Positions PDF (a data: URL) into JPEG
-    // images so they can be embedded into the generated report PDF like any other page.
+    // Rasterizes every page of an imported PDF into JPEG images for the generated report.
     function renderPdfDataUrlToImages(dataUrl) {
       return ensurePdfJsLoaded().then(function(pdfjsLib) {
         var base64 = dataUrl.split(',')[1];
@@ -6512,6 +6616,16 @@ function renderPaxLoadTable() {
       safeOn('agent-pos-import-pdf-btn', openAgentPosPdfPicker);
       safeOn('agent-pos-remove-pdf-btn', removeAgentPosPdf);
       (function(){ var pdfInput = document.getElementById('agent-pos-pdf-input'); if (pdfInput) pdfInput.addEventListener('change', handleAgentPosPdfSelected); })();
+      safeOn('dep-gen-dec-import-pdf-btn', function() { openContentPdfPicker('depGenDec'); });
+      safeOn('dep-gen-dec-remove-pdf-btn', function() { removeContentPdf('depGenDec'); });
+      safeOn('ramp-roster-import-pdf-btn', function() { openContentPdfPicker('rampRoster'); });
+      safeOn('ramp-roster-remove-pdf-btn', function() { removeContentPdf('rampRoster'); });
+      (function(){
+        var depPdfInput = document.getElementById('dep-gen-dec-pdf-input');
+        var rampPdfInput = document.getElementById('ramp-roster-pdf-input');
+        if (depPdfInput) depPdfInput.addEventListener('change', function(e) { handleContentPdfSelected('depGenDec', e); });
+        if (rampPdfInput) rampPdfInput.addEventListener('change', function(e) { handleContentPdfSelected('rampRoster', e); });
+      })();
 
       // Show the underload warning only after leaving one of the weight fields
       document.getElementById('tab-pts').addEventListener('focusout', function(e) {
@@ -6586,6 +6700,8 @@ function renderPaxLoadTable() {
         })();
         if (restored._images) pastedImages = restored._images;
         if (restored._agent_pos_pdf) showAgentPosPdf(restored._agent_pos_pdf);
+        if (restored._dep_gen_dec_pdf) showContentPdf('depGenDec', restored._dep_gen_dec_pdf);
+        if (restored._ramp_roster_pdf) showContentPdf('rampRoster', restored._ramp_roster_pdf);
         updateUnderloadFromWeights();
         syncInputsFromState();
         renderActivities();
