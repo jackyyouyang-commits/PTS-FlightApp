@@ -1120,6 +1120,23 @@ document.addEventListener('DOMContentLoaded', function() {
         .pasted-image-gallery{width:100%!important;max-width:100%!important;box-sizing:border-box!important;}
         .pasted-image-item img{max-width:100px!important;max-height:100px!important;}
       }
+      @media (max-width: 480px) {
+        .summary-five-across {
+          grid-template-columns:repeat(5,minmax(0,1fr))!important;
+          gap:2px!important;
+          width:100%!important;
+        }
+        .summary-five-across .sum-label {
+          font-size:0.58rem!important;
+          white-space:nowrap!important;
+        }
+        .summary-five-across .sum-value {
+          font-size:0.78rem!important;
+          white-space:nowrap!important;
+          overflow:hidden!important;
+          text-overflow:ellipsis!important;
+        }
+      }
       </style>
     <script>
     window.APP_VERSION = 'v1.21';
@@ -3397,7 +3414,7 @@ function renderPaxLoadTable() {
         '</div>' +
         '<div class="card">' +
           '<div class="section-hdr" style="margin-top:0;">Arrival Loading</div>' +
-          '<div class="grid grid-cols-5 gap-3 text-center">' +
+          '<div class="grid grid-cols-5 gap-3 text-center summary-five-across">' +
             '<div><div class="sum-label">J</div><div class="sum-value">' + (state.arr_pax_j||'-') + '</div></div>' +
             '<div><div class="sum-label">W</div><div class="sum-value">' + (state.arr_pax_w||'-') + '</div></div>' +
             '<div><div class="sum-label">Y</div><div class="sum-value">' + (state.arr_pax_y||'-') + '</div></div>' +
@@ -3450,7 +3467,7 @@ function renderPaxLoadTable() {
         '</div>' +
         '<div class="card">' +
           '<div class="section-hdr" style="margin-top:0;">Final Loading <span id="final-loading-source-label" style="font-size:11px;color:rgba(255,255,255,0.8);margin-left:6px;text-transform:none;letter-spacing:0;">(Final)</span></div>' +
-          '<div class="grid grid-cols-5 gap-3 text-center">' +
+          '<div class="grid grid-cols-5 gap-3 text-center summary-five-across">' +
             '<div><div class="sum-label">J</div><div class="sum-value" id="final-loading-j">-</div></div>' +
             '<div><div class="sum-label">W</div><div class="sum-value" id="final-loading-w">-</div></div>' +
             '<div><div class="sum-label">Y</div><div class="sum-value" id="final-loading-y">-</div></div>' +
