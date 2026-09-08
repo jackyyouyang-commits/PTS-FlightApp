@@ -1136,6 +1136,29 @@ document.addEventListener('DOMContentLoaded', function() {
           overflow:hidden!important;
           text-overflow:ellipsis!important;
         }
+        .arrival-pax-five-across {
+          grid-template-columns:repeat(5,minmax(0,1fr))!important;
+          gap:3px!important;
+          width:100%!important;
+        }
+        .arrival-pax-five-across > div,
+        .catering-three-across > div {
+          min-width:0!important;
+        }
+        .arrival-pax-five-across .field-input {
+          padding-left:4px!important;
+          padding-right:4px!important;
+          text-align:center!important;
+        }
+        .arrival-pax-five-across #arr-pax-total-y5z6 {
+          font-size:1rem!important;
+          white-space:nowrap!important;
+        }
+        .catering-three-across {
+          grid-template-columns:repeat(3,minmax(0,1fr))!important;
+          gap:4px!important;
+          width:100%!important;
+        }
       }
       </style>
     <script>
@@ -1990,7 +2013,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
         <div data-id="177" class="section-hdr">Arrival PAX Loading</div>
         <div data-id="178" class="card">
-          <div data-id="179" class="grid grid-cols-5 gap-2 items-end">
+          <div data-id="179" class="grid grid-cols-5 gap-2 items-end arrival-pax-five-across">
             <div data-id="180"><label data-id="181" class="field-label">J</label><input data-id="182" class="field-input sm" id="f-arr_pax_j" data-key="arr_pax_j" inputmode="numeric" placeholder="0"></div>
             <div data-id="183"><label data-id="184" class="field-label">W</label><input data-id="185" class="field-input sm" id="f-arr_pax_w" data-key="arr_pax_w" inputmode="numeric" placeholder="0"></div>
             <div data-id="186"><label data-id="187" class="field-label">Y</label><input data-id="188" class="field-input sm" id="f-arr_pax_y" data-key="arr_pax_y" inputmode="numeric" placeholder="0"></div>
@@ -2130,7 +2153,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
         <div data-id="376" class="section-hdr">Catering Order</div>
         <div data-id="377" class="card">
-          <div data-id="378" class="grid grid-cols-3 gap-3">
+          <div data-id="378" class="grid grid-cols-3 gap-3 catering-three-across">
             <div data-id="379"><label data-id="380" class="field-label">CAT J</label><input data-id="381" class="field-input sm" id="f-dep_cat_j" data-key="dep_cat_j" inputmode="numeric" placeholder="0"></div>
             <div data-id="382"><label data-id="383" class="field-label">CAT W</label><input data-id="384" class="field-input sm" id="f-dep_cat_w" data-key="dep_cat_w" inputmode="numeric" placeholder="0"></div>
             <div data-id="385"><label data-id="386" class="field-label">CAT Y</label><input data-id="387" class="field-input sm" id="f-dep_cat_y" data-key="dep_cat_y" inputmode="numeric" placeholder="0"></div>
