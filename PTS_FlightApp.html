@@ -4963,31 +4963,36 @@ function renderPaxLoadTable() {
       
       var allCells = lines.map(function(line) { return line.split('\t'); });
       var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
-      var colWidths = new Array(numCols).fill(80); // Minimum 80px per column
+      var colWeights = new Array(numCols).fill(4);
       function escapeCell(value) {
         return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       }
       
-      // Calculate max width for each column (monospace ~8px per char + 16px padding)
+      // Use bounded content weights to allocate responsive percentage widths. The fixed
+      // layout and wrapping keep every pasted table within its panel on any screen size.
       allCells.forEach(function(row) {
         for (var idx = 0; idx < numCols; idx++) {
           var cell = row[idx] || '';
-          var width = Math.max(80, cell.length * 9 + 16); // 9px per char + padding, min 80px
-          colWidths[idx] = Math.max(colWidths[idx], width);
+          colWeights[idx] = Math.max(colWeights[idx], Math.min(40, cell.length || 1));
         }
       });
-      
-      console.log('Column widths:', colWidths);
-      
-      var tableHTML = '<table style="width:auto;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
+      var totalWeight = colWeights.reduce(function(sum, width) { return sum + width; }, 0);
+      var fontSize = numCols <= 4 ? 13 : (numCols <= 6 ? 11 : (numCols <= 8 ? 9 : 8));
+      var cellPadding = numCols <= 4 ? 8 : (numCols <= 8 ? 5 : 3);
+      var tableHTML = '<table style="width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;font-family:monospace;font-size:' + fontSize + 'px;line-height:1.35;">';
+      tableHTML += '<colgroup>';
+      colWeights.forEach(function(width) {
+        tableHTML += '<col style="width:' + ((width / totalWeight) * 100).toFixed(3) + '%;">';
+      });
+      tableHTML += '</colgroup>';
       
       allCells.forEach(function(row, rowIdx) {
         tableHTML += '<tr data-pasted-row="' + rowIdx + '" style="transition:background-color 0.3s ease;">';
         for (var idx = 0; idx < numCols; idx++) {
           var cell = row[idx] || '';
           var cellContent = cell === '' ? '&nbsp;' : escapeCell(cell);
-          tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:pre;min-width:' + colWidths[idx] + 'px;text-align:left;">' +
+          tableHTML += '<td style="border:1px solid #ccc;padding:' + cellPadding + 'px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;min-width:0;text-align:left;vertical-align:top;">' +
             cellContent + '</td>';
         }
         tableHTML += '</tr>';
@@ -5002,7 +5007,7 @@ function renderPaxLoadTable() {
         preview = document.createElement('div');
         preview.id = previewId;
         // Match textarea's flex sizing to maintain container height
-        preview.style.cssText = 'flex:1 1 0;width:100%;border:1px solid #ddd;border-radius:6px;padding:12px;background:#f9fafb;max-height:none;overflow:auto;box-sizing:border-box;';
+        preview.style.cssText = 'flex:1 1 0;width:100%;max-width:100%;min-width:0;border:1px solid #ddd;border-radius:6px;padding:clamp(4px,1.5vw,12px);background:#f9fafb;max-height:none;overflow-x:hidden;overflow-y:auto;box-sizing:border-box;';
         textarea.parentNode.insertBefore(preview, textarea);
       }
       preview.innerHTML = tableHTML;
