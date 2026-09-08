@@ -1,5 +1,5 @@
 /* PTS Flight App service worker - offline cache */
-var CACHE = 'pts-flightapp-v3';
+var CACHE = 'pts-flightapp-v4';
 var ASSETS = [
   './',
   './PTS_FlightApp.html',
@@ -25,6 +25,24 @@ self.addEventListener('activate', function(e) {
 
 self.addEventListener('fetch', function(e) {
   if (e.request.method !== 'GET') return;
+  var url = new URL(e.request.url);
+  var isAppDocument = e.request.mode === 'navigate' || url.pathname.endsWith('/PTS_FlightApp.html');
+
+  if (isAppDocument) {
+    e.respondWith(
+      fetch(e.request).then(function(resp) {
+        if (resp && resp.status === 200 && e.request.url.indexOf(self.location.origin) === 0) {
+          var copy = resp.clone();
+          caches.open(CACHE).then(function(c) { c.put(e.request, copy); });
+        }
+        return resp;
+      }).catch(function() {
+        return caches.match(e.request, { ignoreSearch: true });
+      })
+    );
+    return;
+  }
+
   e.respondWith(
     caches.match(e.request, { ignoreSearch: true }).then(function(cached) {
       return cached || fetch(e.request).then(function(resp) {

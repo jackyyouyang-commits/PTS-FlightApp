@@ -549,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       textarea[data-key], #oir-textarea, #dep-lir-textarea,
       #crew-textarea, #dep-crew-textarea,
-      #staff-acc-textarea, #arr-ptm-textarea {
+      #staff-acc-textarea, #arr-ptm-textarea, #arr-bnl-textarea {
         color: #111827 !important;
         font-size: 13px;
         line-height: 1.5;
@@ -605,7 +605,7 @@ document.addEventListener('DOMContentLoaded', function() {
         flex-direction: column;
         height: 100%;
       }
-      #staff-acc-textarea, #arr-ptm-textarea, #oir-textarea,
+      #staff-acc-textarea, #arr-ptm-textarea, #arr-bnl-textarea, #oir-textarea,
       #dep-lir-textarea, #crew-textarea, #dep-crew-textarea {
         flex: 1 1 0;
         width: 100%;
@@ -1096,7 +1096,7 @@ document.addEventListener('DOMContentLoaded', function() {
           padding-left:8px!important;padding-right:8px!important;
         }
         .textarea-panel-wrapper textarea,
-        #staff-acc-textarea,#arr-ptm-textarea,#arr-disruption-ppm-textarea,#oir-textarea,#itd-tag-card-textarea,
+        #staff-acc-textarea,#arr-ptm-textarea,#arr-bnl-textarea,#arr-disruption-ppm-textarea,#oir-textarea,#itd-tag-card-textarea,
         #dep-lir-textarea,#crew-textarea,#dep-crew-textarea,#dep-gen-dec-textarea,
         #agent-pos-textarea,#f-remarks{
           width:100%!important;max-width:100%!important;min-width:0!important;
@@ -1827,6 +1827,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
          <i data-id="574" data-lucide="plane-landing" class="w-5 h-5"></i>
          <span data-id="575" class="text-[11px] font-semibold">Arrival PTM</span>
         </button>
+        <button class="bottom-tab" data-tab="arr-bnl">
+         <i data-lucide="file-text" class="w-5 h-5"></i>
+         <span class="text-[11px] font-semibold">Arrival BNL</span>
+        </button>
         <button data-id="573b" class="bottom-tab" data-tab="arr-disruption-ppm">
          <i data-id="574b" data-lucide="unlink" class="w-5 h-5"></i>
          <span data-id="575b" class="text-[11px] font-semibold">Arrival Disruption PPM</span>
@@ -2218,6 +2222,22 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
       </div>
 
+      <!-- ========== TAB: ARRIVAL BNL ========== -->
+      <div id="tab-arr-bnl" class="tab-content tab-flex-panel">
+        <div class="textarea-panel-wrapper">
+          <div class="panel-header">
+            <h2 style="font-size:18px;font-weight:700;margin:0;">Arrival BNL</h2>
+            <span id="arr-bnl-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
+          </div>
+          <textarea id="arr-bnl-textarea" placeholder="Paste Arrival BNL content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
+          <div class="panel-footer">
+            <button id="arr-bnl-paste-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
+            <button id="arr-bnl-save-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
+            <button id="arr-bnl-clear-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
+          </div>
+        </div>
+      </div>
+
       <!-- ========== TAB: ARRIVAL DISRUPTION PPM ========== -->
       <div data-id="515b" id="tab-arr-disruption-ppm" class="tab-content tab-flex-panel">
         <div data-id="516b" class="textarea-panel-wrapper">
@@ -2404,6 +2424,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       clearDepCrew();
       clearStaffAcc();
       clearArrPTM();
+      clearArrBNL();
       clearArrDisruptionPPM();
       clearDepLIR();
       clearITDTagCard();
@@ -3499,6 +3520,11 @@ function renderPaxLoadTable() {
       if(arrPtmVal.trim()) lines.push(arrPtmVal.trim());
       lines.push('');
 
+      sec('ARRIVAL BNL');
+      var arrBnlVal = (document.getElementById('arr-bnl-textarea')||{}).value||'';
+      if(arrBnlVal.trim()) lines.push(arrBnlVal.trim());
+      lines.push('');
+
       sec('ARRIVAL DISRUPTION PPM');
       var arrDisruptionPpmVal = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
       if(arrDisruptionPpmVal.trim()) lines.push(arrDisruptionPpmVal.trim());
@@ -3575,7 +3601,7 @@ function renderPaxLoadTable() {
     // This lets a user paste a screenshot (e.g. from Snipping Tool) into the same box;
     // the image is captured as a data-URL and shown in a small gallery under the textarea,
     // and travels with saveToLocal/generateShareCode just like the textarea's text.
-    var PASTE_IMAGE_IDS = ['staff-acc-textarea','arr-ptm-textarea','arr-disruption-ppm-textarea','itd-tag-card-textarea','oir-textarea',
+    var PASTE_IMAGE_IDS = ['staff-acc-textarea','arr-ptm-textarea','arr-bnl-textarea','arr-disruption-ppm-textarea','itd-tag-card-textarea','oir-textarea',
       'dep-lir-textarea','crew-textarea','dep-crew-textarea','dep-gen-dec-textarea','agent-pos-textarea'];
     var pastedImages = {}; // textareaId -> array of image data-URLs
 
@@ -3654,6 +3680,7 @@ function renderPaxLoadTable() {
         // Include paste-tab content in share payload
         payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
         payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
+        payload._arr_bnl   = (document.getElementById('arr-bnl-textarea')||{}).value||'';
         payload._arr_disruption_ppm = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
         payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
         payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
@@ -3851,6 +3878,7 @@ function renderPaxLoadTable() {
         // even one image is larger than the maximum capacity of a QR code.
         payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
         payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
+        payload._arr_bnl   = (document.getElementById('arr-bnl-textarea')||{}).value||'';
         payload._arr_disruption_ppm = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
         payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
         payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
@@ -3942,7 +3970,7 @@ function renderPaxLoadTable() {
         if (data.depActual) Object.assign(depActual, data.depActual);
         // Restore paste-tab textarea content from shared payload
         (function(){
-          var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm','arr-disruption-ppm-textarea':'_arr_disruption_ppm',
+          var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm','arr-bnl-textarea':'_arr_bnl','arr-disruption-ppm-textarea':'_arr_disruption_ppm',
                    'oir-textarea':'_oir','itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir',
                    'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew',
                    'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos'};
@@ -5279,6 +5307,49 @@ function renderPaxLoadTable() {
     }
 
     // ===========================
+    // ARRIVAL BNL FUNCTIONS
+    // ===========================
+    function saveArrBNL() {
+      var val = document.getElementById('arr-bnl-textarea').value;
+      try { localStorage.setItem('pts_arr_bnl', val); } catch(e) {}
+      lockArrBNL();
+      showToast('Arrival BNL saved & locked', 'green');
+    }
+    function lockArrBNL() {
+      var ta = document.getElementById('arr-bnl-textarea');
+      if (ta) { ta.setAttribute('readonly','readonly'); ta.style.background='#F9FAFB'; }
+      var badge = document.getElementById('arr-bnl-lock-badge');
+      if (badge) {
+        badge.style.display='inline-flex';
+        badge.innerHTML='\uD83D\uDD12 Locked <button id="arr-bnl-unlock-btn" class="lock-badge-btn" style="background:rgba(255,255,255,0.2);border:none;border-radius:99px;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer;margin-left:4px;">Unlock</button>';
+        var unlockBtn = document.getElementById('arr-bnl-unlock-btn');
+        if (unlockBtn) unlockBtn.addEventListener('click', unlockArrBNL);
+      }
+      try { localStorage.setItem('pts_arr_bnl_locked','1'); } catch(e) {}
+    }
+    function unlockArrBNL() {
+      var ta = document.getElementById('arr-bnl-textarea');
+      if (ta) { ta.removeAttribute('readonly'); ta.style.background=''; }
+      var badge = document.getElementById('arr-bnl-lock-badge');
+      if (badge) {
+        badge.style.display='inline-flex';
+        badge.innerHTML='\uD83D\uDD13 Unlocked <button id="arr-bnl-lock-btn" class="lock-badge-btn" style="background:rgba(255,255,255,0.2);border:none;border-radius:99px;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer;margin-left:4px;">Lock</button>';
+        var lockBtn = document.getElementById('arr-bnl-lock-btn');
+        if (lockBtn) lockBtn.addEventListener('click', lockArrBNL);
+      }
+      try { localStorage.setItem('pts_arr_bnl_locked','0'); } catch(e) {}
+    }
+    function clearArrBNL() {
+      unlockArrBNL();
+      var ta = document.getElementById('arr-bnl-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
+      var preview = document.getElementById('arr-bnl-textarea-preview'); if(preview) preview.remove();
+      try { localStorage.removeItem('pts_arr_bnl'); localStorage.removeItem('pts_arr_bnl_locked'); } catch(e) {}
+      var badge = document.getElementById('arr-bnl-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('arr-bnl-textarea');
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // ===========================
     // ARRIVAL DISRUPTION PPM FUNCTIONS
     // ===========================
     function saveArrDisruptionPPM() {
@@ -5524,6 +5595,7 @@ function renderPaxLoadTable() {
       function taVal(id){ var el=document.getElementById(id); return el&&el.value.trim()?el.value.trim():''; }
       var staffAccContent = taVal('staff-acc-textarea');
       var arrPtmContent   = taVal('arr-ptm-textarea');
+      var arrBnlContent   = taVal('arr-bnl-textarea');
       var arrDisruptionPpmContent = taVal('arr-disruption-ppm-textarea');
       var itdTagCardContent = taVal('itd-tag-card-textarea');
       var oirContent      = taVal('oir-textarea');
@@ -5741,6 +5813,9 @@ function renderPaxLoadTable() {
 
         // === Page 3: Arrival PTM ===
         '<div class="page-break">'+preSection('Arrival PTM', arrPtmContent)+'</div>',
+
+        // === Page 3a: Arrival BNL ===
+        '<div class="page-break">'+preSection('Arrival BNL', arrBnlContent)+'</div>',
 
         // === Page 3b: Arrival Disruption PPM ===
         '<div class="page-break">'+htmlSection('Arrival Disruption PPM', formatITDTagCardTable(arrDisruptionPpmContent), 'wide')+'</div>',
@@ -6257,6 +6332,10 @@ function renderPaxLoadTable() {
       safeOn('arr-ptm-save-btn', saveArrPTM);
       safeOn('arr-ptm-clear-btn', clearArrPTM);
 
+      // Arrival BNL buttons
+      safeOn('arr-bnl-save-btn', saveArrBNL);
+      safeOn('arr-bnl-clear-btn', clearArrBNL);
+
       // Arrival Disruption PPM buttons
       safeOn('arr-disruption-ppm-save-btn', saveArrDisruptionPPM);
       safeOn('arr-disruption-ppm-clear-btn', clearArrDisruptionPPM);
@@ -6306,6 +6385,7 @@ function renderPaxLoadTable() {
       // Paste from Excel buttons
       safeOn('staff-acc-paste-btn', function() { pasteFromExcel('staff-acc-textarea'); });
       safeOn('arr-ptm-paste-btn', function() { pasteFromExcel('arr-ptm-textarea'); });
+      safeOn('arr-bnl-paste-btn', function() { pasteFromExcel('arr-bnl-textarea'); });
       safeOn('arr-disruption-ppm-paste-btn', function() { pasteFromExcel('arr-disruption-ppm-textarea'); });
       safeOn('itd-tag-card-paste-btn', function() { pasteFromExcel('itd-tag-card-textarea'); });
       safeOn('oir-paste-btn', function() { pasteFromExcel('oir-textarea'); });
@@ -6377,7 +6457,7 @@ function renderPaxLoadTable() {
       if (restored) {
         // Restore paste-tab textarea content from local storage payload
         (function(){
-          var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm','arr-disruption-ppm-textarea':'_arr_disruption_ppm',
+          var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm','arr-bnl-textarea':'_arr_bnl','arr-disruption-ppm-textarea':'_arr_disruption_ppm',
                    'oir-textarea':'_oir','itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir',
                    'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew',
                    'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos'};
@@ -6480,6 +6560,14 @@ function renderPaxLoadTable() {
         var l='0'; try{l=localStorage.getItem('pts_arr_ptm_locked')||'0';}catch(e){}
         var ta=document.getElementById('arr-ptm-textarea'); if(ta&&v) ta.value=v;
         if(l==='1'&&v) lockArrPTM();
+      })();
+
+      // Restore Arrival BNL
+      if (!hashCode) (function(){
+        var v=''; try{v=localStorage.getItem('pts_arr_bnl')||'';}catch(e){}
+        var l='0'; try{l=localStorage.getItem('pts_arr_bnl_locked')||'0';}catch(e){}
+        var ta=document.getElementById('arr-bnl-textarea'); if(ta&&v) ta.value=v;
+        if(l==='1'&&v) lockArrBNL();
       })();
 
       // Restore Arrival Disruption PPM
