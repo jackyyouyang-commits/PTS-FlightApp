@@ -4625,7 +4625,7 @@ function renderPaxLoadTable() {
           if (hasDepActual) {
             el.innerHTML = '<span style="color:#fff;">Departed</span>' + disruptionStr + etaLine;
           } else {
-            var departureTimeHtml = '<span style="color:#fff;">Departs at:</span> <span style="color:#FCA5A5">' + departsAtStr() + '</span>';
+            var departureTimeHtml = '<span style="color:#fff;">Departs at:</span> <span style="color:#fff">' + departsAtStr() + '</span>';
             el.innerHTML = departureTimeHtml + disruptionStr + etaLine;
           }
           el.style.color = '#fff';
