@@ -2461,7 +2461,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       });
       // autosize textareas after clearing so they shrink back to one line
       document.querySelectorAll('textarea[data-autoresize], textarea.autosize').forEach(function(t){ try{ autosizeTextarea(t); }catch(e){} });
-      unlockFields();
+      lockFields();
       ['hdr-lock-badge','hdr-lock-badge-m'].forEach(function(id){
         var el=document.getElementById(id); if(el) { el.style.display='none'; el.innerHTML=''; }
       });
