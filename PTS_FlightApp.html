@@ -40,6 +40,7 @@ window.lucide = {
       'file-text': 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8',
       'luggage': 'M6 20h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2zM8 20V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v15M16 20v2M8 20v2',
       'baggage-transfer': 'M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M5 7h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zM7 14h10M14 11l3 3-3 3',
+      'ground-service': 'M3 6h11v11H3zM14 10h4l3 4v3h-2M6 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
       'users': 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
       'clipboard-copy': 'M20 8v14H8V8h12zM16 8V4H4v12h4M16 4l4 4',
       'timer': 'M12 22a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v4l3 2M9 2h6',
@@ -551,7 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       textarea[data-key], #oir-textarea, #dep-lir-textarea,
       #crew-textarea, #dep-crew-textarea,
-      #staff-acc-textarea, #arr-ptm-textarea, #arr-bnl-textarea {
+      #staff-acc-textarea, #arr-ptm-textarea, #arr-bnl-textarea, #ramp-roster-textarea {
         color: #111827 !important;
         font-size: 13px;
         line-height: 1.5;
@@ -607,7 +608,7 @@ document.addEventListener('DOMContentLoaded', function() {
         flex-direction: column;
         height: 100%;
       }
-      #staff-acc-textarea, #arr-ptm-textarea, #arr-bnl-textarea, #oir-textarea,
+      #staff-acc-textarea, #arr-ptm-textarea, #arr-bnl-textarea, #oir-textarea, #ramp-roster-textarea,
       #dep-lir-textarea, #crew-textarea, #dep-crew-textarea {
         flex: 1 1 0;
         width: 100%;
@@ -1098,7 +1099,7 @@ document.addEventListener('DOMContentLoaded', function() {
           padding-left:8px!important;padding-right:8px!important;
         }
         .textarea-panel-wrapper textarea,
-        #staff-acc-textarea,#arr-ptm-textarea,#arr-bnl-textarea,#arr-disruption-ppm-textarea,#oir-textarea,#itd-tag-card-textarea,
+        #staff-acc-textarea,#arr-ptm-textarea,#arr-bnl-textarea,#arr-disruption-ppm-textarea,#oir-textarea,#itd-tag-card-textarea,#ramp-roster-textarea,
         #dep-lir-textarea,#crew-textarea,#dep-crew-textarea,#dep-gen-dec-textarea,
         #agent-pos-textarea,#f-remarks{
           width:100%!important;max-width:100%!important;min-width:0!important;
@@ -1873,6 +1874,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <i data-id="592" data-lucide="users" class="w-5 h-5"></i>
           <span data-id="593" class="text-[11px] font-semibold">Agent Positions</span>
         </button>
+        <button class="bottom-tab" data-tab="ramp-roster">
+          <i data-lucide="ground-service" class="w-5 h-5"></i>
+          <span class="text-[11px] font-semibold">Ramp Roster</span>
+        </button>
       </div>
     </nav>
 
@@ -2377,6 +2382,22 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
       </div>
 
+      <!-- ========== TAB: RAMP ROSTER ========== -->
+      <div id="tab-ramp-roster" class="tab-content tab-flex-panel">
+        <div class="textarea-panel-wrapper">
+          <div class="panel-header">
+            <h2 style="font-size:18px;font-weight:700;margin:0;">Ramp Roster</h2>
+            <span id="ramp-roster-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
+          </div>
+          <textarea id="ramp-roster-textarea" placeholder="Paste Ramp Roster content here..." style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
+          <div class="panel-footer">
+            <button id="ramp-roster-paste-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">Paste from Excel</button>
+            <button id="ramp-roster-save-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">Save &amp; Lock</button>
+            <button id="ramp-roster-clear-btn" style="background:#1a6e4e;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
+          </div>
+        </div>
+      </div>
+
     <!-- footer removed -->
 
     </div><!-- end #app-shell -->
@@ -2444,6 +2465,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       clearITDTagCard();
       clearDepGenDec();
       clearAgentPos();
+      clearRampRoster();
       refreshSummarySpans();
       refreshFinalLoading();
       if (typeof showToast === 'function') showToast('All data cleared', 'red');
@@ -3602,6 +3624,11 @@ function renderPaxLoadTable() {
       if(crewArrVal.trim()) lines.push(crewArrVal.trim());
       lines.push('');
 
+      sec('RAMP ROSTER');
+      var rampRosterVal = (document.getElementById('ramp-roster-textarea')||{}).value||'';
+      if(rampRosterVal.trim()) lines.push(rampRosterVal.trim());
+      lines.push('');
+
       sec('DEPARTURE PTS');
       depActivities.forEach(function(act,i){
         var logged=depActual[i];
@@ -3633,7 +3660,7 @@ function renderPaxLoadTable() {
     // the image is captured as a data-URL and shown in a small gallery under the textarea,
     // and travels with saveToLocal/generateShareCode just like the textarea's text.
     var PASTE_IMAGE_IDS = ['staff-acc-textarea','arr-ptm-textarea','arr-bnl-textarea','arr-disruption-ppm-textarea','itd-tag-card-textarea','oir-textarea',
-      'dep-lir-textarea','crew-textarea','dep-crew-textarea','dep-gen-dec-textarea','agent-pos-textarea'];
+      'dep-lir-textarea','crew-textarea','dep-crew-textarea','dep-gen-dec-textarea','agent-pos-textarea','ramp-roster-textarea'];
     var pastedImages = {}; // textareaId -> array of image data-URLs
 
     function renderPastedImageGallery(id) {
@@ -3720,6 +3747,7 @@ function renderPaxLoadTable() {
         payload._dep_crew  = (document.getElementById('dep-crew-textarea')||{}).value||'';
         payload._dep_gen_dec = (document.getElementById('dep-gen-dec-textarea')||{}).value||'';
         payload._agent_pos   = (document.getElementById('agent-pos-textarea')||{}).value||'';
+        payload._ramp_roster = (document.getElementById('ramp-roster-textarea')||{}).value||'';
         payload._images = pastedImages;
         payload._agent_pos_pdf = agentPosPdfData || '';
         localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(payload));
@@ -3918,6 +3946,7 @@ function renderPaxLoadTable() {
         payload._dep_crew  = (document.getElementById('dep-crew-textarea')||{}).value||'';
         payload._dep_gen_dec = (document.getElementById('dep-gen-dec-textarea')||{}).value||'';
         payload._agent_pos   = (document.getElementById('agent-pos-textarea')||{}).value||'';
+        payload._ramp_roster = (document.getElementById('ramp-roster-textarea')||{}).value||'';
         payload._images = [];
 
         if (typeof LZString === 'undefined' || typeof qrcode === 'undefined') {
@@ -4004,7 +4033,8 @@ function renderPaxLoadTable() {
           var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm','arr-bnl-textarea':'_arr_bnl','arr-disruption-ppm-textarea':'_arr_disruption_ppm',
                    'oir-textarea':'_oir','itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir',
                    'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew',
-                   'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos'};
+                   'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos',
+                   'ramp-roster-textarea':'_ramp_roster'};
           Object.keys(m).forEach(function(id){
             var ta=document.getElementById(id);
             if(ta&&data[m[id]]) {
@@ -5497,6 +5527,49 @@ function renderPaxLoadTable() {
     }
 
     // ===========================
+    // RAMP ROSTER FUNCTIONS
+    // ===========================
+    function saveRampRoster() {
+      var val = (document.getElementById('ramp-roster-textarea')||{}).value||'';
+      try { localStorage.setItem('pts_ramp_roster', val); } catch(e) {}
+      lockRampRoster();
+      showToast('Ramp Roster saved & locked', 'green');
+    }
+    function lockRampRoster() {
+      var ta = document.getElementById('ramp-roster-textarea');
+      if (ta) { ta.setAttribute('readonly','readonly'); ta.style.background='#F9FAFB'; }
+      var badge = document.getElementById('ramp-roster-lock-badge');
+      if (badge) {
+        badge.style.display='inline-flex';
+        badge.innerHTML='\uD83D\uDD12 Locked <button id="ramp-roster-unlock-btn" class="lock-badge-btn" style="background:rgba(255,255,255,0.2);border:none;border-radius:99px;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer;margin-left:4px;">Unlock</button>';
+        var unlockBtn = document.getElementById('ramp-roster-unlock-btn');
+        if (unlockBtn) unlockBtn.addEventListener('click', unlockRampRoster);
+      }
+      try { localStorage.setItem('pts_ramp_roster_locked','1'); } catch(e) {}
+    }
+    function unlockRampRoster() {
+      var ta = document.getElementById('ramp-roster-textarea');
+      if (ta) { ta.removeAttribute('readonly'); ta.style.background=''; }
+      var badge = document.getElementById('ramp-roster-lock-badge');
+      if (badge) {
+        badge.style.display='inline-flex';
+        badge.innerHTML='\uD83D\uDD13 Unlocked <button id="ramp-roster-lock-btn" class="lock-badge-btn" style="background:rgba(255,255,255,0.2);border:none;border-radius:99px;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer;margin-left:4px;">Lock</button>';
+        var lockBtn = document.getElementById('ramp-roster-lock-btn');
+        if (lockBtn) lockBtn.addEventListener('click', lockRampRoster);
+      }
+      try { localStorage.setItem('pts_ramp_roster_locked','0'); } catch(e) {}
+    }
+    function clearRampRoster() {
+      unlockRampRoster();
+      var ta = document.getElementById('ramp-roster-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
+      var preview = document.getElementById('ramp-roster-textarea-preview'); if(preview) preview.remove();
+      try { localStorage.removeItem('pts_ramp_roster'); localStorage.removeItem('pts_ramp_roster_locked'); } catch(e) {}
+      var badge = document.getElementById('ramp-roster-lock-badge'); if(badge) badge.style.display='none';
+      clearPastedImages('ramp-roster-textarea');
+      if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // ===========================
     // AGENT POSITIONS - IMPORT PDF
     // ===========================
     var agentPosPdfData = null; // data URL of the imported PDF, persisted via saveToLocal/restoreFromLocal
@@ -5633,6 +5706,7 @@ function renderPaxLoadTable() {
       var depLirContent   = taVal('dep-lir-textarea');
       var crewArrContent  = taVal('crew-textarea');
       var depGenDecContent = taVal('dep-gen-dec-textarea');
+      var rampRosterContent = taVal('ramp-roster-textarea');
       var agentPosHasPdf = (typeof agentPosPdfData !== 'undefined' && !!agentPosPdfData);
       var agentPosContent = agentPosHasPdf ? '' : taVal('agent-pos-textarea');
       // When a PDF is imported, embed its actual rendered pages as images directly inside
@@ -5867,7 +5941,10 @@ function renderPaxLoadTable() {
         '<div class="page-break">'+preSection('Departure Gen Dec', depGenDecContent)+'</div>',
 
         // === Page 9: Agent Positions & Roster ===
-        '<div class="page-break">'+(agentPosHasPdf ? htmlSection('Agent Positions & Roster', agentPosImagesHtml || '<div class="pre-content">Loading imported PDF preview…</div>') : preSection('Agent Positions & Roster', agentPosContent))+'</div>'
+        '<div class="page-break">'+(agentPosHasPdf ? htmlSection('Agent Positions & Roster', agentPosImagesHtml || '<div class="pre-content">Loading imported PDF preview…</div>') : preSection('Agent Positions & Roster', agentPosContent))+'</div>',
+
+        // === Page 10: Ramp Roster ===
+        '<div class="page-break">'+preSection('Ramp Roster', rampRosterContent)+'</div>'
       ].join('\n');
 
       return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PTS Report '+(s.flight||'')+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
@@ -6414,6 +6491,10 @@ function renderPaxLoadTable() {
       // Agent Positions clear
       safeOn('agent-pos-clear-btn', clearAgentPos);
 
+      // Ramp Roster buttons
+      safeOn('ramp-roster-save-btn', saveRampRoster);
+      safeOn('ramp-roster-clear-btn', clearRampRoster);
+
       // Paste from Excel buttons
       safeOn('staff-acc-paste-btn', function() { pasteFromExcel('staff-acc-textarea'); });
       safeOn('arr-ptm-paste-btn', function() { pasteFromExcel('arr-ptm-textarea'); });
@@ -6425,6 +6506,7 @@ function renderPaxLoadTable() {
       safeOn('crew-paste-btn', function() { pasteFromExcel('crew-textarea'); });
       safeOn('dep-gen-dec-paste-btn', function() { pasteFromExcel('dep-gen-dec-textarea'); });
       safeOn('agent-pos-paste-btn', function() { pasteFromExcel('agent-pos-textarea'); });
+      safeOn('ramp-roster-paste-btn', function() { pasteFromExcel('ramp-roster-textarea'); });
 
       // Agent Positions - Import PDF
       safeOn('agent-pos-import-pdf-btn', openAgentPosPdfPicker);
@@ -6492,7 +6574,8 @@ function renderPaxLoadTable() {
           var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm','arr-bnl-textarea':'_arr_bnl','arr-disruption-ppm-textarea':'_arr_disruption_ppm',
                    'oir-textarea':'_oir','itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir',
                    'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew',
-                   'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos'};
+                   'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos',
+                   'ramp-roster-textarea':'_ramp_roster'};
           Object.keys(m).forEach(function(id){
             var ta=document.getElementById(id);
             if(ta&&restored[m[id]]) {
@@ -6617,6 +6700,15 @@ function renderPaxLoadTable() {
         var l='0'; try{l=localStorage.getItem('pts_dep_lir_locked')||'0';}catch(e){}
         var ta=document.getElementById('dep-lir-textarea'); if(ta&&v) ta.value=v;
         if(l==='1'&&v) lockDepLIR();
+      })();
+
+      // Restore Ramp Roster
+      if (!hashCode) (function(){
+        var v=''; try{v=localStorage.getItem('pts_ramp_roster')||'';}catch(e){}
+        var l='0'; try{l=localStorage.getItem('pts_ramp_roster_locked')||'0';}catch(e){}
+        var ta=document.getElementById('ramp-roster-textarea');
+        if(ta&&v) { ta.value=v; try { processPastedData(ta, v, true); } catch(e) {} }
+        if(l==='1'&&v) lockRampRoster();
       })();
 
       refreshSummarySpans();
