@@ -1811,7 +1811,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <div id="share-qr-image-note" style="display:none;margin-top:10px;color:#92400E;background:#FEF3C7;padding:8px 10px;border-radius:8px;font-size:12px;text-align:center;">
           Pasted images are not included in the QR code.
         </div>
-        <div data-id="128" class="flex justify-end gap-3 mt-4">
+        <input id="share-qr-image-input" type="file" accept="image/*,.svg" style="display:none;">
+        <div data-id="128" class="flex justify-end gap-3 mt-4" style="flex-wrap:wrap;">
+          <button id="share-download-qr-btn" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark">Download QR Code</button>
+          <button id="share-upload-qr-btn" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark">Upload QR Image</button>
           <button id="share-scan-btn" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark">Scan QR Code to Connect</button>
           <button id="share-stop-scan-btn" style="display:none;" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark">Stop Scanning</button>
           <button data-id="131" id="share-close-btn" class="px-5 py-3 rounded-lg text-white font-semibold text-sm min-h-[44px]" style="background:#1a6e4e;">Close</button>
@@ -3857,6 +3860,132 @@ function renderPaxLoadTable() {
       try { return decodeURIComponent(legacy[1]); } catch(e) { return null; }
     }
 
+    function importDecodedQrValue(value, errorMessage) {
+      var shareCode = shareCodeFromScannedValue(value);
+      if (!shareCode) {
+        var errorEl = document.getElementById('share-qr-error');
+        if (errorEl) {
+          errorEl.textContent = errorMessage || 'That is not a PTS Connect QR code.';
+          errorEl.style.display = 'block';
+        }
+        return false;
+      }
+      stopQrScanner();
+      var modal = document.getElementById('share-modal');
+      if (modal) modal.style.display = 'none';
+      return loadShareCode(shareCode);
+    }
+
+    function downloadShareQrImage() {
+      var svg = document.querySelector('#share-qr-output svg');
+      var errorEl = document.getElementById('share-qr-error');
+      if (!svg) {
+        if (errorEl) {
+          errorEl.textContent = 'Generate a Connect QR code before downloading it.';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+      var source = new XMLSerializer().serializeToString(svg);
+      var blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var image = new Image();
+      image.onload = function() {
+        var canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 1024;
+        var context = canvas.getContext('2d');
+        context.fillStyle = '#FFFFFF';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function(pngBlob) {
+          if (!pngBlob) return;
+          var downloadUrl = URL.createObjectURL(pngBlob);
+          var link = document.createElement('a');
+          var flight = String(state.flight || 'flight').replace(/[^a-z0-9_-]+/gi, '-');
+          link.href = downloadUrl;
+          link.download = flight + '-PTS-Connect-QR.png';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(function() { URL.revokeObjectURL(downloadUrl); }, 1000);
+        }, 'image/png');
+      };
+      image.onerror = function() {
+        URL.revokeObjectURL(url);
+        if (errorEl) {
+          errorEl.textContent = 'Unable to prepare the QR image for download.';
+          errorEl.style.display = 'block';
+        }
+      };
+      image.src = url;
+    }
+
+    function openShareQrImagePicker() {
+      var input = document.getElementById('share-qr-image-input');
+      if (input) input.click();
+    }
+
+    function handleShareQrImageSelected(event) {
+      var input = event.target;
+      var file = input.files && input.files[0];
+      var errorEl = document.getElementById('share-qr-error');
+      if (!file) return;
+      if (errorEl) {
+        errorEl.style.display = 'none';
+        errorEl.textContent = '';
+      }
+      if (typeof jsQR === 'undefined') {
+        if (errorEl) {
+          errorEl.textContent = 'QR image decoding is unavailable on this device.';
+          errorEl.style.display = 'block';
+        }
+        input.value = '';
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var image = new Image();
+        image.onload = function() {
+          var maxSide = 2400;
+          var scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+          var context = canvas.getContext('2d', { willReadFrequently: true });
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          var pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+          var result = jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'attemptBoth' });
+          input.value = '';
+          if (!result || !result.data) {
+            if (errorEl) {
+              errorEl.textContent = 'No QR code was found in that image. Choose a clear PTS Connect QR image.';
+              errorEl.style.display = 'block';
+            }
+            return;
+          }
+          importDecodedQrValue(result.data, 'That image does not contain a PTS Connect QR code.');
+        };
+        image.onerror = function() {
+          input.value = '';
+          if (errorEl) {
+            errorEl.textContent = 'Unable to read that image file.';
+            errorEl.style.display = 'block';
+          }
+        };
+        image.src = e.target.result;
+      };
+      reader.onerror = function() {
+        input.value = '';
+        if (errorEl) {
+          errorEl.textContent = 'Unable to read that image file.';
+          errorEl.style.display = 'block';
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
     function scanQrCameraFrame() {
       if (!qrScannerRunning) return;
       var video = document.getElementById('share-scanner-video');
@@ -3870,14 +3999,7 @@ function renderPaxLoadTable() {
         var image = context.getImageData(0, 0, canvas.width, canvas.height);
         var result = jsQR(image.data, image.width, image.height, { inversionAttempts: 'attemptBoth' });
         if (result && result.data) {
-          var shareCode = shareCodeFromScannedValue(result.data);
-          if (shareCode) {
-            stopQrScanner();
-            var modal = document.getElementById('share-modal');
-            if (modal) modal.style.display = 'none';
-            loadShareCode(shareCode);
-            return;
-          }
+          if (importDecodedQrValue(result.data)) return;
           if (status) status.textContent = 'That is not a PTS Connect QR code. Try another code.';
         }
       }
@@ -6420,6 +6542,12 @@ function renderPaxLoadTable() {
       safeOn('share-close-btn', closeShareModal);
       safeOn('share-scan-btn', startQrScanner);
       safeOn('share-stop-scan-btn', stopQrScanner);
+      safeOn('share-download-qr-btn', downloadShareQrImage);
+      safeOn('share-upload-qr-btn', openShareQrImagePicker);
+      (function(){
+        var qrImageInput = document.getElementById('share-qr-image-input');
+        if (qrImageInput) qrImageInput.addEventListener('change', handleShareQrImageSelected);
+      })();
       safeOn('underload-warning-ok',function(){ var m=document.getElementById('underload-warning-modal'); if(m)m.style.display='none'; });
 
       // Close modals on overlay click
