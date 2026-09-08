@@ -2906,6 +2906,35 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       updateHeaderFlightNum();
     }
 
+    function updateUnderloadFromWeights() {
+      var mzfw = parseFloat(state.dep_mzfw);
+      var ezfw = parseFloat(state.dep_ezfw);
+      var azfwRaw = state.dep_azfw;
+      var azfw = (azfwRaw !== undefined && azfwRaw !== null && String(azfwRaw).trim() !== '')
+        ? parseFloat(azfwRaw)
+        : NaN;
+      var underload = NaN;
+
+      if (!isNaN(mzfw) && !isNaN(azfw)) {
+        underload = mzfw - azfw;
+      } else if (!isNaN(mzfw) && !isNaN(ezfw)) {
+        underload = mzfw - ezfw;
+      }
+
+      if (!isNaN(underload)) {
+        underload *= 1000;
+        state.Q31 = Math.round(underload) === underload
+          ? String(underload)
+          : String(Number(underload.toFixed(2)));
+      } else {
+        state.Q31 = '';
+      }
+
+      var underloadEl = document.getElementById('f-dep_underload');
+      if (underloadEl) underloadEl.value = state.Q31;
+      return state.Q31;
+    }
+
     // Autosize textarea to match number of lines only
     function autosizeTextarea(el) {
       if (!el) return;
@@ -3927,11 +3956,12 @@ function renderPaxLoadTable() {
             if(ta&&data[m[id]]) {
               ta.value=data[m[id]];
               // Rebuild the Excel table preview so imported content shows as a table, not plain text
-              try { processPastedData(ta, ta.value); } catch(e) {}
+              try { processPastedData(ta, ta.value, true); } catch(e) {}
             }
           });
         })();
         if (data._images) { pastedImages = data._images; PASTE_IMAGE_IDS.forEach(renderPastedImageGallery); }
+        updateUnderloadFromWeights();
         syncInputsFromState();
         renderActivities();
         renderPaxLoadTable();
@@ -4822,7 +4852,7 @@ function renderPaxLoadTable() {
       pasteTextarea.focus();
     }
     
-    function processPastedData(textarea, data) {
+    function processPastedData(textarea, data, silent) {
       console.log('Processing pasted data, length:', data.length);
       if (!data || !data.trim()) {
         showToast('No data to paste', 'orange');
@@ -4832,21 +4862,26 @@ function renderPaxLoadTable() {
       // Store the raw data in textarea
       textarea.value = data;
       
-      // Parse lines and calculate column widths for auto-fit
-      var lines = data.split('\n').filter(function(line) { return line.trim(); });
+      // Keep every row, column, blank cell, and space so another device reconstructs
+      // the same layout that was originally pasted.
+      var lines = data.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
       console.log('Lines parsed:', lines.length);
       
       var allCells = lines.map(function(line) { return line.split('\t'); });
       var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
       var colWidths = new Array(numCols).fill(80); // Minimum 80px per column
+      function escapeCell(value) {
+        return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
       
       // Calculate max width for each column (monospace ~8px per char + 16px padding)
       allCells.forEach(function(row) {
-        row.forEach(function(cell, idx) {
-          var trimmed = cell.trim() || '&nbsp;';
-          var width = Math.max(80, trimmed.length * 9 + 16); // 9px per char + padding, min 80px
+        for (var idx = 0; idx < numCols; idx++) {
+          var cell = row[idx] || '';
+          var width = Math.max(80, cell.length * 9 + 16); // 9px per char + padding, min 80px
           colWidths[idx] = Math.max(colWidths[idx], width);
-        });
+        }
       });
       
       console.log('Column widths:', colWidths);
@@ -4854,12 +4889,13 @@ function renderPaxLoadTable() {
       var tableHTML = '<table style="width:auto;border-collapse:collapse;font-family:monospace;font-size:13px;line-height:1.5;">';
       
       allCells.forEach(function(row, rowIdx) {
-        tableHTML += '<tr id="itd-tag-card-row-' + rowIdx + '" style="transition:background-color 0.3s ease;">';
-        row.forEach(function(cell, idx) {
-          var cellContent = cell.trim() || '&nbsp;';
-          tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:nowrap;min-width:' + colWidths[idx] + 'px;text-align:left;">' + 
+        tableHTML += '<tr data-pasted-row="' + rowIdx + '" style="transition:background-color 0.3s ease;">';
+        for (var idx = 0; idx < numCols; idx++) {
+          var cell = row[idx] || '';
+          var cellContent = cell === '' ? '&nbsp;' : escapeCell(cell);
+          tableHTML += '<td style="border:1px solid #ccc;padding:8px;white-space:pre;min-width:' + colWidths[idx] + 'px;text-align:left;">' +
             cellContent + '</td>';
-        });
+        }
         tableHTML += '</tr>';
       });
       
@@ -4887,7 +4923,7 @@ function renderPaxLoadTable() {
       var changeEvent = new Event('change', { bubbles: true });
       textarea.dispatchEvent(changeEvent);
       
-      showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
+      if (!silent) showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
     }
 
     // ===========================
@@ -5439,7 +5475,12 @@ function renderPaxLoadTable() {
     // === PRINT / PDF REPORT ===
     function buildPrintReport() {
       var s = state;
-      function v(k){ return (s[k]&&String(s[k]).trim()) ? String(s[k]) : ''; }
+      function escapeReportValue(value) {
+        return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+      function v(k){ return (s[k]&&String(s[k]).trim()) ? escapeReportValue(s[k]) : ''; }
       function numOrZero(x){ return parseInt(x)||0; }
       function row(label,val){ return '<tr><td class="lbl">'+label+'</td><td class="val">'+val+'</td></tr>'; }
 
@@ -5454,34 +5495,35 @@ function renderPaxLoadTable() {
         return '<tr><td class="lbl">'+label+'</td><td class="val">J: '+j+' / W: '+w+' / Y: '+y+' / INF: '+inf+' / Total: '+tot+'</td></tr>';
       }
 
-      // Arrival PTS Fix 7: show target + actual + variance
-      var arrPtsHtml = '';
-      (function(){
-        var bm = (function(str){if(!str)return null;var p=str.split(':');return p.length>=2?parseInt(p[0])*60+parseInt(p[1]):null;})(s.eta);
-        function fmt(m){var hh=((Math.floor(m/60)%24)+24)%24;var mm=((m%60)+60)%60;return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;}
-        function parseTime(str){if(!str||str==='')return null;var p=str.split(':');return p.length>=2?parseInt(p[0])*60+parseInt(p[1]):null;}
-        function fmtVariance(tgtMin, actMin){if(tgtMin===null||actMin===null)return '';var diffMin=actMin-tgtMin;var sign=diffMin>=0?'+':'-';var absMin=Math.abs(diffMin);var h=Math.floor(absMin/60);var m=absMin%60;return sign+(h<10?'0':'')+h+':'+(m<10?'0':'')+m;}
-        arrActivities.forEach(function(a,i){
-          var tgt=(a.offset!==null&&bm!==null)?fmt(bm+a.offset):'';
-          var act=(typeof arrActual!=='undefined'&&arrActual[i])?arrActual[i]:'';
-          var variance=fmtVariance(parseTime(tgt), parseTime(act));
-          arrPtsHtml+='<tr><td class="lbl">'+a.name+'</td><td class="val">Target: '+tgt+' | Actual: '+act+' | Variance: '+variance+'</td></tr>';
+      function activityReportRows(tbodyId, defs, baseKey, shift, actualObj) {
+        var renderedRows = document.querySelectorAll('#' + tbodyId + ' tr');
+        var targets = computeActivityTargets(defs, baseKey, shift, actualObj);
+        var html = '';
+        defs.forEach(function(activity, index) {
+          var cells = renderedRows[index] ? renderedRows[index].querySelectorAll('td') : [];
+          var target = cells.length >= 2
+            ? cells[1].textContent.trim()
+            : (targets[index] === null || targets[index] === undefined ? '\u2014' : fmtMin(targets[index]));
+          var actual = actualObj[index] || '';
+          var variance = cells.length >= 4 ? cells[3].textContent.trim() : '\u2014';
+          html += row(
+            escapeReportValue(activity.name),
+            'Target: ' + escapeReportValue(target) +
+            ' | Actual: ' + escapeReportValue(actual) +
+            ' | Variance: ' + escapeReportValue(variance)
+          );
         });
-      })();
-      // Departure PTS Fix 7: show target + actual + variance
-      var depPtsHtml = '';
-      (function(){
-        var bm = (function(str){if(!str)return null;var p=str.split(':');return p.length>=2?parseInt(p[0])*60+parseInt(p[1]):null;})(s.dep_std);
-        function fmt(m){var hh=((Math.floor(m/60)%24)+24)%24;var mm=((m%60)+60)%60;return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;}
-        function parseTime(str){if(!str||str==='')return null;var p=str.split(':');return p.length>=2?parseInt(p[0])*60+parseInt(p[1]):null;}
-        function fmtVariance(tgtMin, actMin){if(tgtMin===null||actMin===null)return '';var diffMin=actMin-tgtMin;var sign=diffMin>=0?'+':'-';var absMin=Math.abs(diffMin);var h=Math.floor(absMin/60);var m=absMin%60;return sign+(h<10?'0':'')+h+':'+(m<10?'0':'')+m;}
-        depActivities.forEach(function(a,i){
-          var tgt=(a.offset!==null&&bm!==null)?fmt(bm+a.offset):'';
-          var act=(typeof depActual!=='undefined'&&depActual[i])?depActual[i]:'';
-          var variance=fmtVariance(parseTime(tgt), parseTime(act));
-          depPtsHtml+='<tr><td class="lbl">'+a.name+'</td><td class="val">Target: '+tgt+' | Actual: '+act+' | Variance: '+variance+'</td></tr>';
-        });
-      })();
+        return html;
+      }
+
+      var arrPtsHtml = activityReportRows('arr-milestones-a1', arrActivities, 'eta', 0, arrActual);
+      var depPtsHtml = activityReportRows(
+        'dep-milestones-e5',
+        depActivities,
+        'dep_std',
+        computeDepTurnaroundShift(),
+        depActual
+      );
 
       // Textarea content helpers
       function taVal(id){ var el=document.getElementById(id); return el&&el.value.trim()?el.value.trim():''; }
@@ -5629,16 +5671,18 @@ function renderPaxLoadTable() {
         // === Page 1: PTS Data ===
         section('Flight Information',
           row('Flight',v('flight'))+row('Date',v('date'))+row('REGN',v('regn'))+row('Config',v('config'))+
-          row('STA',v('sta'))+row('ETA',v('eta'))+row('ATA',v('ata'))+row('Gate',v('gate'))+row('Carousel',v('carousel'))+
-          row('Weather',v('weather'))+row('Delay Code(s) ex HKG',v('delayCode'))
+          row('STA',v('sta'))+row('ETA',v('eta'))+row('ATA',escapeReportValue(arrActual[0] || s.ata || ''))+
+          row('Gate',v('gate'))+row('Carousel',v('carousel'))+row('Weather',v('weather'))+
+          row('Delay Code(s) ex HKG',v('delayCode'))+row('Flight Status',s._flightCancelled ? 'Cancelled' : 'Active')
         ),
         section('Arrival Crew', row('CN',v('arr_cn'))+row('ISM',v('arr_ism'))),
         section('Arrival Pax',
           (function(){var aj=numOrZero(s.arr_pax_j),aw=numOrZero(s.arr_pax_w),ay=numOrZero(s.arr_pax_y),ai=numOrZero(s.arr_pax_inf);
-            return row('Pax','J: '+aj+' / W: '+aw+' / Y: '+ay+' / INF: '+ai+' / Total: '+(aj+aw+ay));})()
+            return row('Pax','J: '+aj+' / W: '+aw+' / Y: '+ay+' / INF: '+ai+' / Total: '+(aj+aw+ay+ai));})()
         ),
         section('Arrival Special Handling',
-          row('WCHR/S',v('arr_wchr_s'))+row('WCHC',v('arr_wchc'))+row('MAAS',v('arr_maas'))+
+          row('WCHR/S',v('arr_wchr_s'))+row('WCHR/S Details',v('arr_wchr_s_details'))+
+          row('WCHC',v('arr_wchc'))+row('MAAS',v('arr_maas'))+
           row('MEDA',v('arr_meda'))+row('UMNR',v('arr_umnr'))+row('SVIP',v('arr_svip'))+
           row('DEAF',v('arr_deaf'))+row('BLND',v('arr_blnd'))
         ),
@@ -5647,7 +5691,7 @@ function renderPaxLoadTable() {
           row('WS WCH / MAAS',v('ws_wch'))+row('AC WCH / MAAS',v('ac_wch'))
         ),
         section('Baggage',
-        row('Doorside', (v('arr_doorside') && v('arr_doorside')!=='-' ? v('arr_doorside').replace(/\n/g,'<br>') : v('arr_doorside')) )+row('Total Bags',v('arr_total_bags'))+
+        row('Doorside', ((v('arr_doorside') || v('F19')) && (v('arr_doorside') || v('F19'))!=='-' ? (v('arr_doorside') || v('F19')).replace(/\n/g,'<br>') : (v('arr_doorside') || v('F19'))) )+row('Total Bags',v('arr_total_bags'))+
           row('First Bag',v('arr_first_bag'))+row('Last Bag',v('arr_last_bag'))
         ),
         arrPtsHtml ? section('Arrival Precision Timing Schedule', arrPtsHtml) : section('Arrival Precision Timing Schedule', ''),
@@ -5668,13 +5712,19 @@ function renderPaxLoadTable() {
         ),
         section('Defects', row('Defects',v('defects'))),
         section('Remarks', row('Remarks', (v('remarks')!=='' ? String(s.remarks).replace(/</g,'&lt;').replace(/\n/g,'<br>') : ''))),
-        section('Catering Order', row('Catering Order', (v('catering_order')!=='' ? String(s.catering_order).replace(/</g,'&lt;').replace(/\n/g,'<br>') : ''))),
+        section('Catering Order',
+          row('CAT J',v('dep_cat_j'))+row('CAT W',v('dep_cat_w'))+row('CAT Y',v('dep_cat_y'))
+        ),
         section('Capacity',
           row('CAP','J: '+v('cap_j')+' / W: '+v('cap_w')+' / Y: '+v('cap_y'))+
           row('Avail','J: '+v('avail_j')+' / W: '+v('avail_w')+' / Y: '+v('avail_y'))+
           row('Est','J: '+v('est_j')+' / W: '+v('est_w')+' / Y: '+v('est_y'))
         ),
-        section('Pax Loading (Final)',
+        section('Passenger Loading Details',
+          paxRow('Loading',  'load_j','load_w','load_y','load_inf','load_total')+
+          paxRow('Sublo',    'sublo_j','sublo_w','sublo_y','sublo_inf','sublo_total')+
+          paxRow('NET',      'net_j','net_w','net_y','net_inf','net_total')+
+          paxRow('Total',    'total_j','total_w','total_y','total_inf','total_total')+
           paxRow('Final',    'final_j','final_w','final_y','final_inf','final_total')+
           paxRow('Final Rev 1','final_rev1_j','final_rev1_w','final_rev1_y','final_rev1_inf','final_rev1_total')+
           paxRow('Final Rev 2','final_rev2_j','final_rev2_w','final_rev2_y','final_rev2_inf','final_rev2_total')
@@ -5685,6 +5735,7 @@ function renderPaxLoadTable() {
           row('MEDA',v('dep_meda'))+row('DEAF',v('dep_deaf'))+row('BLND',v('dep_blnd'))+row('CHD',v('dep_chd'))
         ),
         section('Pax Category',
+          row('IN/DMP',v('dep_in_dmp'))+row('INF',v('dep_inf'))+
           row('DM/Emer',v('dep_dm_e'))+row('GO/Saph',v('dep_go_s'))+row('SL/Ruby',v('dep_sl_r'))+
           row('CIS',v('dep_cis'))+row('IC',v('dep_ic'))+row('OC',v('dep_oc'))+
           row('JOIN',v('dep_join'))+row('HKG',v('dep_hkg'))
@@ -6126,6 +6177,7 @@ function renderPaxLoadTable() {
         delete lastParsedResult.dep_strl;
         delete lastParsedResult.dep_wch;
         Object.keys(lastParsedResult).forEach(function(k){ if(k in state) state[k]=lastParsedResult[k]||''; });
+        updateUnderloadFromWeights();
         syncInputsFromState(); renderActivities(); renderPaxLoadTable();
         updateArrPaxTotal(); renderSummary(); updateHeaderFlightNum(); updateETDCountdown();
         refreshSummarySpans();
@@ -6301,32 +6353,10 @@ function renderPaxLoadTable() {
         if (key.indexOf('arr_pax') === 0) updateArrPaxTotal();
         if (key === 'eta') renderActivities();
         if (['dep_mzfw','dep_ezfw','dep_azfw'].indexOf(key) >= 0) {
+          updateUnderloadFromWeights();
+          // Re-arm the warning whenever EZFW drops back below MZFW
           var mzfw = parseFloat(state.dep_mzfw);
           var ezfw = parseFloat(state.dep_ezfw);
-          var azfwRaw = state.dep_azfw;
-          var azfw = (azfwRaw !== undefined && azfwRaw !== null && String(azfwRaw).trim() !== '') ? parseFloat(azfwRaw) : NaN;
-          mzfw = isNaN(mzfw) ? NaN : mzfw;
-          ezfw = isNaN(ezfw) ? NaN : ezfw;
-
-          var ul = NaN;
-          // prefer AZFW if provided, otherwise fall back to EZFW
-          if (!isNaN(mzfw) && !isNaN(azfw)) {
-            ul = mzfw - azfw;
-          } else if (!isNaN(mzfw) && !isNaN(ezfw)) {
-            ul = mzfw - ezfw;
-          }
-
-          if (!isNaN(ul)) {
-            ul = ul * 1000;
-            // format to remove trailing .0 when integer
-            var ulStr = (Math.round(ul) === ul) ? String(ul) : String(Number(ul.toFixed(2)));
-            state.Q31 = ulStr;
-          } else {
-            state.Q31 = '';
-          }
-          var ulEl = document.getElementById('f-dep_underload');
-          if (ulEl) ulEl.value = state.Q31;
-          // Re-arm the warning whenever EZFW drops back below MZFW
           if (isNaN(ezfw) || isNaN(mzfw) || ezfw < mzfw) window._underloadWarnShown = false;
         }
         if (key === 'dep_std') { renderActivities(); updateETDCountdown(); }
@@ -6362,11 +6392,15 @@ function renderPaxLoadTable() {
                    'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos'};
           Object.keys(m).forEach(function(id){
             var ta=document.getElementById(id);
-            if(ta&&restored[m[id]]) ta.value=restored[m[id]];
+            if(ta&&restored[m[id]]) {
+              ta.value=restored[m[id]];
+              try { processPastedData(ta, ta.value, true); } catch(e) {}
+            }
           });
         })();
         if (restored._images) pastedImages = restored._images;
         if (restored._agent_pos_pdf) showAgentPosPdf(restored._agent_pos_pdf);
+        updateUnderloadFromWeights();
         syncInputsFromState();
         renderActivities();
         renderPaxLoadTable();
@@ -6462,7 +6496,7 @@ function renderPaxLoadTable() {
         var v=''; try{v=localStorage.getItem('pts_arr_disruption_ppm')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_arr_disruption_ppm_locked')||'0';}catch(e){}
         var ta=document.getElementById('arr-disruption-ppm-textarea');
-        if(ta&&v) { ta.value=v; try { processPastedData(ta, v); } catch(e) {} }
+        if(ta&&v) { ta.value=v; try { processPastedData(ta, v, true); } catch(e) {} }
         if(l==='1'&&v) lockArrDisruptionPPM();
       })();
 
