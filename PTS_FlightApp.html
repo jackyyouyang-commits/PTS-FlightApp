@@ -1724,7 +1724,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     <!-- CONNECT SUCCESS MODAL -->
     <div id="connect-success-modal" class="modal-overlay" style="display:none;z-index:220;">
       <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
-        <div style="font-size:15px;font-weight:700;color:#1a6e4e;">Flight Data Successfully Retrieved</div>
+        <div id="connect-success-title" style="font-size:15px;font-weight:700;color:#1a6e4e;">Flight Data Successfully Retrieved</div>
+        <div id="connect-save-warning" role="alert" style="display:none;margin-top:12px;font-size:13px;color:#991B1B;">Flight data is loaded but could not be saved on this device. Keep this page open and retry Save after device storage is available.</div>
         <div style="margin-top:18px;display:flex;justify-content:center;">
           <button id="connect-success-ok" style="background:#1a6e4e;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">OK</button>
         </div>
@@ -1867,6 +1868,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <button data-id="124" id="share-modal-close" class="p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"><i data-id="125" data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
         </div>
         <p data-id="126" class="text-sm text-cx-grey mb-3 text-center">QR Connect includes all flight fields, operational tabs, formatting, images, and imported PDFs.</p>
+        <p class="text-sm text-cx-grey mb-3 text-center">On the receiving iPad, use this app's Scan QR Code to Connect button below, not the Camera app. No file upload is needed.</p>
         <div id="share-qr-output" style="display:flex;justify-content:center;align-items:center;min-height:190px;padding:12px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;"></div>
         <div id="share-qr-sequence-status" style="display:none;margin-top:10px;color:#1e3a5f;background:#DBEAFE;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;"></div>
         <div id="share-scanner" style="display:none;">
@@ -3739,8 +3741,14 @@ function renderPaxLoadTable() {
     // This lets a user paste a screenshot (e.g. from Snipping Tool) into the same box;
     // the image is captured as a data-URL and shown in a small gallery under the textarea,
     // and travels with saveToLocal/generateShareCode just like the textarea's text.
-    var PASTE_IMAGE_IDS = ['staff-acc-textarea','arr-ptm-textarea','arr-bnl-textarea','arr-disruption-ppm-textarea','itd-tag-card-textarea','oir-textarea',
-      'dep-lir-textarea','crew-textarea','dep-crew-textarea','dep-gen-dec-textarea','agent-pos-textarea','ramp-roster-textarea'];
+    var OPERATIONAL_TEXT_FIELDS = {
+      'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm','arr-bnl-textarea':'_arr_bnl',
+      'arr-disruption-ppm-textarea':'_arr_disruption_ppm','itd-tag-card-textarea':'_itd_tag_card',
+      'oir-textarea':'_oir','dep-lir-textarea':'_dep_lir','crew-textarea':'_crew',
+      'dep-crew-textarea':'_dep_crew','dep-gen-dec-textarea':'_dep_gen_dec',
+      'agent-pos-textarea':'_agent_pos','ramp-roster-textarea':'_ramp_roster'
+    };
+    var PASTE_IMAGE_IDS = Object.keys(OPERATIONAL_TEXT_FIELDS);
     var pastedImages = {}; // textareaId -> array of image data-URLs
     var contentRichHtml = {}; // textareaId -> sanitized rich clipboard HTML
 
@@ -4021,19 +4029,10 @@ function renderPaxLoadTable() {
 
     function buildLocalSavePayload() {
       var payload = { state: state, arrActual: arrActual, depActual: depActual, savedAt: new Date().toISOString() };
-      payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
-      payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
-      payload._arr_bnl   = (document.getElementById('arr-bnl-textarea')||{}).value||'';
+      Object.keys(OPERATIONAL_TEXT_FIELDS).forEach(function(id) {
+        payload[OPERATIONAL_TEXT_FIELDS[id]] = (document.getElementById(id)||{}).value||'';
+      });
       payload._rich_html = contentRichHtml;
-      payload._arr_disruption_ppm = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
-      payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
-      payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
-      payload._dep_lir   = (document.getElementById('dep-lir-textarea')||{}).value||'';
-      payload._crew      = (document.getElementById('crew-textarea')||{}).value||'';
-      payload._dep_crew  = (document.getElementById('dep-crew-textarea')||{}).value||'';
-      payload._dep_gen_dec = (document.getElementById('dep-gen-dec-textarea')||{}).value||'';
-      payload._agent_pos   = (document.getElementById('agent-pos-textarea')||{}).value||'';
-      payload._ramp_roster = (document.getElementById('ramp-roster-textarea')||{}).value||'';
       payload._images = pastedImages;
       payload._agent_pos_pdf = agentPosPdfData || '';
       payload._dep_gen_dec_pdf = contentPdfImports.depGenDec.data || '';
@@ -4118,12 +4117,30 @@ function renderPaxLoadTable() {
     var shareQrIndex = 0;
     var shareQrTimer = 0;
     var receivedQrTransfers = Object.create(null);
+    var CONNECT_QR_CHUNK_SIZE = 700;
+    var CONNECT_QR_MAX_PARTS = 10000;
 
     function stopShareQrSequence() {
       if (shareQrTimer) {
         clearInterval(shareQrTimer);
         shareQrTimer = 0;
       }
+    }
+
+    function startShareQrSequence() {
+      stopShareQrSequence();
+      if (shareQrValues.length > 1) {
+        shareQrTimer = setInterval(function() {
+          shareQrIndex = (shareQrIndex + 1) % shareQrValues.length;
+          renderShareQrFrame();
+        }, 1100);
+      }
+    }
+
+    function returnToShareQrSequence() {
+      stopQrScanner();
+      renderShareQrFrame();
+      startShareQrSequence();
     }
 
     function stopQrScanner() {
@@ -4203,7 +4220,7 @@ function renderPaxLoadTable() {
       var index = parseInt(fields[1], 36);
       var total = parseInt(fields[2], 36);
       if (!fields[0] || !fields[3] || !Number.isFinite(index) || !Number.isFinite(total) ||
-          index < 1 || total < 2 || index > total || total > 10000 || fields[3].length > 1000) return null;
+          index < 1 || total < 2 || index > total || total > CONNECT_QR_MAX_PARTS || fields[3].length > 1000) return null;
       return { id: fields[0], index: index, total: total, data: fields[3] };
     }
 
@@ -4231,9 +4248,7 @@ function renderPaxLoadTable() {
         return { handled: true, complete: false };
       }
       delete receivedQrTransfers[part.id];
-      stopQrScanner();
-      var modal = document.getElementById('share-modal');
-      if (modal) modal.style.display = 'none';
+      closeShareModal();
       return { handled: true, complete: loadShareCode('lz:' + compressed) };
     }
 
@@ -4249,9 +4264,7 @@ function renderPaxLoadTable() {
         }
         return false;
       }
-      stopQrScanner();
-      var modal = document.getElementById('share-modal');
-      if (modal) modal.style.display = 'none';
+      closeShareModal();
       return loadShareCode(shareCode);
     }
 
@@ -4413,7 +4426,6 @@ function renderPaxLoadTable() {
     }
 
     function startQrScanner() {
-      stopShareQrSequence();
       receivedQrTransfers = Object.create(null);
       var errorEl = document.getElementById('share-qr-error');
       var status = document.getElementById('share-scanner-status');
@@ -4431,6 +4443,7 @@ function renderPaxLoadTable() {
         return;
       }
 
+      stopShareQrSequence();
       var scanner = document.getElementById('share-scanner');
       var qrOutput = document.getElementById('share-qr-output');
       var sequenceStatus = document.getElementById('share-qr-sequence-status');
@@ -4473,7 +4486,7 @@ function renderPaxLoadTable() {
         scanQrCameraFrame();
       }).catch(function(error) {
         if (requestId !== qrScannerRequestId) return;
-        stopQrScanner();
+        returnToShareQrSequence();
         if (errorEl) {
           errorEl.textContent = error && error.name === 'NotAllowedError'
             ? 'Camera access was denied. Allow camera access in your browser settings and try again.'
@@ -4504,24 +4517,12 @@ function renderPaxLoadTable() {
         depActual: depActual,
         _replace_state: !!compact
       };
-      function addText(key, textareaId) {
+      Object.keys(OPERATIONAL_TEXT_FIELDS).forEach(function(textareaId) {
         var value = (document.getElementById(textareaId) || {}).value || '';
-        if (!compact || value) payload[key] = value;
-      }
-      addText('_staff_acc', 'staff-acc-textarea');
-      addText('_arr_ptm', 'arr-ptm-textarea');
-      addText('_arr_bnl', 'arr-bnl-textarea');
+        if (!compact || value) payload[OPERATIONAL_TEXT_FIELDS[textareaId]] = value;
+      });
       if (!compact || Object.keys(richPayload).length) payload._rich_html = richPayload;
       if (!compact) payload._arr_bnl_html = richPayload['arr-bnl-textarea'] || '';
-      addText('_arr_disruption_ppm', 'arr-disruption-ppm-textarea');
-      addText('_oir', 'oir-textarea');
-      addText('_itd_tag_card', 'itd-tag-card-textarea');
-      addText('_dep_lir', 'dep-lir-textarea');
-      addText('_crew', 'crew-textarea');
-      addText('_dep_crew', 'dep-crew-textarea');
-      addText('_dep_gen_dec', 'dep-gen-dec-textarea');
-      addText('_agent_pos', 'agent-pos-textarea');
-      addText('_ramp_roster', 'ramp-roster-textarea');
       var imagePayload = pastedImages;
       if (compact) {
         imagePayload = {};
@@ -4588,11 +4589,6 @@ function renderPaxLoadTable() {
           if (!json) throw new Error('Invalid transfer file');
           var payload = JSON.parse(json);
           applyConnectPayload(payload, 'Transfer file loaded!');
-          try {
-            localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(Object.assign({}, payload, { savedAt: new Date().toISOString() })));
-          } catch(storageError) {
-            showToast('Data loaded; device storage is full, so keep the transfer file.', 'orange');
-          }
           closeShareModal();
         } catch(err) {
           if (errorEl) {
@@ -4654,15 +4650,8 @@ function renderPaxLoadTable() {
           ? window.location.origin + window.location.pathname
           : 'https://jackyyouyang-commits.github.io/PTS-FlightApp/PTS_FlightApp.html';
         var singleUrl = baseUrl + '#pts2=' + compressed;
-        var singleQr = qrcode(0, 'L');
-        var useMultiple = false;
-        try {
-          singleQr.addData(singleUrl, 'Byte');
-          singleQr.make();
-        } catch(singleError) {
-          if (String(singleError).indexOf('code length overflow') < 0) throw singleError;
-          useMultiple = true;
-        }
+        // Keep each frame camera-friendly instead of filling a maximum-density QR.
+        var useMultiple = compressed.length > CONNECT_QR_CHUNK_SIZE;
 
         shareQrValues = [];
         shareQrIndex = 0;
@@ -4670,8 +4659,9 @@ function renderPaxLoadTable() {
           shareQrValues.push(singleUrl);
         } else {
           var transferId = connectPayloadId(compressed);
-          var chunkSize = 700;
+          var chunkSize = CONNECT_QR_CHUNK_SIZE;
           var total = Math.ceil(compressed.length / chunkSize);
+          if (total > CONNECT_QR_MAX_PARTS) throw new Error('Flight data exceeds the QR transfer capacity. Reduce attachment sizes and try again.');
           for (var i = 0; i < total; i++) {
             shareQrValues.push(
               baseUrl + '#ptsm=' + transferId + '.' + (i + 1).toString(36) + '.' +
@@ -4696,12 +4686,7 @@ function renderPaxLoadTable() {
         if (downloadQrButton) downloadQrButton.style.display = shareQrValues.length > 1 ? 'none' : '';
 
         renderShareQrFrame();
-        if (shareQrValues.length > 1) {
-          shareQrTimer = setInterval(function() {
-            shareQrIndex = (shareQrIndex + 1) % shareQrValues.length;
-            renderShareQrFrame();
-          }, 1100);
-        }
+        startShareQrSequence();
         var modal = document.getElementById('share-modal');
         if (modal) modal.style.display = 'flex';
       } catch(e) {
@@ -4713,7 +4698,7 @@ function renderPaxLoadTable() {
         if (qrEl) qrEl.innerHTML = '';
         if (sequenceStatus) sequenceStatus.style.display = 'none';
         if (errorEl) {
-          errorEl.textContent = 'Unable to generate the QR transfer on this device.';
+          errorEl.textContent = 'Unable to generate the QR transfer on this device: ' + e.message;
           errorEl.style.display = 'block';
         }
         if (modal) modal.style.display = 'flex';
@@ -4741,19 +4726,13 @@ function renderPaxLoadTable() {
       if (data.arrActual) Object.assign(arrActual, data.arrActual);
       if (data.depActual) Object.assign(depActual, data.depActual);
 
-      var textFields = {
-        'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm','arr-bnl-textarea':'_arr_bnl',
-        'arr-disruption-ppm-textarea':'_arr_disruption_ppm','oir-textarea':'_oir',
-        'itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir','crew-textarea':'_crew',
-        'dep-crew-textarea':'_dep_crew','dep-gen-dec-textarea':'_dep_gen_dec',
-        'agent-pos-textarea':'_agent_pos','ramp-roster-textarea':'_ramp_roster'
-      };
+      var textFields = OPERATIONAL_TEXT_FIELDS;
       Object.keys(textFields).forEach(function(id) {
         var ta = document.getElementById(id);
         if (!ta) return;
         ta.value = data[textFields[id]] || '';
         if (ta.value) {
-          try { processPastedData(ta, ta.value, true); } catch(e) {}
+          processPastedData(ta, ta.value, true);
         } else {
           var preview = document.getElementById(id + '-preview');
           if (preview) {
@@ -4792,11 +4771,19 @@ function renderPaxLoadTable() {
       refreshSummarySpans();
       refreshFinalLoading();
       lockFields();
+      var saved = persistCompleteFlight(true);
       if (showRetrievedModal) {
+        var title = document.getElementById('connect-success-title');
+        var warning = document.getElementById('connect-save-warning');
+        if (title) {
+          title.textContent = saved ? 'Flight Data Successfully Retrieved' : 'Flight Data Retrieved - Not Saved';
+          title.style.color = saved ? '#1a6e4e' : '#991B1B';
+        }
+        if (warning) warning.style.display = saved ? 'none' : 'block';
         var successModal = document.getElementById('connect-success-modal');
         if (successModal) successModal.style.display = 'flex';
       } else {
-        showToast(successMessage || 'Shared flight loaded!', 'green');
+        showToast(saved ? (successMessage || 'Shared flight loaded!') : 'Flight data loaded but not saved. Keep this page open and retry Save.', saved ? 'green' : 'orange');
       }
       return true;
     }
@@ -4815,7 +4802,7 @@ function renderPaxLoadTable() {
         var data = JSON.parse(json);
         return applyConnectPayload(data, '', true);
       } catch(e) {
-        showToast('Invalid share code', 'red');
+        showToast('Unable to retrieve flight data: ' + e.message, 'red');
         return false;
       }
     }
@@ -7469,7 +7456,7 @@ function renderPaxLoadTable() {
       safeOn('share-modal-close', closeShareModal);
       safeOn('share-close-btn', closeShareModal);
       safeOn('share-scan-btn', startQrScanner);
-      safeOn('share-stop-scan-btn', stopQrScanner);
+      safeOn('share-stop-scan-btn', returnToShareQrSequence);
       safeOn('share-download-qr-btn', downloadShareQrImage);
       safeOn('share-upload-qr-btn', openShareQrImagePicker);
       safeOn('share-download-data-btn', downloadConnectDataFile);
@@ -7673,7 +7660,6 @@ function renderPaxLoadTable() {
       // Auto-import shared data from a scanned QR URL (legacy share links still work).
       var hashCode = getShareCodeFromHash();
       if (hashCode && loadShareCode(hashCode)) {
-        try { saveToLocal(); } catch(e) {}
         try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch(e) {}
       } else {
       var restored = restoreFromLocal();
@@ -7681,11 +7667,7 @@ function renderPaxLoadTable() {
         updateLastUpdatedDisplay(restored.savedAt);
         // Restore paste-tab textarea content from local storage payload
         (function(){
-          var m = {'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm','arr-bnl-textarea':'_arr_bnl','arr-disruption-ppm-textarea':'_arr_disruption_ppm',
-                   'oir-textarea':'_oir','itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir',
-                   'crew-textarea':'_crew','dep-crew-textarea':'_dep_crew',
-                   'dep-gen-dec-textarea':'_dep_gen_dec','agent-pos-textarea':'_agent_pos',
-                   'ramp-roster-textarea':'_ramp_roster'};
+          var m = OPERATIONAL_TEXT_FIELDS;
           Object.keys(m).forEach(function(id){
             var ta=document.getElementById(id);
             if(ta&&restored[m[id]]) {
@@ -7750,52 +7732,57 @@ function renderPaxLoadTable() {
         setTimeout(function(){ if(typeof lucide!=='undefined') lucide.createIcons(); }, 500);
       }
 
+      // A complete snapshot is authoritative, including intentionally empty tabs.
+      function shouldRestoreStandaloneContent(key) {
+        return !hashCode && (!restored || !Object.prototype.hasOwnProperty.call(restored, key));
+      }
+
       // Restore OIR
       if (!hashCode) (function(){
         var oirVal = ''; try { oirVal = localStorage.getItem('pts_oir')||''; } catch(e){}
         var oirLocked = ''; try { oirLocked = localStorage.getItem('pts_oir_locked')||'0'; } catch(e){}
-        var ta = document.getElementById('oir-textarea'); if(ta && oirVal) ta.value = oirVal;
-        if (oirLocked === '1' && oirVal) lockOIR();
+        var ta = document.getElementById('oir-textarea'); if(ta && oirVal && shouldRestoreStandaloneContent('_oir')) ta.value = oirVal;
+        if (oirLocked === '1' && ta && ta.value) lockOIR();
       })();
 
       // Restore Crew List
       if (!hashCode) (function(){
         var crewVal = ''; try { crewVal = localStorage.getItem('pts_crew')||''; } catch(e){}
         var crewLocked = ''; try { crewLocked = localStorage.getItem('pts_crew_locked')||'0'; } catch(e){}
-        var ta = document.getElementById('crew-textarea'); if(ta && crewVal) ta.value = crewVal;
-        if (crewLocked === '1' && crewVal) lockCrew();
+        var ta = document.getElementById('crew-textarea'); if(ta && crewVal && shouldRestoreStandaloneContent('_crew')) ta.value = crewVal;
+        if (crewLocked === '1' && ta && ta.value) lockCrew();
       })();
 
       // Restore Departure Crew List
       if (!hashCode) (function(){
         var v=''; try{v=localStorage.getItem('pts_dep_crew')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_dep_crew_locked')||'0';}catch(e){}
-        var ta=document.getElementById('dep-crew-textarea'); if(ta&&v) ta.value=v;
-        if(l==='1'&&v) lockDepCrew();
+        var ta=document.getElementById('dep-crew-textarea'); if(ta&&v&&shouldRestoreStandaloneContent('_dep_crew')) ta.value=v;
+        if(l==='1'&&ta&&ta.value) lockDepCrew();
       })();
 
       // Restore Staff Acceptance
       if (!hashCode) (function(){
         var v=''; try{v=localStorage.getItem('pts_staff_acc')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_staff_acc_locked')||'0';}catch(e){}
-        var ta=document.getElementById('staff-acc-textarea'); if(ta&&v) ta.value=v;
-        if(l==='1'&&v) lockStaffAcc();
+        var ta=document.getElementById('staff-acc-textarea'); if(ta&&v&&shouldRestoreStandaloneContent('_staff_acc')) ta.value=v;
+        if(l==='1'&&ta&&ta.value) lockStaffAcc();
       })();
 
       // Restore Arrival PTM
       if (!hashCode) (function(){
         var v=''; try{v=localStorage.getItem('pts_arr_ptm')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_arr_ptm_locked')||'0';}catch(e){}
-        var ta=document.getElementById('arr-ptm-textarea'); if(ta&&v) ta.value=v;
-        if(l==='1'&&v) lockArrPTM();
+        var ta=document.getElementById('arr-ptm-textarea'); if(ta&&v&&shouldRestoreStandaloneContent('_arr_ptm')) ta.value=v;
+        if(l==='1'&&ta&&ta.value) lockArrPTM();
       })();
 
       // Restore Arrival BNL
       if (!hashCode) (function(){
         var v=''; try{v=localStorage.getItem('pts_arr_bnl')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_arr_bnl_locked')||'0';}catch(e){}
-        var ta=document.getElementById('arr-bnl-textarea'); if(ta&&v) ta.value=v;
-        if(l==='1'&&v) lockArrBNL();
+        var ta=document.getElementById('arr-bnl-textarea'); if(ta&&v&&shouldRestoreStandaloneContent('_arr_bnl')) ta.value=v;
+        if(l==='1'&&ta&&ta.value) lockArrBNL();
       })();
 
       // Restore Arrival Disruption PPM
@@ -7803,8 +7790,8 @@ function renderPaxLoadTable() {
         var v=''; try{v=localStorage.getItem('pts_arr_disruption_ppm')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_arr_disruption_ppm_locked')||'0';}catch(e){}
         var ta=document.getElementById('arr-disruption-ppm-textarea');
-        if(ta&&v) { ta.value=v; try { processPastedData(ta, v, true); } catch(e) {} }
-        if(l==='1'&&v) lockArrDisruptionPPM();
+        if(ta&&v&&shouldRestoreStandaloneContent('_arr_disruption_ppm')) { ta.value=v; try { processPastedData(ta, v, true); } catch(e) {} }
+        if(l==='1'&&ta&&ta.value) lockArrDisruptionPPM();
       })();
 
       // Restore DEP LIR
@@ -7812,8 +7799,8 @@ function renderPaxLoadTable() {
         var v=''; try{v=localStorage.getItem('pts_dep_lir')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_dep_lir_locked')||'0';}catch(e){}
         var ta=document.getElementById('dep-lir-textarea');
-        if(ta&&v) { ta.value=v; try { processPastedData(ta, v, true); } catch(e) {} }
-        if(l==='1'&&v) lockDepLIR();
+        if(ta&&v&&shouldRestoreStandaloneContent('_dep_lir')) { ta.value=v; try { processPastedData(ta, v, true); } catch(e) {} }
+        if(l==='1'&&ta&&ta.value) lockDepLIR();
       })();
 
       // Restore Ramp Roster
@@ -7821,8 +7808,8 @@ function renderPaxLoadTable() {
         var v=''; try{v=localStorage.getItem('pts_ramp_roster')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_ramp_roster_locked')||'0';}catch(e){}
         var ta=document.getElementById('ramp-roster-textarea');
-        if(ta&&v) { ta.value=v; try { processPastedData(ta, v, true); } catch(e) {} }
-        if(l==='1'&&v) lockRampRoster();
+        if(ta&&v&&shouldRestoreStandaloneContent('_ramp_roster')) { ta.value=v; try { processPastedData(ta, v, true); } catch(e) {} }
+        if(l==='1'&&ta&&ta.value) lockRampRoster();
       })();
 
       if (!hashCode) {
@@ -7834,9 +7821,9 @@ function renderPaxLoadTable() {
           standaloneAgentPosPdf = localStorage.getItem('pts_agent_pos_pdf') || '';
           standaloneRampPdf = localStorage.getItem('pts_ramp_roster_pdf') || '';
         } catch(e) {}
-        if (!contentPdfImports.depGenDec.data && standaloneDepGenPdf) showContentPdf('depGenDec', standaloneDepGenPdf);
-        if (!agentPosPdfData && standaloneAgentPosPdf) showAgentPosPdf(standaloneAgentPosPdf);
-        if (!contentPdfImports.rampRoster.data && standaloneRampPdf) showContentPdf('rampRoster', standaloneRampPdf);
+        if (shouldRestoreStandaloneContent('_dep_gen_dec_pdf') && !contentPdfImports.depGenDec.data && standaloneDepGenPdf) showContentPdf('depGenDec', standaloneDepGenPdf);
+        if (shouldRestoreStandaloneContent('_agent_pos_pdf') && !agentPosPdfData && standaloneAgentPosPdf) showAgentPosPdf(standaloneAgentPosPdf);
+        if (shouldRestoreStandaloneContent('_ramp_roster_pdf') && !contentPdfImports.rampRoster.data && standaloneRampPdf) showContentPdf('rampRoster', standaloneRampPdf);
         [
           ['itd-tag-card-textarea', 'itd-tag-card-lock-badge'],
           ['dep-gen-dec-textarea', 'dep-gen-dec-lock-badge'],
@@ -7850,14 +7837,14 @@ function renderPaxLoadTable() {
             value = localStorage.getItem(textContentStorageKey(textareaId)) || '';
             locked = localStorage.getItem(textContentStorageKey(textareaId) + '_locked') || '0';
           } catch(e) {}
-          if (ta && !ta.value && value) {
+          if (ta && !ta.value && value && shouldRestoreStandaloneContent(OPERATIONAL_TEXT_FIELDS[textareaId])) {
             ta.value = value;
             try { processPastedData(ta, value, true); } catch(e) {}
           }
-          if (locked === '1' && (value || (ta && ta.value))) setSimpleContentLock(textareaId, item[1], true);
+          if (locked === '1' && ta && ta.value) setSimpleContentLock(textareaId, item[1], true);
         });
         PASTE_IMAGE_IDS.forEach(function(textareaId) {
-          if (contentRichHtml[textareaId]) return;
+          if (!shouldRestoreStandaloneContent('_rich_html') || contentRichHtml[textareaId]) return;
           var html = '';
           try { html = localStorage.getItem(richContentStorageKey(textareaId)) || ''; } catch(e) {}
           if (html) {
