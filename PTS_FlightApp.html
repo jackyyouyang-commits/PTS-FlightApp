@@ -5224,7 +5224,18 @@ function renderPaxLoadTable() {
           return;
         }
         var diffSec = Math.round((etdTargetMs - nowMs)/1000);
-        var departureTimeHtml = '<span style="color:#fff;">Departs at:</span> <span style="color:#fff">' + departsAtStr() + '</span>';
+        // A shifted/manual ETD later than STD is highlighted, but the departure time itself
+        // remains steady. Only countdown elements may use the blinking treatment.
+        var atdLateBy = null;
+        if (depShiftForEtd > 0) {
+          atdLateBy = depShiftForEtd;
+        } else if (stdMin != null && etdMin != null) {
+          var etdDifference = etdMin - stdMin;
+          if (etdDifference < -720) etdDifference += 1440;
+          if (etdDifference > 0) atdLateBy = etdDifference;
+        }
+        var departureTimeColor = atdLateBy !== null ? '#FCA5A5' : '#fff';
+        var departureTimeHtml = '<span style="color:' + departureTimeColor + ';">Departs at: ' + departsAtStr() + '</span>';
 
         if (diffSec < 0) {
           var overdueCountdownHtml = '<br><span class="blink-countdown" style="color:#FCA5A5;">ETD +' + fmtFromSec(Math.abs(diffSec)) + '</span>';
@@ -5246,14 +5257,6 @@ function renderPaxLoadTable() {
         // Disruption: Delay whenever the new ATD target is later than the STD. The turnaround
         // compression shift already measures how far the schedule pushed out (handles
         // post-midnight ATD), and the field ETD > STD covers manual delays.
-        var atdLateBy = null;
-        if (depShiftForEtd > 0) {
-          atdLateBy = depShiftForEtd;
-        } else if (stdMin != null && etdMin != null) {
-          var ed = etdMin - stdMin;
-          if (ed < -720) ed += 1440; // post-midnight ETD
-          if (ed > 0) atdLateBy = ed;
-        }
         if (atdLateBy !== null) {
           delayStr = '<br><span style="font-size:0.75em;opacity:0.9;">Disruption: Delay</span>';
           el.style.color = '#FCA5A5';
