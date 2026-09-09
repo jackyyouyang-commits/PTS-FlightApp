@@ -378,11 +378,18 @@ document.addEventListener('DOMContentLoaded', function() {
         display: flex; align-items: center; gap: 8px;
       }
 
-      /* Modal variant: single-line notices, shrunk to fit the dialog width. */
+      /* Modal notices wrap within narrow phone dialogs instead of overflowing. */
       .notice-card-compact {
         font-size: 12px;
         padding: 10px 12px;
-        white-space: nowrap;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: normal;
+        line-height: 1.4;
+        text-align: center;
         justify-content: center;
       }
 
