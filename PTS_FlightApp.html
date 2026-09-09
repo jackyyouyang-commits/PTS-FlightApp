@@ -4745,7 +4745,7 @@ function renderPaxLoadTable() {
       if (sequenceStatus) {
         sequenceStatus.style.display = 'block';
         sequenceStatus.textContent = shareQrValues.length === 1
-          ? 'QR 1 of 1 - all current data fits in one code; no cycling needed'
+          ? 'QR 1 of 1'
           : 'QR part ' + (shareQrIndex + 1) + ' of ' + shareQrValues.length;
       }
     }
