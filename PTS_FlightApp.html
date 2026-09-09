@@ -5219,7 +5219,7 @@ function renderPaxLoadTable() {
         // Once ATD (idx 25) is logged the aircraft has departed - stop the countdown
         if (depActual && depActual[25]) { el.innerHTML = '<span style="color:#fff;">Departed</span>' + headerDisruptionStr + etaLine; el.style.color = '#fff'; return; }
         if (!etdTargetMs) {
-          el.innerHTML = '<span style="color:#fff;">Departs at: --:--</span><br><span style="font-size:0.75em;opacity:0.9;color:#fff;">ETD --:--:--</span>' + etaLine;
+          el.innerHTML = '<span style="color:#fff;">Departs at: --:--</span><br><span style="font-size:0.75em;opacity:0.9;color:#fff;">ETD in --:--:--</span>' + etaLine;
           el.style.color = '#fff';
           return;
         }
@@ -5251,7 +5251,7 @@ function renderPaxLoadTable() {
           el.style.color = '#fff';
           return;
         }
-        var countdownStr = departureTimeHtml + '<br><span style="font-size:0.75em;opacity:0.9;color:#fff;">ETD -' + fmtFromSec(diffSec) + '</span>';
+        var countdownStr = departureTimeHtml + '<br><span style="font-size:0.75em;opacity:0.9;color:#fff;">ETD in ' + fmtFromSec(diffSec) + '</span>';
         var delayStr = '';
 
         // Disruption: Delay whenever the new ATD target is later than the STD. The turnaround
