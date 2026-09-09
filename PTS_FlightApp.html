@@ -261,8 +261,17 @@ document.addEventListener('DOMContentLoaded', function() {
         width: 26px; height: 26px; font-size: 18px; cursor: pointer;
         display: inline-flex; align-items: center; justify-content: center;
         padding: 0; line-height: 1; flex-shrink: 0;
+        user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
       }
       .act-del-btn:hover { background: #B91C1C; }
+      .act-del-btn:focus-visible { outline: 3px solid #F59E0B; outline-offset: 2px; }
+      .act-del-btn, .logged-time { position: relative; overflow: hidden; }
+      .activity-delete-holding::after {
+        content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.35);
+        pointer-events: none; transform-origin: left;
+        animation: activity-delete-progress var(--delete-hold-duration, 1000ms) linear forwards;
+      }
+      @keyframes activity-delete-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
       .bottom-tab {
         flex: 1 0 auto;
@@ -1867,8 +1876,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <h2 data-id="123" class="text-lg font-bold text-cx-teal-dark">Connect</h2>
           <button data-id="124" id="share-modal-close" class="p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"><i data-id="125" data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
         </div>
-        <p data-id="126" class="text-sm text-cx-grey mb-3 text-center">QR Connect includes all flight fields, operational tabs, formatting, images, and imported PDFs.</p>
-        <p class="text-sm text-cx-grey mb-3 text-center">Laptop: leave the QR code displayed. Receiving iPad: use Scan QR Code to Connect below. The laptop does not need a camera.</p>
         <div id="share-content-summary" role="status" style="margin-bottom:12px;padding:8px 10px;border-radius:8px;background:#F3F4F6;color:#374151;font-size:13px;text-align:center;"></div>
         <div id="share-qr-output" style="display:flex;justify-content:center;align-items:center;min-height:190px;padding:12px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;"></div>
         <div id="share-qr-sequence-status" style="display:none;margin-top:10px;color:#1e3a5f;background:#DBEAFE;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;"></div>
@@ -3038,24 +3045,91 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       updateETDCountdown();
     }
 
+    var ACTIVITY_DELETE_HOLD_MS = 1000;
     var lpTimer = null;
     var lpFired = false;
+    var activityDeleteHold = null;
 
-    function handlePointerDown(type, idx) {
+    function handlePointerDown(type, idx, button, event) {
+      handlePointerUp();
       lpFired = false;
+      var actual = type === 'arr' ? arrActual : depActual;
+      var logged = actual[idx];
+      if (!logged) return;
+      var hold = {
+        button: button, pointerId: event.pointerId, key: event.key,
+        x: event.clientX, y: event.clientY
+      };
+      activityDeleteHold = hold;
+      button.style.setProperty('--delete-hold-duration', ACTIVITY_DELETE_HOLD_MS + 'ms');
+      button.classList.add('activity-delete-holding');
       lpTimer = setTimeout(function() {
+        if (activityDeleteHold !== hold) return;
+        var canDelete = button.isConnected && button.getClientRects().length > 0 &&
+          document.visibilityState === 'visible' && actual[idx] === logged;
+        handlePointerUp();
+        if (!canDelete) return;
         lpFired = true;
         resetTime(type, idx);
-      }, 600);
+      }, ACTIVITY_DELETE_HOLD_MS);
     }
     function handlePointerUp() {
       if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+      if (activityDeleteHold) activityDeleteHold.button.classList.remove('activity-delete-holding');
+      activityDeleteHold = null;
     }
     function handleClick(type, idx) {
       if (lpFired) { lpFired = false; return; }
       var logged = (type === 'arr') ? arrActual[idx] : depActual[idx];
       if (!logged) logTime(type, idx);
     }
+
+    function attachActivityDeleteHold(button) {
+      var type = button.dataset.msType;
+      var idx = parseInt(button.dataset.msIdx, 10);
+      button.addEventListener('pointerdown', function(e) {
+        if (e.button !== 0 || e.isPrimary === false) { handlePointerUp(); return; }
+        e.preventDefault();
+        e.stopPropagation();
+        handlePointerDown(type, idx, button, e);
+      });
+      button.addEventListener('pointerleave', handlePointerUp);
+      button.addEventListener('lostpointercapture', handlePointerUp);
+      button.addEventListener('blur', handlePointerUp);
+      button.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+      button.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { handlePointerUp(); return; }
+        if (e.key !== ' ' && e.key !== 'Enter') return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (!e.repeat) handlePointerDown(type, idx, button, e);
+      });
+    }
+
+    document.addEventListener('pointerdown', function(e) {
+      if (activityDeleteHold && e.pointerId !== activityDeleteHold.pointerId) handlePointerUp();
+    }, true);
+    document.addEventListener('pointermove', function(e) {
+      var hold = activityDeleteHold;
+      if (!hold || e.pointerId !== hold.pointerId) return;
+      var rect = hold.button.getBoundingClientRect();
+      if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom ||
+          Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > 10) handlePointerUp();
+    }, true);
+    ['pointerup', 'pointercancel'].forEach(function(name) {
+      document.addEventListener(name, function(e) {
+        if (activityDeleteHold && e.pointerId === activityDeleteHold.pointerId) handlePointerUp();
+      }, true);
+    });
+    document.addEventListener('keyup', function(e) {
+      if (activityDeleteHold && e.key === activityDeleteHold.key) handlePointerUp();
+    }, true);
+    document.addEventListener('scroll', handlePointerUp, true);
+    window.addEventListener('blur', handlePointerUp);
+    window.addEventListener('pagehide', handlePointerUp);
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'hidden') handlePointerUp();
+    });
 
     // ===========================
     // RENDER
@@ -3172,7 +3246,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           actualCell = '<span style="display:inline-flex;align-items:center;gap:4px;">' +
             '<span class="logged-time" data-ms-type="' + type + '" data-ms-idx="' + i + '">' + logged + '</span>' +
             '<button class="act-edit-btn" data-ms-type="' + type + '" data-ms-idx="' + i + '" title="Edit">&#9998;</button>' +
-            '<button class="act-del-btn" data-ms-type="' + type + '" data-ms-idx="' + i + '" title="Delete">&times;</button>' +
+            '<button type="button" class="act-del-btn" data-ms-type="' + type + '" data-ms-idx="' + i + '" title="Hold for 1 second to delete" aria-label="Hold for 1 second to delete actual time">&times;</button>' +
             '</span>';
         } else {
           actualCell = '<span style="display:inline-flex;align-items:center;gap:4px;">' +
@@ -3265,6 +3339,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     }
 
     function renderActivities() {
+      handlePointerUp();
       renderActivityTable('arr-milestones-a1', arrActivities, 'eta', 'arr', arrActual);
       var depShift = computeDepTurnaroundShift();
       var depTargets = renderActivityTable('dep-milestones-e5', depActivities, 'dep_std', 'dep', depActual, depShift);
@@ -3355,24 +3430,20 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           input.addEventListener('keydown', function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); finish(true); } else if (ev.key === 'Escape') { finish(false); } });
         });
       });
-      // Delete (?) button
       document.querySelectorAll('.act-del-btn').forEach(function(btn) {
+        attachActivityDeleteHold(btn);
         btn.addEventListener('click', function(e) {
+          e.preventDefault();
           e.stopPropagation();
-          var type = btn.dataset.msType;
-          var idx  = parseInt(btn.dataset.msIdx);
-          resetTime(type, idx);
+          if (lpFired) { lpFired = false; return; }
+          showToast('Hold for 1 second to delete the recorded time', 'orange');
         });
       });
       document.querySelectorAll('.log-btn, .logged-time').forEach(function(el) {
         var type = el.dataset.msType;
         var idx = parseInt(el.dataset.msIdx);
-        el.addEventListener('pointerdown', function(e) {
-          e.preventDefault();
-          handlePointerDown(type, idx);
-        });
-        el.addEventListener('pointerup', function() { handlePointerUp(); });
-        el.addEventListener('pointerleave', function() { handlePointerUp(); });
+        if (el.classList.contains('logged-time')) attachActivityDeleteHold(el);
+        else el.addEventListener('pointerdown', function() { lpFired = false; });
         el.addEventListener('click', function(e) {
           e.preventDefault();
           handleClick(type, idx);
@@ -4118,7 +4189,7 @@ function renderPaxLoadTable() {
     var shareQrIndex = 0;
     var shareQrTimer = 0;
     var receivedQrTransfers = Object.create(null);
-    var CONNECT_QR_CHUNK_SIZE = 700;
+    var CONNECT_QR_CHUNK_SIZE = 650;
     var CONNECT_QR_MAX_PARTS = 10000;
 
     function stopShareQrSequence() {
@@ -4652,7 +4723,7 @@ function renderPaxLoadTable() {
       });
       var svg = qrEl.querySelector('svg');
       if (svg) {
-        svg.style.width = 'min(100%, 440px)';
+        svg.style.width = 'min(100%, 320px)';
         svg.style.height = 'auto';
         svg.style.display = 'block';
       }
