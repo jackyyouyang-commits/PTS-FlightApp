@@ -1724,8 +1724,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     <!-- CONNECT SUCCESS MODAL -->
     <div id="connect-success-modal" class="modal-overlay" style="display:none;z-index:220;">
       <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
-        <div id="connect-success-title" style="font-size:15px;font-weight:700;color:#1a6e4e;">Flight Data Successfully Retrieved</div>
-        <div id="connect-save-warning" role="alert" style="display:none;margin-top:12px;font-size:13px;color:#991B1B;">Flight data is loaded but could not be saved on this device. Keep this page open and retry Save after device storage is available.</div>
+        <div style="font-size:15px;font-weight:700;color:#1a6e4e;">Flight Data Successfully Retrieved</div>
         <div style="margin-top:18px;display:flex;justify-content:center;">
           <button id="connect-success-ok" style="background:#1a6e4e;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">OK</button>
         </div>
@@ -1868,7 +1867,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <button data-id="124" id="share-modal-close" class="p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"><i data-id="125" data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
         </div>
         <p data-id="126" class="text-sm text-cx-grey mb-3 text-center">QR Connect includes all flight fields, operational tabs, formatting, images, and imported PDFs.</p>
-        <p class="text-sm text-cx-grey mb-3 text-center">On the receiving iPad, use this app's Scan QR Code to Connect button below, not the Camera app. No file upload is needed.</p>
         <div id="share-qr-output" style="display:flex;justify-content:center;align-items:center;min-height:190px;padding:12px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;"></div>
         <div id="share-qr-sequence-status" style="display:none;margin-top:10px;color:#1e3a5f;background:#DBEAFE;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;"></div>
         <div id="share-scanner" style="display:none;">
@@ -4117,30 +4115,12 @@ function renderPaxLoadTable() {
     var shareQrIndex = 0;
     var shareQrTimer = 0;
     var receivedQrTransfers = Object.create(null);
-    var CONNECT_QR_CHUNK_SIZE = 700;
-    var CONNECT_QR_MAX_PARTS = 10000;
 
     function stopShareQrSequence() {
       if (shareQrTimer) {
         clearInterval(shareQrTimer);
         shareQrTimer = 0;
       }
-    }
-
-    function startShareQrSequence() {
-      stopShareQrSequence();
-      if (shareQrValues.length > 1) {
-        shareQrTimer = setInterval(function() {
-          shareQrIndex = (shareQrIndex + 1) % shareQrValues.length;
-          renderShareQrFrame();
-        }, 1100);
-      }
-    }
-
-    function returnToShareQrSequence() {
-      stopQrScanner();
-      renderShareQrFrame();
-      startShareQrSequence();
     }
 
     function stopQrScanner() {
@@ -4220,7 +4200,7 @@ function renderPaxLoadTable() {
       var index = parseInt(fields[1], 36);
       var total = parseInt(fields[2], 36);
       if (!fields[0] || !fields[3] || !Number.isFinite(index) || !Number.isFinite(total) ||
-          index < 1 || total < 2 || index > total || total > CONNECT_QR_MAX_PARTS || fields[3].length > 1000) return null;
+          index < 1 || total < 2 || index > total || total > 10000 || fields[3].length > 1000) return null;
       return { id: fields[0], index: index, total: total, data: fields[3] };
     }
 
@@ -4248,7 +4228,9 @@ function renderPaxLoadTable() {
         return { handled: true, complete: false };
       }
       delete receivedQrTransfers[part.id];
-      closeShareModal();
+      stopQrScanner();
+      var modal = document.getElementById('share-modal');
+      if (modal) modal.style.display = 'none';
       return { handled: true, complete: loadShareCode('lz:' + compressed) };
     }
 
@@ -4264,7 +4246,9 @@ function renderPaxLoadTable() {
         }
         return false;
       }
-      closeShareModal();
+      stopQrScanner();
+      var modal = document.getElementById('share-modal');
+      if (modal) modal.style.display = 'none';
       return loadShareCode(shareCode);
     }
 
@@ -4426,6 +4410,7 @@ function renderPaxLoadTable() {
     }
 
     function startQrScanner() {
+      stopShareQrSequence();
       receivedQrTransfers = Object.create(null);
       var errorEl = document.getElementById('share-qr-error');
       var status = document.getElementById('share-scanner-status');
@@ -4443,7 +4428,6 @@ function renderPaxLoadTable() {
         return;
       }
 
-      stopShareQrSequence();
       var scanner = document.getElementById('share-scanner');
       var qrOutput = document.getElementById('share-qr-output');
       var sequenceStatus = document.getElementById('share-qr-sequence-status');
@@ -4486,7 +4470,7 @@ function renderPaxLoadTable() {
         scanQrCameraFrame();
       }).catch(function(error) {
         if (requestId !== qrScannerRequestId) return;
-        returnToShareQrSequence();
+        stopQrScanner();
         if (errorEl) {
           errorEl.textContent = error && error.name === 'NotAllowedError'
             ? 'Camera access was denied. Allow camera access in your browser settings and try again.'
@@ -4517,12 +4501,24 @@ function renderPaxLoadTable() {
         depActual: depActual,
         _replace_state: !!compact
       };
-      Object.keys(OPERATIONAL_TEXT_FIELDS).forEach(function(textareaId) {
+      function addText(key, textareaId) {
         var value = (document.getElementById(textareaId) || {}).value || '';
-        if (!compact || value) payload[OPERATIONAL_TEXT_FIELDS[textareaId]] = value;
-      });
+        if (!compact || value) payload[key] = value;
+      }
+      addText('_staff_acc', 'staff-acc-textarea');
+      addText('_arr_ptm', 'arr-ptm-textarea');
+      addText('_arr_bnl', 'arr-bnl-textarea');
       if (!compact || Object.keys(richPayload).length) payload._rich_html = richPayload;
       if (!compact) payload._arr_bnl_html = richPayload['arr-bnl-textarea'] || '';
+      addText('_arr_disruption_ppm', 'arr-disruption-ppm-textarea');
+      addText('_oir', 'oir-textarea');
+      addText('_itd_tag_card', 'itd-tag-card-textarea');
+      addText('_dep_lir', 'dep-lir-textarea');
+      addText('_crew', 'crew-textarea');
+      addText('_dep_crew', 'dep-crew-textarea');
+      addText('_dep_gen_dec', 'dep-gen-dec-textarea');
+      addText('_agent_pos', 'agent-pos-textarea');
+      addText('_ramp_roster', 'ramp-roster-textarea');
       var imagePayload = pastedImages;
       if (compact) {
         imagePayload = {};
@@ -4589,6 +4585,11 @@ function renderPaxLoadTable() {
           if (!json) throw new Error('Invalid transfer file');
           var payload = JSON.parse(json);
           applyConnectPayload(payload, 'Transfer file loaded!');
+          try {
+            localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(Object.assign({}, payload, { savedAt: new Date().toISOString() })));
+          } catch(storageError) {
+            showToast('Data loaded; device storage is full, so keep the transfer file.', 'orange');
+          }
           closeShareModal();
         } catch(err) {
           if (errorEl) {
@@ -4650,8 +4651,15 @@ function renderPaxLoadTable() {
           ? window.location.origin + window.location.pathname
           : 'https://jackyyouyang-commits.github.io/PTS-FlightApp/PTS_FlightApp.html';
         var singleUrl = baseUrl + '#pts2=' + compressed;
-        // Keep each frame camera-friendly instead of filling a maximum-density QR.
-        var useMultiple = compressed.length > CONNECT_QR_CHUNK_SIZE;
+        var singleQr = qrcode(0, 'L');
+        var useMultiple = false;
+        try {
+          singleQr.addData(singleUrl, 'Byte');
+          singleQr.make();
+        } catch(singleError) {
+          if (String(singleError).indexOf('code length overflow') < 0) throw singleError;
+          useMultiple = true;
+        }
 
         shareQrValues = [];
         shareQrIndex = 0;
@@ -4659,9 +4667,8 @@ function renderPaxLoadTable() {
           shareQrValues.push(singleUrl);
         } else {
           var transferId = connectPayloadId(compressed);
-          var chunkSize = CONNECT_QR_CHUNK_SIZE;
+          var chunkSize = 700;
           var total = Math.ceil(compressed.length / chunkSize);
-          if (total > CONNECT_QR_MAX_PARTS) throw new Error('Flight data exceeds the QR transfer capacity. Reduce attachment sizes and try again.');
           for (var i = 0; i < total; i++) {
             shareQrValues.push(
               baseUrl + '#ptsm=' + transferId + '.' + (i + 1).toString(36) + '.' +
@@ -4686,7 +4693,12 @@ function renderPaxLoadTable() {
         if (downloadQrButton) downloadQrButton.style.display = shareQrValues.length > 1 ? 'none' : '';
 
         renderShareQrFrame();
-        startShareQrSequence();
+        if (shareQrValues.length > 1) {
+          shareQrTimer = setInterval(function() {
+            shareQrIndex = (shareQrIndex + 1) % shareQrValues.length;
+            renderShareQrFrame();
+          }, 1100);
+        }
         var modal = document.getElementById('share-modal');
         if (modal) modal.style.display = 'flex';
       } catch(e) {
@@ -4698,7 +4710,7 @@ function renderPaxLoadTable() {
         if (qrEl) qrEl.innerHTML = '';
         if (sequenceStatus) sequenceStatus.style.display = 'none';
         if (errorEl) {
-          errorEl.textContent = 'Unable to generate the QR transfer on this device: ' + e.message;
+          errorEl.textContent = 'Unable to generate the QR transfer on this device.';
           errorEl.style.display = 'block';
         }
         if (modal) modal.style.display = 'flex';
@@ -4726,13 +4738,19 @@ function renderPaxLoadTable() {
       if (data.arrActual) Object.assign(arrActual, data.arrActual);
       if (data.depActual) Object.assign(depActual, data.depActual);
 
-      var textFields = OPERATIONAL_TEXT_FIELDS;
+      var textFields = {
+        'staff-acc-textarea':'_staff_acc','arr-ptm-textarea':'_arr_ptm','arr-bnl-textarea':'_arr_bnl',
+        'arr-disruption-ppm-textarea':'_arr_disruption_ppm','oir-textarea':'_oir',
+        'itd-tag-card-textarea':'_itd_tag_card','dep-lir-textarea':'_dep_lir','crew-textarea':'_crew',
+        'dep-crew-textarea':'_dep_crew','dep-gen-dec-textarea':'_dep_gen_dec',
+        'agent-pos-textarea':'_agent_pos','ramp-roster-textarea':'_ramp_roster'
+      };
       Object.keys(textFields).forEach(function(id) {
         var ta = document.getElementById(id);
         if (!ta) return;
         ta.value = data[textFields[id]] || '';
         if (ta.value) {
-          processPastedData(ta, ta.value, true);
+          try { processPastedData(ta, ta.value, true); } catch(e) {}
         } else {
           var preview = document.getElementById(id + '-preview');
           if (preview) {
@@ -4771,19 +4789,11 @@ function renderPaxLoadTable() {
       refreshSummarySpans();
       refreshFinalLoading();
       lockFields();
-      var saved = persistCompleteFlight(true);
       if (showRetrievedModal) {
-        var title = document.getElementById('connect-success-title');
-        var warning = document.getElementById('connect-save-warning');
-        if (title) {
-          title.textContent = saved ? 'Flight Data Successfully Retrieved' : 'Flight Data Retrieved - Not Saved';
-          title.style.color = saved ? '#1a6e4e' : '#991B1B';
-        }
-        if (warning) warning.style.display = saved ? 'none' : 'block';
         var successModal = document.getElementById('connect-success-modal');
         if (successModal) successModal.style.display = 'flex';
       } else {
-        showToast(saved ? (successMessage || 'Shared flight loaded!') : 'Flight data loaded but not saved. Keep this page open and retry Save.', saved ? 'green' : 'orange');
+        showToast(successMessage || 'Shared flight loaded!', 'green');
       }
       return true;
     }
@@ -4802,7 +4812,7 @@ function renderPaxLoadTable() {
         var data = JSON.parse(json);
         return applyConnectPayload(data, '', true);
       } catch(e) {
-        showToast('Unable to retrieve flight data: ' + e.message, 'red');
+        showToast('Invalid share code', 'red');
         return false;
       }
     }
@@ -7456,7 +7466,7 @@ function renderPaxLoadTable() {
       safeOn('share-modal-close', closeShareModal);
       safeOn('share-close-btn', closeShareModal);
       safeOn('share-scan-btn', startQrScanner);
-      safeOn('share-stop-scan-btn', returnToShareQrSequence);
+      safeOn('share-stop-scan-btn', stopQrScanner);
       safeOn('share-download-qr-btn', downloadShareQrImage);
       safeOn('share-upload-qr-btn', openShareQrImagePicker);
       safeOn('share-download-data-btn', downloadConnectDataFile);
@@ -7660,6 +7670,7 @@ function renderPaxLoadTable() {
       // Auto-import shared data from a scanned QR URL (legacy share links still work).
       var hashCode = getShareCodeFromHash();
       if (hashCode && loadShareCode(hashCode)) {
+        try { saveToLocal(); } catch(e) {}
         try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch(e) {}
       } else {
       var restored = restoreFromLocal();
