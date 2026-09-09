@@ -3199,14 +3199,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       return targetsOut;
     }
 
-    // Standard turnaround is 95 min (ATA -> target ATD). Shift departure targets
-    // only when ATA + 95 minutes is later than the existing target ATD.
+    // Standard turnaround is 95 min (ATA -> target ATD), but it applies only
+    // after a late arrival. An ATA at or before STA must not move Departure PTS.
     // ATA is anchored to the flight date vs today (same as the milestone tables), so a
     // delayed next-day ATA (e.g. 01:32 logged on 05-Sep for an 04-Sep flight) is handled.
     function computeDepTurnaroundShift() {
       var ataMin = arrActual[0] ? parseTime(arrActual[0]) : null;
+      var staMin = parseTime(state.sta);
       var targetAtdMin = parseTime(state.dep_std);
-      if (ataMin === null || targetAtdMin === null) return 0;
+      if (ataMin === null || staMin === null || targetAtdMin === null) return 0;
       // Days between the flight date and today push the ATA forward (next-day arrival)
       var now0 = new Date();
       var todayMid = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
@@ -3217,6 +3218,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         dayAdv = Math.round((todayMid - fMid) / 86400000);
       }
       var ataAbs = ataMin + dayAdv * 1440;
+      var staAbs = staMin;
+      if (ataAbs <= staAbs) return 0;
       var targetAtdAbs = targetAtdMin;
       // A much earlier clock time represents a genuine next-day departure. Do not
       // otherwise roll the target forward merely because ATA has passed it.
