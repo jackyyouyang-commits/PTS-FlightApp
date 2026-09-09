@@ -3925,6 +3925,7 @@ function renderPaxLoadTable() {
       saveRichContent(textareaId);
       saveStandaloneContentPdf(textareaId);
       setSimpleContentLock(textareaId, badgeId, true);
+      persistCompleteFlight(false);
       showToast(label + ' saved & locked', 'green');
     }
 
@@ -4012,33 +4013,47 @@ function renderPaxLoadTable() {
       });
     }
 
-    function saveToLocal() {
+    function buildLocalSavePayload() {
+      var payload = { state: state, arrActual: arrActual, depActual: depActual, savedAt: new Date().toISOString() };
+      payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
+      payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
+      payload._arr_bnl   = (document.getElementById('arr-bnl-textarea')||{}).value||'';
+      payload._rich_html = contentRichHtml;
+      payload._arr_disruption_ppm = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
+      payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
+      payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
+      payload._dep_lir   = (document.getElementById('dep-lir-textarea')||{}).value||'';
+      payload._crew      = (document.getElementById('crew-textarea')||{}).value||'';
+      payload._dep_crew  = (document.getElementById('dep-crew-textarea')||{}).value||'';
+      payload._dep_gen_dec = (document.getElementById('dep-gen-dec-textarea')||{}).value||'';
+      payload._agent_pos   = (document.getElementById('agent-pos-textarea')||{}).value||'';
+      payload._ramp_roster = (document.getElementById('ramp-roster-textarea')||{}).value||'';
+      payload._images = pastedImages;
+      payload._agent_pos_pdf = agentPosPdfData || '';
+      payload._dep_gen_dec_pdf = contentPdfImports.depGenDec.data || '';
+      payload._ramp_roster_pdf = contentPdfImports.rampRoster.data || '';
+      return payload;
+    }
+
+    var localSaveFailureShown = false;
+    function persistCompleteFlight(showError) {
       try {
-        var payload = { state: state, arrActual: arrActual, depActual: depActual, savedAt: new Date().toISOString() };
-        // Include paste-tab content in share payload
-        payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
-        payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
-        payload._arr_bnl   = (document.getElementById('arr-bnl-textarea')||{}).value||'';
-        payload._rich_html = contentRichHtml;
-        payload._arr_bnl_html = contentRichHtml['arr-bnl-textarea'] || '';
-        payload._arr_disruption_ppm = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
-        payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
-        payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
-        payload._dep_lir   = (document.getElementById('dep-lir-textarea')||{}).value||'';
-        payload._crew      = (document.getElementById('crew-textarea')||{}).value||'';
-        payload._dep_crew  = (document.getElementById('dep-crew-textarea')||{}).value||'';
-        payload._dep_gen_dec = (document.getElementById('dep-gen-dec-textarea')||{}).value||'';
-        payload._agent_pos   = (document.getElementById('agent-pos-textarea')||{}).value||'';
-        payload._ramp_roster = (document.getElementById('ramp-roster-textarea')||{}).value||'';
-        payload._images = pastedImages;
-        payload._agent_pos_pdf = agentPosPdfData || '';
-        payload._dep_gen_dec_pdf = contentPdfImports.depGenDec.data || '';
-        payload._ramp_roster_pdf = contentPdfImports.rampRoster.data || '';
-        localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(payload));
+        localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(buildLocalSavePayload()));
+        localSaveFailureShown = false;
+        return true;
+      } catch(e) {
+        if (showError || !localSaveFailureShown) {
+          showToast('Save failed: ' + e.message, 'red');
+          localSaveFailureShown = true;
+        }
+        return false;
+      }
+    }
+
+    function saveToLocal() {
+      if (persistCompleteFlight(true)) {
         var saveModal = document.getElementById('save-success-modal');
         if (saveModal) saveModal.style.display = 'flex';
-      } catch(e) {
-        showToast('Save failed: ' + e.message, 'red');
       }
       if (typeof state !== 'undefined' && state._locked) {
         lockFields();
@@ -6000,6 +6015,7 @@ function renderPaxLoadTable() {
       try { localStorage.setItem('pts_oir', val); } catch(e) {}
       saveRichContent('oir-textarea');
       lockOIR();
+      persistCompleteFlight(false);
       showToast('OIR saved & locked', 'green');
     }
     function lockOIR() {
@@ -6045,6 +6061,7 @@ function renderPaxLoadTable() {
       try { localStorage.setItem('pts_crew', val); } catch(e) {}
       saveRichContent('crew-textarea');
       lockCrew();
+      persistCompleteFlight(false);
       showToast('Crew List saved & locked', 'green');
     }
     function lockCrew() {
@@ -6090,6 +6107,7 @@ function renderPaxLoadTable() {
       try { localStorage.setItem('pts_dep_crew', val); } catch(e) {}
       saveRichContent('dep-crew-textarea');
       lockDepCrew();
+      persistCompleteFlight(false);
       showToast('Dep Crew List saved & locked', 'green');
     }
     function lockDepCrew() {
@@ -6135,6 +6153,7 @@ function renderPaxLoadTable() {
       try { localStorage.setItem('pts_staff_acc', val); } catch(e) {}
       saveRichContent('staff-acc-textarea');
       lockStaffAcc();
+      persistCompleteFlight(false);
       showToast('Staff Acceptance saved & locked', 'green');
     }
     function lockStaffAcc() {
@@ -6180,6 +6199,7 @@ function renderPaxLoadTable() {
       try { localStorage.setItem('pts_arr_ptm', val); } catch(e) {}
       saveRichContent('arr-ptm-textarea');
       lockArrPTM();
+      persistCompleteFlight(false);
       showToast('Arrival PTM saved & locked', 'green');
     }
     function lockArrPTM() {
@@ -6225,6 +6245,7 @@ function renderPaxLoadTable() {
       try { localStorage.setItem('pts_arr_bnl', val); } catch(e) {}
       saveRichContent('arr-bnl-textarea');
       lockArrBNL();
+      persistCompleteFlight(false);
       showToast('Arrival BNL saved & locked', 'green');
     }
     function lockArrBNL() {
@@ -6273,6 +6294,7 @@ function renderPaxLoadTable() {
       try { localStorage.setItem('pts_arr_disruption_ppm', val); } catch(e) {}
       saveRichContent('arr-disruption-ppm-textarea');
       lockArrDisruptionPPM();
+      persistCompleteFlight(false);
       showToast('Arrival Disruption PPM saved & locked', 'green');
     }
     function lockArrDisruptionPPM() {
@@ -6318,6 +6340,7 @@ function renderPaxLoadTable() {
       try { localStorage.setItem('pts_dep_lir', val); } catch(e) {}
       saveRichContent('dep-lir-textarea');
       lockDepLIR();
+      persistCompleteFlight(false);
       showToast('DEP LIR saved & locked', 'green');
     }
     function lockDepLIR() {
@@ -6408,6 +6431,7 @@ function renderPaxLoadTable() {
       saveRichContent('ramp-roster-textarea');
       saveStandaloneContentPdf('ramp-roster-textarea');
       lockRampRoster();
+      persistCompleteFlight(false);
       showToast('Ramp Roster saved & locked', 'green');
     }
     function lockRampRoster() {
@@ -7618,8 +7642,6 @@ function renderPaxLoadTable() {
         }
         refreshSummarySpans();
         refreshFinalLoading();
-        clearTimeout(window._autoSaveTimer);
-        window._autoSaveTimer = setTimeout(function(){ try{ localStorage.setItem(PTS_SAVE_KEY, JSON.stringify({ state: state, arrActual: arrActual, depActual: depActual, savedAt: new Date().toISOString() })); }catch(e){} }, 500);
       });
 
     }); // end DOMContentLoaded
@@ -7827,7 +7849,19 @@ function renderPaxLoadTable() {
       refreshSummarySpans();
       refreshFinalLoading();
       initImagePasteSupport();
+
+      clearInterval(window._tenMinuteAutoSaveTimer);
+      window._tenMinuteAutoSaveTimer = setInterval(function() {
+        persistCompleteFlight(false);
+      }, 10 * 60 * 1000);
     }
+
+    // Mobile browsers may suspend or reload the app while it is in the background.
+    // Save the complete flight before suspension rather than waiting for the next interval.
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'hidden') persistCompleteFlight(false);
+    });
+    window.addEventListener('pagehide', function() { persistCompleteFlight(false); });
 
     // === VIEWPORT HEIGHT (Android Chrome address bar) ===
     function setVH(){document.documentElement.style.setProperty('--vh',(window.innerHeight*0.01)+'px');}
