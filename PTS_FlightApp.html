@@ -625,6 +625,8 @@ document.addEventListener('DOMContentLoaded', function() {
         display: flex;
         gap: 6px;
       }
+      .operational-paste-layout { width: 100%; overflow: hidden; }
+      .operational-paste-content { transform-origin: top left; }
       .tab-flex-panel {
         flex-direction: column;
         height: 100%;
@@ -1888,9 +1890,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div id="share-scanner-status" role="status" style="margin-top:10px;color:#374151;font-size:13px;font-weight:600;text-align:center;">Point the camera at a PTS Connect QR code.</div>
         </div>
         <div id="share-qr-error" style="display:none;margin-top:12px;padding:10px 12px;border-radius:8px;background:#FEE2E2;color:#991B1B;font-size:13px;font-weight:600;text-align:center;"></div>
-        <div id="share-qr-image-note" style="display:none;margin-top:10px;color:#92400E;background:#FEF3C7;padding:8px 10px;border-radius:8px;font-size:12px;text-align:center;">
-          Keep the iPad scanner pointed at this screen. Multi-part QR codes cycle automatically until every part is received.
-        </div>
         <input id="share-qr-image-input" type="file" accept="image/*,.svg" style="display:none;">
         <input id="share-data-file-input" type="file" accept=".pts,application/json" style="display:none;">
         <div data-id="128" class="flex justify-end gap-3 mt-4" style="flex-wrap:wrap;">
@@ -3872,13 +3871,21 @@ function renderPaxLoadTable() {
       if (!preview) return;
       var content = preview.querySelector('.operational-paste-content');
       if (!content) return;
-      content.style.zoom = '';
-      if (!window.matchMedia('(max-width: 767px)').matches) return;
+      var layout = content.parentElement;
+      if (!layout.classList.contains('operational-paste-layout')) {
+        layout = document.createElement('div');
+        layout.className = 'operational-paste-layout';
+        content.parentNode.insertBefore(layout, content);
+        layout.appendChild(content);
+      }
       requestAnimationFrame(function() {
+        if (!preview.isConnected || !content.isConnected) return;
+        content.style.transform = '';
+        layout.style.height = '';
         var availableWidth = preview.clientWidth
           - (parseFloat(getComputedStyle(preview).paddingLeft) || 0)
           - (parseFloat(getComputedStyle(preview).paddingRight) || 0);
-        var naturalWidth = content.scrollWidth;
+        var naturalWidth = Math.max(content.scrollWidth, content.getBoundingClientRect().width);
         // Restored previews are often rendered while their tab is hidden, where both
         // measurements are zero. Retry after tab activation instead of leaving them unfitted.
         if (availableWidth <= 0 || naturalWidth <= 0) {
@@ -3887,8 +3894,11 @@ function renderPaxLoadTable() {
           }
           return;
         }
-        if (availableWidth > 0 && naturalWidth > availableWidth) {
-          content.style.zoom = availableWidth / naturalWidth;
+        if (naturalWidth > availableWidth) {
+          var scale = availableWidth / naturalWidth;
+          var naturalHeight = Math.max(content.scrollHeight, content.getBoundingClientRect().height);
+          content.style.transform = 'scale(' + scale + ')';
+          layout.style.height = Math.ceil(naturalHeight * scale) + 'px';
         }
       });
     }
@@ -3910,14 +3920,19 @@ function renderPaxLoadTable() {
       var ta = document.getElementById(textareaId);
       if (!ta) return;
       var tablePreview = document.getElementById(textareaId + '-preview');
-      if (tablePreview) tablePreview.remove();
       var preview = document.getElementById(textareaId + '-rich-preview');
       var richHtml = contentRichHtml[textareaId] || '';
       if (!richHtml) {
         if (preview) preview.remove();
-        ta.style.display = '';
+        // A missing rich-HTML payload must not discard the fixed-column text view.
+        if (ta.value.trim()) renderPlainContentPreview(ta);
+        else {
+          if (tablePreview) tablePreview.remove();
+          ta.style.display = '';
+        }
         return;
       }
+      if (tablePreview) tablePreview.remove();
       if (!preview) {
         preview = document.createElement('div');
         preview.id = textareaId + '-rich-preview';
@@ -4731,7 +4746,7 @@ function renderPaxLoadTable() {
         sequenceStatus.style.display = 'block';
         sequenceStatus.textContent = shareQrValues.length === 1
           ? 'QR 1 of 1 - all current data fits in one code; no cycling needed'
-          : 'QR part ' + (shareQrIndex + 1) + ' of ' + shareQrValues.length + ' - changing automatically';
+          : 'QR part ' + (shareQrIndex + 1) + ' of ' + shareQrValues.length;
       }
     }
 
@@ -5794,11 +5809,17 @@ function renderPaxLoadTable() {
       
       // Store the raw data in textarea
       textarea.value = data;
-      
+      renderPlainContentPreview(textarea);
+
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      textarea.dispatchEvent(new Event('change', { bubbles: true }));
+      if (!silent) showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
+    }
+
+    function renderPlainContentPreview(textarea) {
       // Keep every row, column, blank cell, and space so another device reconstructs
       // the same layout that was originally pasted.
-      var lines = data.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-      console.log('Lines parsed:', lines.length);
+      var lines = textarea.value.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
       
       var allCells = lines.map(function(line) { return line.split('\t'); });
       var numCols = Math.max.apply(null, allCells.map(function(row) { return row.length; }));
@@ -5821,7 +5842,7 @@ function renderPaxLoadTable() {
       var cellPadding = numCols <= 4 ? 8 : (numCols <= 8 ? 5 : 3);
       var previewHTML;
       if (numCols === 1) {
-        previewHTML = '<pre style="margin:0;font-family:monospace;font-size:13px;line-height:1.45;tab-size:8;">';
+        previewHTML = '<pre style="margin:0;font-family:monospace;font-size:13px;line-height:1.5;tab-size:8;white-space:pre;overflow-wrap:normal;word-break:normal;">';
         lines.forEach(function(line, rowIdx) {
           previewHTML += '<span data-pasted-row="' + rowIdx + '" style="display:block;transition:background-color 0.3s ease;">'
             + (line === '' ? '&nbsp;' : escapeCell(line)) + '</span>';
@@ -5866,14 +5887,6 @@ function renderPaxLoadTable() {
       
       // Hide the textarea and show preview only
       textarea.style.display = 'none';
-      
-      // Trigger events for state update
-      var event = new Event('input', { bubbles: true });
-      textarea.dispatchEvent(event);
-      var changeEvent = new Event('change', { bubbles: true });
-      textarea.dispatchEvent(changeEvent);
-      
-      if (!silent) showToast('Pasted from Excel! Click Save & Lock to confirm.', 'blue');
     }
 
     // ===========================
@@ -6164,6 +6177,7 @@ function renderPaxLoadTable() {
     function lockOIR() {
       var ta = document.getElementById('oir-textarea');
       if (ta) { ta.setAttribute('readonly','readonly'); ta.style.background='#F9FAFB'; }
+      if (ta && ta.value.trim() && !contentRichHtml[ta.id]) renderPlainContentPreview(ta);
       var badge = document.getElementById('oir-lock-badge');
       if (badge) {
         badge.style.display='inline-flex';
@@ -6176,6 +6190,8 @@ function renderPaxLoadTable() {
     function unlockOIR() {
       var ta = document.getElementById('oir-textarea');
       if (ta) { ta.removeAttribute('readonly'); ta.style.background=''; }
+      var preview = document.getElementById('oir-textarea-preview');
+      if (ta && preview) { preview.style.display='none'; ta.style.display=''; ta.wrap='off'; }
       var badge = document.getElementById('oir-lock-badge');
       if (badge) {
         badge.style.display='inline-flex';
@@ -6489,6 +6505,7 @@ function renderPaxLoadTable() {
     function lockDepLIR() {
       var ta = document.getElementById('dep-lir-textarea');
       if (ta) { ta.setAttribute('readonly','readonly'); ta.style.background='#F9FAFB'; }
+      if (ta && ta.value.trim() && !contentRichHtml[ta.id]) renderPlainContentPreview(ta);
       var badge = document.getElementById('dep-lir-lock-badge');
       if (badge) {
         badge.style.display='inline-flex';
@@ -6501,6 +6518,8 @@ function renderPaxLoadTable() {
     function unlockDepLIR() {
       var ta = document.getElementById('dep-lir-textarea');
       if (ta) { ta.removeAttribute('readonly'); ta.style.background=''; }
+      var preview = document.getElementById('dep-lir-textarea-preview');
+      if (ta && preview) { preview.style.display='none'; ta.style.display=''; ta.wrap='off'; }
       var badge = document.getElementById('dep-lir-lock-badge');
       if (badge) {
         badge.style.display='inline-flex';
@@ -7877,7 +7896,8 @@ function renderPaxLoadTable() {
       if (!hashCode) (function(){
         var oirVal = ''; try { oirVal = localStorage.getItem('pts_oir')||''; } catch(e){}
         var oirLocked = ''; try { oirLocked = localStorage.getItem('pts_oir_locked')||'0'; } catch(e){}
-        var ta = document.getElementById('oir-textarea'); if(ta && oirVal && shouldRestoreStandaloneContent('_oir')) ta.value = oirVal;
+        var ta = document.getElementById('oir-textarea');
+        if(ta && oirVal && shouldRestoreStandaloneContent('_oir')) { ta.value = oirVal; renderPlainContentPreview(ta); }
         if (oirLocked === '1' && ta && ta.value) lockOIR();
       })();
 
