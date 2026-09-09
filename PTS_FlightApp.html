@@ -3766,7 +3766,23 @@ function renderPaxLoadTable() {
       return doc.body.innerHTML;
     }
 
-    function fitOperationalPastePreview(preview) {
+    var operationalPreviewWidths = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+    var operationalPreviewResizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(function(entries) {
+          entries.forEach(function(entry) {
+            var width = entry.contentRect ? entry.contentRect.width : entry.target.clientWidth;
+            if (operationalPreviewWidths && operationalPreviewWidths.get(entry.target) === width) return;
+            if (operationalPreviewWidths) operationalPreviewWidths.set(entry.target, width);
+            fitOperationalPastePreview(entry.target);
+          });
+        })
+      : null;
+
+    function watchOperationalPastePreview(preview) {
+      if (preview && operationalPreviewResizeObserver) operationalPreviewResizeObserver.observe(preview);
+    }
+
+    function fitOperationalPastePreview(preview, retryCount) {
       if (!preview) return;
       var content = preview.querySelector('.operational-paste-content');
       if (!content) return;
@@ -3777,6 +3793,14 @@ function renderPaxLoadTable() {
           - (parseFloat(getComputedStyle(preview).paddingLeft) || 0)
           - (parseFloat(getComputedStyle(preview).paddingRight) || 0);
         var naturalWidth = content.scrollWidth;
+        // Restored previews are often rendered while their tab is hidden, where both
+        // measurements are zero. Retry after tab activation instead of leaving them unfitted.
+        if (availableWidth <= 0 || naturalWidth <= 0) {
+          if ((retryCount || 0) < 4) {
+            setTimeout(function() { fitOperationalPastePreview(preview, (retryCount || 0) + 1); }, 80);
+          }
+          return;
+        }
         if (availableWidth > 0 && naturalWidth > availableWidth) {
           content.style.zoom = availableWidth / naturalWidth;
         }
@@ -3792,6 +3816,9 @@ function renderPaxLoadTable() {
       });
     }
     window.addEventListener('resize', fitAllOperationalPastePreviews);
+    window.addEventListener('orientationchange', function() {
+      setTimeout(fitAllOperationalPastePreviews, 250);
+    });
 
     function renderRichContent(textareaId) {
       var ta = document.getElementById(textareaId);
@@ -3813,6 +3840,7 @@ function renderPaxLoadTable() {
       }
       preview.innerHTML = '<div class="operational-paste-content">' + richHtml + '</div>';
       preview.style.display = '';
+      watchOperationalPastePreview(preview);
       preview.querySelectorAll('table').forEach(function(table) {
         table.style.maxWidth = '100%';
         table.style.boxSizing = 'border-box';
@@ -5675,6 +5703,7 @@ function renderPaxLoadTable() {
       }
       preview.innerHTML = '<div class="operational-paste-content">' + previewHTML + '</div>';
       preview.style.display = 'block';
+      watchOperationalPastePreview(preview);
       fitOperationalPastePreview(preview);
       
       // Hide the textarea and show preview only
@@ -7739,7 +7768,8 @@ function renderPaxLoadTable() {
       if (!hashCode) (function(){
         var v=''; try{v=localStorage.getItem('pts_dep_lir')||'';}catch(e){}
         var l='0'; try{l=localStorage.getItem('pts_dep_lir_locked')||'0';}catch(e){}
-        var ta=document.getElementById('dep-lir-textarea'); if(ta&&v) ta.value=v;
+        var ta=document.getElementById('dep-lir-textarea');
+        if(ta&&v) { ta.value=v; try { processPastedData(ta, v, true); } catch(e) {} }
         if(l==='1'&&v) lockDepLIR();
       })();
 
@@ -7816,6 +7846,8 @@ function renderPaxLoadTable() {
       });
       if(tabId==='summary'){try{refreshSummarySpans();}catch(e){}}
       requestAnimationFrame(fitAllOperationalPastePreviews);
+      setTimeout(fitAllOperationalPastePreviews, 100);
+      setTimeout(fitAllOperationalPastePreviews, 300);
     }
     function wireNavTabs(){
       document.querySelectorAll('.bottom-tab').forEach(function(btn){
