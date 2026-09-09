@@ -5218,13 +5218,18 @@ function renderPaxLoadTable() {
         }
         // Once ATD (idx 25) is logged the aircraft has departed - stop the countdown
         if (depActual && depActual[25]) { el.innerHTML = '<span style="color:#fff;">Departed</span>' + headerDisruptionStr + etaLine; el.style.color = '#fff'; return; }
-        if (!etdTargetMs) { el.innerHTML = 'Departs at: --:--' + etaLine; el.style.color = '#fff'; return; }
+        if (!etdTargetMs) {
+          el.innerHTML = '<span style="color:#fff;">Departs at: --:--</span><br><span style="color:#FCA5A5;">ETD --:--:--</span>' + etaLine;
+          el.style.color = '#fff';
+          return;
+        }
         var diffSec = Math.round((etdTargetMs - nowMs)/1000);
+        var departureTimeHtml = '<span style="color:#fff;">Departs at:</span> <span style="color:#fff">' + departsAtStr() + '</span>';
 
         if (diffSec < 0) {
-          var departureTimeHtml = '<span style="color:#fff;">Departs at:</span> <span style="color:#fff">' + departsAtStr() + '</span>';
+          var overdueCountdownHtml = '<br><span class="blink-countdown" style="color:#FCA5A5;">ETD +' + fmtFromSec(Math.abs(diffSec)) + '</span>';
           var disruptionStr = '<br><span style="font-size:0.75em;opacity:0.9;">Disruption: Delay</span>';
-          el.innerHTML = departureTimeHtml + disruptionStr + etaLine;
+          el.innerHTML = departureTimeHtml + overdueCountdownHtml + disruptionStr + etaLine;
           el.style.color = '#fff';
           return;
         }
@@ -5235,7 +5240,7 @@ function renderPaxLoadTable() {
           el.style.color = '#fff';
           return;
         }
-        var countdownStr = 'Departs at: ' + departsAtStr();
+        var countdownStr = departureTimeHtml + '<br><span style="color:#FCA5A5;">ETD -' + fmtFromSec(diffSec) + '</span>';
         var delayStr = '';
 
         // Disruption: Delay whenever the new ATD target is later than the STD. The turnaround
