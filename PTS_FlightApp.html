@@ -1866,7 +1866,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <h2 data-id="123" class="text-lg font-bold text-cx-teal-dark">Connect</h2>
           <button data-id="124" id="share-modal-close" class="p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"><i data-id="125" data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
         </div>
-        <p data-id="126" class="text-sm text-cx-grey mb-3 text-center">Scan QR code to retrieve flight data</p>
+        <p data-id="126" class="text-sm text-cx-grey mb-3 text-center">QR Connect includes all flight fields, operational tabs, formatting, images, and imported PDFs.</p>
         <div id="share-qr-output" style="display:flex;justify-content:center;align-items:center;min-height:190px;padding:12px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;"></div>
         <div id="share-qr-sequence-status" style="display:none;margin-top:10px;color:#1e3a5f;background:#DBEAFE;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;"></div>
         <div id="share-scanner" style="display:none;">
@@ -1879,7 +1879,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
         <div id="share-qr-error" style="display:none;margin-top:12px;padding:10px 12px;border-radius:8px;background:#FEE2E2;color:#991B1B;font-size:13px;font-weight:600;text-align:center;"></div>
         <div id="share-qr-image-note" style="display:none;margin-top:10px;color:#92400E;background:#FEF3C7;padding:8px 10px;border-radius:8px;font-size:12px;text-align:center;">
-          Scan until all flight data retrieved. QR code will auto-refresh to retrieve all data
+          Keep the iPad scanner pointed at this screen. Multi-part QR codes cycle automatically until every part is received.
         </div>
         <input id="share-qr-image-input" type="file" accept="image/*,.svg" style="display:none;">
         <input id="share-data-file-input" type="file" accept=".pts,application/json" style="display:none;">
@@ -4637,7 +4637,7 @@ function renderPaxLoadTable() {
         sequenceStatus.style.display = 'block';
         sequenceStatus.textContent = shareQrValues.length === 1
           ? 'Single QR code - all flight data included'
-          : 'Flight Data ' + (shareQrIndex + 1) + '/' + shareQrValues.length;
+          : 'QR part ' + (shareQrIndex + 1) + ' of ' + shareQrValues.length + ' - changing automatically';
       }
     }
 
