@@ -4042,10 +4042,12 @@ function renderPaxLoadTable() {
     var qrScannerFrame = 0;
     var qrScannerRunning = false;
     var qrScannerRequestId = 0;
+    var qrScannerLastScan = 0;
 
     function stopQrScanner() {
       qrScannerRequestId++;
       qrScannerRunning = false;
+      qrScannerLastScan = 0;
       if (qrScannerFrame) {
         cancelAnimationFrame(qrScannerFrame);
         qrScannerFrame = 0;
@@ -4219,21 +4221,42 @@ function renderPaxLoadTable() {
       reader.readAsDataURL(file);
     }
 
-    function scanQrCameraFrame() {
+    function decodeQrCameraSource(source, sourceWidth, sourceHeight, canvas) {
+      if (!source || !sourceWidth || !sourceHeight || !canvas) return null;
+      var insetX = Math.round(sourceWidth * 0.06);
+      var insetY = Math.round(sourceHeight * 0.06);
+      var cropWidth = Math.max(1, sourceWidth - insetX * 2);
+      var cropHeight = Math.max(1, sourceHeight - insetY * 2);
+      var scale = Math.min(1, 1200 / Math.max(cropWidth, cropHeight));
+      canvas.width = Math.max(1, Math.round(cropWidth * scale));
+      canvas.height = Math.max(1, Math.round(cropHeight * scale));
+      var context = canvas.getContext('2d', { willReadFrequently: true });
+      if (!context) return null;
+      context.drawImage(source, insetX, insetY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
+      var image = context.getImageData(0, 0, canvas.width, canvas.height);
+      return jsQR(image.data, image.width, image.height, { inversionAttempts: 'attemptBoth' });
+    }
+
+    function scanQrCameraFrame(timestamp) {
       if (!qrScannerRunning) return;
+      var now = typeof timestamp === 'number' ? timestamp : performance.now();
+      if (now - qrScannerLastScan < 120) {
+        qrScannerFrame = requestAnimationFrame(scanQrCameraFrame);
+        return;
+      }
+      qrScannerLastScan = now;
       var video = document.getElementById('share-scanner-video');
       var canvas = document.getElementById('share-scanner-canvas');
       var status = document.getElementById('share-scanner-status');
       if (video && canvas && video.readyState >= video.HAVE_ENOUGH_DATA) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        var context = canvas.getContext('2d', { willReadFrequently: true });
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        var image = context.getImageData(0, 0, canvas.width, canvas.height);
-        var result = jsQR(image.data, image.width, image.height, { inversionAttempts: 'attemptBoth' });
-        if (result && result.data) {
-          if (importDecodedQrValue(result.data)) return;
-          if (status) status.textContent = 'That is not a PTS Connect QR code. Try another code.';
+        try {
+          var result = decodeQrCameraSource(video, video.videoWidth, video.videoHeight, canvas);
+          if (result && result.data) {
+            if (importDecodedQrValue(result.data)) return;
+            if (status) status.textContent = 'That is not a PTS Connect QR code. Try another code.';
+          }
+        } catch(e) {
+          if (status) status.textContent = 'Scanning... hold the QR code steady inside the frame.';
         }
       }
       qrScannerFrame = requestAnimationFrame(scanQrCameraFrame);
@@ -4269,7 +4292,12 @@ function renderPaxLoadTable() {
       var requestId = ++qrScannerRequestId;
       navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { facingMode: { ideal: 'environment' } }
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 24, max: 30 }
+        }
       }).then(function(stream) {
         if (requestId !== qrScannerRequestId) {
           stream.getTracks().forEach(function(track) { track.stop(); });
@@ -4278,12 +4306,16 @@ function renderPaxLoadTable() {
         qrScannerStream = stream;
         var video = document.getElementById('share-scanner-video');
         if (!video) throw new Error('Scanner video unavailable');
+        video.setAttribute('autoplay', '');
+        video.setAttribute('playsinline', '');
+        video.muted = true;
         video.srcObject = stream;
         return video.play().then(function() { return stream; });
       }).then(function(stream) {
         if (!stream || requestId !== qrScannerRequestId) return;
         qrScannerRunning = true;
-        if (status) status.textContent = 'Point the camera at a PTS Connect QR code.';
+        qrScannerLastScan = 0;
+        if (status) status.textContent = 'Scanning... fill the white frame with the QR code and hold steady.';
         scanQrCameraFrame();
       }).catch(function(error) {
         if (requestId !== qrScannerRequestId) return;
@@ -4298,21 +4330,44 @@ function renderPaxLoadTable() {
     }
 
     function buildConnectPayload(includeBinary) {
-      var payload = { v: 2, state: state, arrActual: arrActual, depActual: depActual };
-      payload._staff_acc = (document.getElementById('staff-acc-textarea')||{}).value||'';
-      payload._arr_ptm   = (document.getElementById('arr-ptm-textarea')||{}).value||'';
-      payload._arr_bnl   = (document.getElementById('arr-bnl-textarea')||{}).value||'';
-      payload._rich_html = contentRichHtml;
-      payload._arr_bnl_html = contentRichHtml['arr-bnl-textarea'] || '';
-      payload._arr_disruption_ppm = (document.getElementById('arr-disruption-ppm-textarea')||{}).value||'';
-      payload._oir       = (document.getElementById('oir-textarea')||{}).value||'';
-      payload._itd_tag_card = (document.getElementById('itd-tag-card-textarea')||{}).value||'';
-      payload._dep_lir   = (document.getElementById('dep-lir-textarea')||{}).value||'';
-      payload._crew      = (document.getElementById('crew-textarea')||{}).value||'';
-      payload._dep_crew  = (document.getElementById('dep-crew-textarea')||{}).value||'';
-      payload._dep_gen_dec = (document.getElementById('dep-gen-dec-textarea')||{}).value||'';
-      payload._agent_pos   = (document.getElementById('agent-pos-textarea')||{}).value||'';
-      payload._ramp_roster = (document.getElementById('ramp-roster-textarea')||{}).value||'';
+      var statePayload = state;
+      var richPayload = contentRichHtml;
+      if (!includeBinary) {
+        statePayload = {};
+        Object.keys(state).forEach(function(key) {
+          var value = state[key];
+          if (value !== '' && value !== false && value !== null && value !== undefined) statePayload[key] = value;
+        });
+        richPayload = {};
+        Object.keys(contentRichHtml).forEach(function(key) {
+          if (contentRichHtml[key]) richPayload[key] = contentRichHtml[key];
+        });
+      }
+      var payload = {
+        v: 2,
+        state: statePayload,
+        arrActual: arrActual,
+        depActual: depActual,
+        _replace_state: !includeBinary
+      };
+      function addText(key, textareaId) {
+        var value = (document.getElementById(textareaId) || {}).value || '';
+        if (includeBinary || value) payload[key] = value;
+      }
+      addText('_staff_acc', 'staff-acc-textarea');
+      addText('_arr_ptm', 'arr-ptm-textarea');
+      addText('_arr_bnl', 'arr-bnl-textarea');
+      if (includeBinary || Object.keys(richPayload).length) payload._rich_html = richPayload;
+      if (includeBinary || richPayload['arr-bnl-textarea']) payload._arr_bnl_html = richPayload['arr-bnl-textarea'] || '';
+      addText('_arr_disruption_ppm', 'arr-disruption-ppm-textarea');
+      addText('_oir', 'oir-textarea');
+      addText('_itd_tag_card', 'itd-tag-card-textarea');
+      addText('_dep_lir', 'dep-lir-textarea');
+      addText('_crew', 'crew-textarea');
+      addText('_dep_crew', 'dep-crew-textarea');
+      addText('_dep_gen_dec', 'dep-gen-dec-textarea');
+      addText('_agent_pos', 'agent-pos-textarea');
+      addText('_ramp_roster', 'ramp-roster-textarea');
       payload._images = includeBinary ? pastedImages : {};
       payload._agent_pos_pdf = includeBinary ? (agentPosPdfData || '') : '';
       payload._dep_gen_dec_pdf = includeBinary ? (contentPdfImports.depGenDec.data || '') : '';
@@ -4457,6 +4512,11 @@ function renderPaxLoadTable() {
 
     function applyConnectPayload(data, successMessage, showRetrievedModal) {
       if (!data || !data.state || typeof data.state !== 'object') throw new Error('Invalid PTS transfer data');
+      if (data._replace_state) {
+        Object.keys(state).forEach(function(k) {
+          state[k] = typeof state[k] === 'boolean' ? false : '';
+        });
+      }
       Object.keys(data.state).forEach(function(k) {
         if (k in state) state[k] = data.state[k] || '';
       });
