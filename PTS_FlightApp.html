@@ -2801,6 +2801,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       return pad(Math.floor(m/60)) + ':' + pad(m%60);
     }
     function numOrZero(v) { var n = parseInt(v); return isNaN(n) ? 0 : n; }
+    function getPaxTotal(keys) {
+      return keys.reduce(function(total, key) { return total + numOrZero(state[key]); }, 0);
+    }
+    function getArrivalPaxTotal() {
+      return getPaxTotal(['arr_pax_j','arr_pax_w','arr_pax_y','arr_pax_inf']);
+    }
     function v(k) { return state[k] || '-'; }
 
     function parseHKGTime(v) {
@@ -2897,7 +2903,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var finalKeys = { j: 'final_j', w: 'final_w', y: 'final_y', inf: 'final_inf' };
       function pick(keys) {
         var j = state[keys.j]||'', w = state[keys.w]||'', y = state[keys.y]||'', inf = state[keys.inf]||'';
-        var total = numOrZero(j) + numOrZero(w) + numOrZero(y) + numOrZero(inf);
+        var total = getPaxTotal([keys.j, keys.w, keys.y, keys.inf]);
         return { j: j, w: w, y: y, inf: inf, total: total ? String(total) : '' };
       }
       function rowHasData(keys) {
@@ -3197,7 +3203,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     }
 
     function updateArrPaxTotal() {
-      var t = numOrZero(state.arr_pax_j)+numOrZero(state.arr_pax_w)+numOrZero(state.arr_pax_y)+numOrZero(state.arr_pax_inf);
+      var t = getArrivalPaxTotal();
       var el = document.getElementById('arr-pax-total-y5z6');
       if (el) el.textContent = t;
     }
@@ -3470,8 +3476,7 @@ function renderPaxLoadTable() {
         } else {
           cells += '<td><div class="total-cell text-cx-grey">\u2014</div></td>';
         }
-        var total = 0;
-        row.keys.forEach(function(k) { total += numOrZero(state[k]); });
+        var total = getPaxTotal(row.keys);
         cells += '<td><div class="total-cell ' + totalCls + '">' + (total || '\u2014') + '</div></td>';
         html += '<tr><td class="' + cls + '">' + row.label + '</td>' + cells + '</tr>';
       }
@@ -3485,8 +3490,7 @@ function renderPaxLoadTable() {
             var rowLabel = tr.cells[0] ? tr.cells[0].textContent.trim() : '';
             for (var ri = 0; ri < paxLoadRows.length; ri++) {
               if (paxLoadRows[ri].label === rowLabel) {
-                var tot = 0;
-                paxLoadRows[ri].keys.forEach(function(rk) { tot += numOrZero(state[rk]); });
+                var tot = getPaxTotal(paxLoadRows[ri].keys);
                 var tcells = tr.querySelectorAll('.total-cell');
                 if (tcells.length) tcells[tcells.length-1].textContent = (tot || '');
                 break;
@@ -3501,7 +3505,7 @@ function renderPaxLoadTable() {
     function renderSummary() {
       var c = document.getElementById('summary-content-g7');
       if (!c) return;
-      var arrTotal = numOrZero(state.arr_pax_j)+numOrZero(state.arr_pax_w)+numOrZero(state.arr_pax_y)+numOrZero(state.arr_pax_inf);
+      var arrTotal = getArrivalPaxTotal();
 
       c.innerHTML = '<div class="card">' +
           '<div class="section-hdr" style="margin-top:0;">Flight Information</div>' +
@@ -3640,7 +3644,7 @@ function renderPaxLoadTable() {
 
       sec('ARRIVAL PAX');
       var aj=numOrZero(state.arr_pax_j),aw=numOrZero(state.arr_pax_w),ay=numOrZero(state.arr_pax_y),ai=numOrZero(state.arr_pax_inf);
-      if(aj||aw||ay||ai) lines.push('  J:'+aj+' W:'+aw+' Y:'+ay+' INF:'+ai+' Total:'+(aj+aw+ay));
+      if(aj||aw||ay||ai) lines.push('  J:'+aj+' W:'+aw+' Y:'+ay+' INF:'+ai+' Total:'+getArrivalPaxTotal());
       lines.push('');
 
       sec('ARRIVAL SPECIAL HANDLING');
@@ -3700,9 +3704,9 @@ function renderPaxLoadTable() {
       sec('PAX LOADING (FINAL)');
       var active = resolveActiveLoading();
       lines.push('  [' + active.label + '] J:' + (active.j||'-') + ' W:' + (active.w||'-') + ' Y:' + (active.y||'-') + ' INF:' + (active.inf||'-') + ' Total:' + (active.total||'-'));
-      lines.push('  FINAL     - J:'+v('final_j')+' W:'+v('final_w')+' Y:'+v('final_y')+' INF:'+v('final_inf')+' Total:'+v('final_total'));
-      lines.push('  FINAL REV 1 - J:'+v('final_rev1_j')+' W:'+v('final_rev1_w')+' Y:'+v('final_rev1_y')+' INF:'+v('final_rev1_inf')+' Total:'+v('final_rev1_total'));
-      lines.push('  FINAL REV 2 - J:'+v('final_rev2_j')+' W:'+v('final_rev2_w')+' Y:'+v('final_rev2_y')+' INF:'+v('final_rev2_inf')+' Total:'+v('final_rev2_total'));
+      lines.push('  FINAL     - J:'+v('final_j')+' W:'+v('final_w')+' Y:'+v('final_y')+' INF:'+v('final_inf')+' Total:'+getPaxTotal(['final_j','final_w','final_y','final_inf']));
+      lines.push('  FINAL REV 1 - J:'+v('final_rev1_j')+' W:'+v('final_rev1_w')+' Y:'+v('final_rev1_y')+' INF:'+v('final_rev1_inf')+' Total:'+getPaxTotal(['final_rev1_j','final_rev1_w','final_rev1_y','final_rev1_inf']));
+      lines.push('  FINAL REV 2 - J:'+v('final_rev2_j')+' W:'+v('final_rev2_w')+' Y:'+v('final_rev2_y')+' INF:'+v('final_rev2_inf')+' Total:'+getPaxTotal(['final_rev2_j','final_rev2_w','final_rev2_y','final_rev2_inf']));
       fld('IN/DMP','dep_in_dmp'); fld('HKG','dep_hkg'); fld('INF','dep_inf'); fld('JOIN','dep_join');
       fld('DM/Emer','dep_dm_e'); fld('GO/Saph','dep_go_s'); fld('SL/Ruby','dep_sl_r'); fld('CIS','dep_cis');
       fld('IC','dep_ic'); fld('OC','dep_oc');
@@ -6829,17 +6833,15 @@ function renderPaxLoadTable() {
           ? escapeReportValue(s[k]).replace(/\r\n?|\n/g, '<br>')
           : '';
       }
-      function numOrZero(x){ return parseInt(x)||0; }
       function row(label,val){ return '<tr><td class="lbl">'+label+'</td><td class="val">'+val+'</td></tr>'; }
 
       // Flight header
       var flightLabel = (s.flight||'') + (s.date ? '  ·  '+s.date : '') + (s.regn ? '  ·  '+s.regn : '') + (s.config ? '  ·  '+s.config : '');
 
       // Active pax loading row (Rev2 > Rev1 > Final)
-      function paxRow(label, jk, wk, yk, infk, totk){
+      function paxRow(label, jk, wk, yk, infk){
         var j=numOrZero(s[jk]),w=numOrZero(s[wk]),y=numOrZero(s[yk]),inf=numOrZero(s[infk]);
-        var calcTotal = j+w+y;
-        var tot=s[totk]&&String(s[totk]).trim()?String(s[totk]):calcTotal;
+        var tot=getPaxTotal([jk,wk,yk,infk]);
         return '<tr><td class="lbl">'+label+'</td><td class="val">J: '+j+' / W: '+w+' / Y: '+y+' / INF: '+inf+' / Total: '+tot+'</td></tr>';
       }
 
@@ -7052,8 +7054,7 @@ function renderPaxLoadTable() {
         ),
         section('Arrival Crew', row('CN',v('arr_cn'))+row('ISM',v('arr_ism'))),
         section('Arrival Pax',
-          (function(){var aj=numOrZero(s.arr_pax_j),aw=numOrZero(s.arr_pax_w),ay=numOrZero(s.arr_pax_y),ai=numOrZero(s.arr_pax_inf);
-            return row('Pax','J: '+aj+' / W: '+aw+' / Y: '+ay+' / INF: '+ai+' / Total: '+(aj+aw+ay+ai));})()
+          paxRow('Pax','arr_pax_j','arr_pax_w','arr_pax_y','arr_pax_inf')
         ),
         section('Arrival Special Handling',
           row('WCHR/S',v('arr_wchr_s'))+row('WCHR/S Details',v('arr_wchr_s_details'))+
@@ -7096,13 +7097,13 @@ function renderPaxLoadTable() {
           row('Est','J: '+v('est_j')+' / W: '+v('est_w')+' / Y: '+v('est_y'))
         ),
         section('Passenger Loading Details',
-          paxRow('Loading',  'load_j','load_w','load_y','load_inf','load_total')+
-          paxRow('Sublo',    'sublo_j','sublo_w','sublo_y','sublo_inf','sublo_total')+
-          paxRow('NET',      'net_j','net_w','net_y','net_inf','net_total')+
-          paxRow('Total',    'total_j','total_w','total_y','total_inf','total_total')+
-          paxRow('Final',    'final_j','final_w','final_y','final_inf','final_total')+
-          paxRow('Final Rev 1','final_rev1_j','final_rev1_w','final_rev1_y','final_rev1_inf','final_rev1_total')+
-          paxRow('Final Rev 2','final_rev2_j','final_rev2_w','final_rev2_y','final_rev2_inf','final_rev2_total')
+          paxRow('Loading',  'load_j','load_w','load_y','load_inf')+
+          paxRow('Sublo',    'sublo_j','sublo_w','sublo_y','sublo_inf')+
+          paxRow('NET',      'net_j','net_w','net_y','net_inf')+
+          paxRow('Total',    'total_j','total_w','total_y','total_inf')+
+          paxRow('Final',    'final_j','final_w','final_y','final_inf')+
+          paxRow('Final Rev 1','final_rev1_j','final_rev1_w','final_rev1_y','final_rev1_inf')+
+          paxRow('Final Rev 2','final_rev2_j','final_rev2_w','final_rev2_y','final_rev2_inf')
         ),
         section('Special Handling (Departure)',
           row('INF OCC',v('dep_inf_occ'))+row('WCHR/S',v('dep_wchr_s'))+row('WCHC',v('dep_wchc'))+
