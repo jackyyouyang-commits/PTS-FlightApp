@@ -1,6 +1,20 @@
 # PTS-FlightApp
 Flight Details and Precision Timing Schedule (PTS) - Interactive web application for flight operations management
 
+## v1.22 beta: larger whole-flight QR with Normal / Fast cycling
+
+Open the **Fast QR beta on both devices**: https://jackyyouyang-commits.github.io/PTS-FlightApp/beta/PTS_FlightApp.html
+
+This is a new **whole-flight** experiment, not the deleted per-tab beta. Stable v1.22 is unchanged. In beta, select **Connect**, then choose **Normal (1.1 seconds/QR)** or **Fast (0.5 seconds/QR)** on the laptop. Normal is the default on each page load. The QR grows to at most 480px where the viewport permits and shrinks on small screens; the dialog scrolls to keep controls reachable. On the other device, use **Scan QR Code to Connect**.
+
+Speed changes affect only the outgoing timer: the current frame, complete payload, transfer ID and collected receiver parts stay unchanged. One QR remains static in either mode. The dialog shows the actual part count and selected-mode **minimum full cycle**. For 1,000 parts, Normal takes at least **18m 20s**, Fast **8m 20s** per cycle. Missed frames require extra cycles, and Fast may miss more; no physical iPad speed improvement has been measured. Enlarging the QR does **not** reduce the part count.
+
+The stable complete-flight protocol, 650-character parts, integrity checks, viewing-copy quality, every image/PDF page, and all flight/schedule import and auto-field behavior are retained. Flight data travels in QR images only: no backend upload or device-to-device network transfer. Loading the app/PDF.js may require internet access; content is processed locally.
+
+Fast QR beta uses a new isolated storage namespace, distinct from both stable and the deleted per-tab beta. To seed it without re-entering a laptop flight, **Save** in stable, then open beta **Connect > Whole-flight beta help / copy saved stable flight > Copy saved flight from stable v1.22**. Confirm replacement of the entire beta flight. This explicitly reads a detached copy of stable's complete snapshot, without changing stable or falling back to stale standalone fields. The existing local transfer-file import/export is also available.
+
+Its separate PWA identity and beta-scoped worker use only Fast QR beta caches, never an old per-tab cache or stable cache. Open online once to replace an old beta worker and install this experiment's offline assets. The unchanged stable worker can evict other caches on a future activation; reopen beta online if its offline cache is lost. PDF viewing-copy preparation may still need PDF.js online; the original-attachment fallback remains explicit.
+
 ## Transfer to an iPad without file uploads
 
 1. Open the published app on both devices: https://jackyyouyang-commits.github.io/PTS-FlightApp/PTS_FlightApp.html

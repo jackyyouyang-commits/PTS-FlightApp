@@ -1,0 +1,17 @@
+{
+  "id": "./fast-qr-v122",
+  "name": "PTS FlightApp v1.22 beta - Fast QR",
+  "short_name": "PTS Fast QR",
+  "description": "Whole-flight optical QR transfer with Normal and Fast cycling",
+  "start_url": "./PTS_FlightApp.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1e3a5f",
+  "theme_color": "#1e3a5f",
+  "icons": [
+    { "src": "../pts-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "../pts-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "../pts-icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
