@@ -3216,7 +3216,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var html = '';
       var targetsOut = [];
       var prevOrigTarget = null;
-      var drift = 0; // cumulative drift from most recently logged actual, applied to future un-logged targets
+      var drift = 0; // arrival actuals adjust subsequent arrival targets only
       var prevAbsTarget = null; // for detecting the schedule crossing midnight
       var dayOffset = 0; // becomes 1440 once the schedule passes midnight (next-day activities)
       // Anchor targets to the flight date and the logged actual to the current date, so the
@@ -3283,8 +3283,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             var h = Math.floor(absMin / 60);
             var m = absMin % 60;
             variance = sign + (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
-            // Shift all subsequent un-logged targets by this activity's real drift
-            if (origTarget !== null) drift = actualAbs - actualDayOffset * 1440 - origTarget;
+            // Departure actuals affect variance, not the STD/turnaround-based targets.
+            if (type === 'arr' && origTarget !== null) drift = actualAbs - actualDayOffset * 1440 - origTarget;
           }
         }
         var targetTdStyle = (shift > 0 && target !== null) ? ' style="color:#DC2626;font-weight:700;"' : '';
@@ -5195,8 +5195,8 @@ function renderPaxLoadTable() {
       lastParsedResult = null;
     }
 
-    // Compute the live (drift/shift-adjusted) targets for one activity list without touching
-    // the DOM, mirroring renderActivityTable. Returns an array of absolute minute targets.
+    // Arrival actuals adjust arrival targets; departure uses STD plus the turnaround shift.
+    // Mirrors renderActivityTable without touching the DOM; returns absolute minute targets.
     function computeActivityTargets(defs, baseTimeKey, shift, actualObj) {
       var baseMin = parseTime(state[baseTimeKey]);
       var out = [];
@@ -5226,7 +5226,7 @@ function renderPaxLoadTable() {
         out.push(target);
         if (target !== null) prevAbsTarget = target;
         var logged = actualObj[i];
-        if (target !== null && logged) {
+        if (baseTimeKey !== 'dep_std' && target !== null && logged) {
           var am = parseTime(logged);
           if (am !== null) {
             var aAbs = am + actualDayOffset * 1440 + dayOffset;
@@ -5287,7 +5287,7 @@ function renderPaxLoadTable() {
 
       var etdMin = parseTime(state.dep_etd); // minutes from midnight
       var stdMin = parseTime(state.dep_std);
-      // Live (drift/shift-adjusted) Departure PTS targets drive the ETD countdown (ATD idx 25).
+      // STD/turnaround-adjusted Departure PTS targets drive the ETD countdown (ATD idx 25).
       var depShiftForEtd = computeDepTurnaroundShift();
       var depTargetsForEtd = computeActivityTargets(depActivities, 'dep_std', depShiftForEtd, depActual);
       var atdTableMin = (depTargetsForEtd && depTargetsForEtd[25] !== null && depTargetsForEtd[25] !== undefined) ? ((depTargetsForEtd[25] % 1440) + 1440) % 1440 : null;
@@ -5482,7 +5482,7 @@ function renderPaxLoadTable() {
       });
       } // end else (!state._flightCancelled)
 
-      // Boarding & ETD are driven by the Departure PTS table's live (drift/shift-adjusted)
+      // Boarding & ETD are driven by the Departure PTS table's STD/turnaround-adjusted
       // targets: Boarding Signal Released (idx 13) and ATD (idx 25).
       var depShiftNow = computeDepTurnaroundShift();
       var depTargetsNow = computeActivityTargets(depActivities, 'dep_std', depShiftNow, depActual);
