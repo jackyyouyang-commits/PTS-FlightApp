@@ -3897,6 +3897,66 @@ function renderPaxLoadTable() {
       return doc.body.innerHTML;
     }
 
+    function repairPastedTextContrast(root) {
+      var canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1;
+      var context = canvas.getContext('2d', { willReadFrequently: true });
+      if (!context) throw new Error('Unable to check pasted text colors');
+      var colors = new Map(), textElements = [];
+      function color(value) {
+        if (!colors.has(value)) {
+          context.clearRect(0, 0, 1, 1);
+          context.fillStyle = value;
+          context.fillRect(0, 0, 1, 1);
+          colors.set(value, Array.from(context.getImageData(0, 0, 1, 1).data));
+        }
+        return colors.get(value);
+      }
+      function blend(foreground, background) {
+        var alpha = foreground[3] / 255;
+        return background.map(function(channel, i) { return foreground[i] * alpha + channel * (1 - alpha); });
+      }
+      function luminance(rgb) {
+        var channels = rgb.map(function(channel) {
+          channel /= 255;
+          return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+        });
+        return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+      }
+      function contrast(a, b) {
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      }
+      function inspect(element, background, hasBackgroundImage) {
+        var style = getComputedStyle(element);
+        background = blend(color(style.backgroundColor), background);
+        hasBackgroundImage = hasBackgroundImage || style.backgroundImage !== 'none';
+        if (Array.from(element.childNodes).some(function(node) { return node.nodeType === 3 && node.textContent.trim(); })) {
+          var fill = style.webkitTextFillColor || style.color;
+          if (fill === 'currentcolor') fill = style.color;
+          textElements.push({ element: element, color: style.color, fill: fill, background: background, image: hasBackgroundImage });
+        }
+        Array.from(element.children).forEach(function(child) { inspect(child, background, hasBackgroundImage); });
+      }
+      // Clipboard fragments can retain white text but lose their source's dark background.
+      // Capture original colors first so repairing a parent does not recolor readable children.
+      inspect(root, [255, 255, 255], false);
+      var changed = false;
+      textElements.forEach(function(item) {
+        var textColor = item.color, fillColor = item.fill;
+        var background = luminance(item.background);
+        if (!item.image && contrast(luminance(blend(color(fillColor), item.background)), background) < 2) {
+          textColor = fillColor = contrast(luminance([17, 24, 39]), background) >= contrast(1, background) ? '#111827' : '#ffffff';
+        }
+        var current = getComputedStyle(item.element);
+        if (current.color !== textColor || (current.webkitTextFillColor || current.color) !== fillColor) {
+          item.element.style.setProperty('color', textColor, 'important');
+          item.element.style.setProperty('-webkit-text-fill-color', fillColor, 'important');
+          changed = true;
+        }
+      });
+      return changed;
+    }
+
     var operationalPreviewWidths = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
     var operationalPreviewResizeObserver = typeof ResizeObserver !== 'undefined'
       ? new ResizeObserver(function(entries) {
@@ -3987,6 +4047,9 @@ function renderPaxLoadTable() {
       }
       preview.innerHTML = '<div class="operational-paste-content">' + richHtml + '</div>';
       preview.style.display = '';
+      preview.style.color = '#111827';
+      var content = preview.querySelector('.operational-paste-content');
+      if (repairPastedTextContrast(content)) contentRichHtml[textareaId] = content.innerHTML;
       watchOperationalPastePreview(preview);
       preview.querySelectorAll('table').forEach(function(table) {
         table.style.maxWidth = '100%';
@@ -6124,6 +6187,11 @@ function renderPaxLoadTable() {
       editor.setAttribute('aria-label', 'Paste ' + label + ' formatted content');
       editor.setAttribute('aria-multiline', 'true');
       editor.style.cssText = 'display:none;width:100%;height:260px;min-height:80px;flex:0 1 260px;overflow:auto;padding:10px;border:1px solid #ccc;border-radius:4px;background:#fff;box-sizing:border-box;font-family:Arial,sans-serif;font-size:16px;user-select:text;-webkit-user-select:text;-webkit-touch-callout:default;';
+      editor.addEventListener('paste', function() {
+        setTimeout(function() {
+          if (editor.isConnected) repairPastedTextContrast(editor);
+        }, 0);
+      });
       var formatted = false;
       var modeBtn = document.createElement('button');
       modeBtn.type = 'button';
@@ -6148,6 +6216,7 @@ function renderPaxLoadTable() {
         }
         textEditor.style.display = formatted ? 'none' : '';
         editor.style.display = formatted ? '' : 'none';
+        if (formatted) repairPastedTextContrast(editor);
         (formatted ? editor : textEditor).focus();
       };
       var buttons = document.createElement('div');
