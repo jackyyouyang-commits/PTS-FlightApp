@@ -1892,7 +1892,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
         <div id="share-qr-error" style="display:none;margin-top:12px;padding:10px 12px;border-radius:8px;background:#FEE2E2;color:#991B1B;font-size:13px;font-weight:600;text-align:center;"></div>
         <input id="share-qr-image-input" type="file" accept="image/*,.svg" style="display:none;">
-        <input id="share-data-file-input" type="file" accept=".pts,application/json" style="display:none;">
+        <!-- Let iPad Files select legacy .pts documents; the importer validates their contents. -->
+        <input id="share-data-file-input" type="file" style="display:none;">
         <div data-id="128" class="flex justify-end gap-3 mt-4" style="flex-wrap:wrap;">
           <button id="share-prepare-btn" style="display:none;" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px]">Prepare QR viewing copies</button>
           <button id="share-original-qr-btn" style="display:none;" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px]">Use original attachments (slower)</button>
@@ -4758,12 +4759,12 @@ function renderPaxLoadTable() {
         if (typeof LZString === 'undefined') throw new Error('Compression library unavailable');
         var payload = buildConnectPayload(true);
         var fileData = 'PTS1\n' + LZString.compressToEncodedURIComponent(JSON.stringify(payload));
-        var blob = new Blob([fileData], { type: 'application/octet-stream' });
+        var blob = new Blob([fileData], { type: 'text/plain;charset=utf-8' });
         var url = URL.createObjectURL(blob);
         var link = document.createElement('a');
         var flight = String(state.flight || 'flight').replace(/[^a-z0-9_-]+/gi, '-');
         link.href = url;
-        link.download = flight + '-PTS-Connect.pts';
+        link.download = flight + '-PTS-Connect.txt';
         document.body.appendChild(link);
         link.click();
         link.remove();

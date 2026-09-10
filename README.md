@@ -15,6 +15,12 @@ Fast QR beta uses a new isolated storage namespace, distinct from both stable an
 
 Its separate PWA identity and beta-scoped worker use only Fast QR beta caches, never an old per-tab cache or stable cache. Open online once to replace an old beta worker and install this experiment's offline assets. The unchanged stable worker can evict other caches on a future activation; reopen beta online if its offline cache is lost. PDF viewing-copy preparation may still need PDF.js online; the original-attachment fallback remains explicit.
 
+## Import a downloaded transfer file on iPad
+
+In **Connect**, select **Download Transfer File** to save one compressed `*-PTS-Connect.txt` file containing the complete flight and original attachments. Move it to the iPad using a company-approved method, then choose **Save to Files** and select a folder such as **Downloads**. In the app, use **Connect > Upload Transfer File** (or **Read Transfer File Locally** in beta) to select it. This reads the file on the device; it does not upload flight data to a server.
+
+Existing `.pts` files remain compatible. The picker no longer filters by extension or MIME type, which can grey out custom file types on iPad; the importer still checks the PTS transfer contents and rejects unrelated files. New downloads use the standard `.txt` extension and `text/plain` type without changing the compressed format. Renaming an unrelated document does not make it a PTS transfer file. Company restrictions on Safari accessing a file or its storage provider can still prevent selection.
+
 ## Transfer to an iPad without file uploads
 
 1. Open the published app on both devices: https://jackyyouyang-commits.github.io/PTS-FlightApp/PTS_FlightApp.html
