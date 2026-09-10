@@ -1881,6 +1881,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <div id="share-content-summary" role="status" style="margin-bottom:12px;padding:8px 10px;border-radius:8px;background:#F3F4F6;color:#374151;font-size:13px;text-align:center;"></div>
         <div id="share-qr-output" style="display:flex;justify-content:center;align-items:center;min-height:190px;padding:12px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;"></div>
         <div id="share-qr-sequence-status" style="display:none;margin-top:10px;color:#1e3a5f;background:#DBEAFE;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;"></div>
+        <div id="share-transfer-estimate" role="status" aria-live="polite" style="margin-top:10px;color:#374151;font-size:13px;text-align:center;"></div>
         <div id="share-scanner" style="display:none;">
           <div style="position:relative;overflow:hidden;border-radius:12px;background:#111;aspect-ratio:4/3;">
             <video id="share-scanner-video" playsinline muted style="display:block;width:100%;height:100%;object-fit:cover;"></video>
@@ -1893,6 +1894,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <input id="share-qr-image-input" type="file" accept="image/*,.svg" style="display:none;">
         <input id="share-data-file-input" type="file" accept=".pts,application/json" style="display:none;">
         <div data-id="128" class="flex justify-end gap-3 mt-4" style="flex-wrap:wrap;">
+          <button id="share-prepare-btn" style="display:none;" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px]">Prepare QR viewing copies</button>
+          <button id="share-original-qr-btn" style="display:none;" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px]">Use original attachments (slower)</button>
           <button id="share-download-qr-btn" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark">Download QR Code</button>
           <button id="share-upload-qr-btn" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark">Upload QR Image</button>
           <button id="share-download-data-btn" class="px-5 py-3 rounded-lg bg-cx-teal text-white font-semibold text-sm min-h-[44px] hover:bg-cx-teal-dark">Download Transfer File</button>
@@ -4207,9 +4210,25 @@ function renderPaxLoadTable() {
     var shareQrValues = [];
     var shareQrIndex = 0;
     var shareQrTimer = 0;
+    var shareQrPreparationId = 0;
+    var shareQrPreparing = false;
     var receivedQrTransfers = Object.create(null);
     var CONNECT_QR_CHUNK_SIZE = 650;
     var CONNECT_QR_MAX_PARTS = 10000;
+    var CONNECT_QR_INTERVAL_MS = 1100;
+    var CONNECT_IMAGE_WIDTH = 1600;
+
+    function cancelShareQrPreparation() {
+      shareQrPreparationId++;
+      if (!shareQrPreparing) return;
+      shareQrPreparing = false;
+      var output = document.getElementById('share-qr-output');
+      var status = document.getElementById('share-transfer-estimate');
+      var prepare = document.getElementById('share-prepare-btn');
+      if (output) { output.textContent = ''; output.removeAttribute('aria-busy'); }
+      if (status) status.textContent = 'QR preparation cancelled. Prepare viewing copies to send, or scan to receive.';
+      if (prepare) prepare.style.display = '';
+    }
 
     function stopShareQrSequence() {
       if (shareQrTimer) {
@@ -4225,11 +4244,15 @@ function renderPaxLoadTable() {
       shareQrTimer = setInterval(function() {
         shareQrIndex = (shareQrIndex + 1) % shareQrValues.length;
         renderShareQrFrame();
-      }, 1100);
+      }, CONNECT_QR_INTERVAL_MS);
     }
 
     function resumeShareQrSequence() {
       stopQrScanner();
+      var estimate = document.getElementById('share-transfer-estimate');
+      var prepare = document.getElementById('share-prepare-btn');
+      if (estimate) estimate.style.display = '';
+      if (prepare && !shareQrValues.length) prepare.style.display = '';
       renderShareQrFrame();
       var note = document.getElementById('share-qr-image-note');
       if (note) note.style.display = shareQrValues.length > 1 ? 'block' : 'none';
@@ -4264,6 +4287,7 @@ function renderPaxLoadTable() {
     }
 
     function closeShareModal() {
+      cancelShareQrPreparation();
       stopQrScanner();
       stopShareQrSequence();
       receivedQrTransfers = Object.create(null);
@@ -4530,6 +4554,7 @@ function renderPaxLoadTable() {
     }
 
     function startQrScanner() {
+      cancelShareQrPreparation();
       stopQrScanner();
       var errorEl = document.getElementById('share-qr-error');
       var status = document.getElementById('share-scanner-status');
@@ -4559,6 +4584,10 @@ function renderPaxLoadTable() {
       if (sequenceStatus) sequenceStatus.style.display = 'none';
       var imageNote = document.getElementById('share-qr-image-note');
       if (imageNote) imageNote.style.display = 'none';
+      ['share-transfer-estimate', 'share-prepare-btn', 'share-original-qr-btn'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
       if (scanBtn) scanBtn.style.display = 'none';
       if (stopBtn) stopBtn.style.display = '';
       if (status) status.textContent = 'Allow camera access, then point at a PTS Connect QR code.';
@@ -4779,20 +4808,308 @@ function renderPaxLoadTable() {
       }
     }
 
-    function generateShareCode() {
+    function connectPreparationYield(check) {
+      return new Promise(function(resolve) { setTimeout(resolve, 0); }).then(check);
+    }
+
+    function loadConnectImage(source) {
+      return new Promise(function(resolve, reject) {
+        var image = new Image();
+        var timeout = setTimeout(function() { finish(new Error('Image decoding timed out')); }, 30000);
+        function finish(error) {
+          clearTimeout(timeout);
+          image.onload = image.onerror = null;
+          if (error) { image.src = ''; reject(error); }
+          else resolve(image);
+        }
+        image.onload = function() {
+          finish(image.naturalWidth && image.naturalHeight ? null : new Error('Image has no readable dimensions'));
+        };
+        image.onerror = function() { finish(new Error('Image could not be decoded')); };
+        image.src = source;
+      });
+    }
+
+    async function optimizeConnectImage(source, context) {
+      if (typeof source !== 'string' || !/^data:image\/(?:png|jpe?g)[;,]/i.test(source)) {
+        context.retainedImages++;
+        return source; // Keep vectors, animations and remote URLs intact; never flatten or fetch them.
+      }
+      if (context.images.has(source)) return context.images.get(source);
+      context.check();
+      var image = await loadConnectImage(source);
+      var canvas = document.createElement('canvas');
+      try {
+        context.check();
+        var width = Math.min(CONNECT_IMAGE_WIDTH, image.naturalWidth);
+        var height = Math.max(1, Math.round(image.naturalHeight * width / image.naturalWidth));
+        // Limit width, not longest edge: tall screenshots must retain legible text and every row.
+        if (height > 32767 || width * height > 16000000) {
+          context.retainedImages++;
+          context.images.set(source, source);
+          return source;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        var ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Image canvas unavailable');
+        ctx.drawImage(image, 0, 0, width, height);
+        var isPng = /^data:image\/png[;,]/i.test(source);
+        var transparent = false;
+        if (isPng) {
+          for (var row = 0; row < height && !transparent; row += 128) {
+            var pixels = ctx.getImageData(0, row, width, Math.min(128, height - row)).data;
+            for (var a = 3; a < pixels.length; a += 4) {
+              if (pixels[a] !== 255) { transparent = true; break; }
+            }
+          }
+        }
+        var best = source;
+        if (isPng) {
+          var png = canvas.toDataURL('image/png');
+          if (png === 'data:,') throw new Error('Image is too large for this browser canvas');
+          if (png.length < best.length) best = png;
+        }
+        if (!transparent) {
+          var jpeg = canvas.toDataURL('image/jpeg', 0.8);
+          if (jpeg === 'data:,') throw new Error('Image is too large for this browser canvas');
+          if (jpeg.length < best.length) best = jpeg;
+        }
+        context.check();
+        context.images.set(source, best);
+        if (best !== source) context.imageCopies++;
+        return best;
+      } finally {
+        canvas.width = canvas.height = 0;
+        image.src = '';
+      }
+    }
+
+    async function optimizeConnectSrcset(value, context) {
+      var result = '', last = 0, pos = 0;
+      while (pos < value.length) {
+        while (pos < value.length && /[\s,]/.test(value.charAt(pos))) pos++;
+        var start = pos;
+        while (pos < value.length && !/\s/.test(value.charAt(pos))) pos++;
+        var end = pos;
+        while (end > start && value.charAt(end - 1) === ',') end--;
+        if (end > start) {
+          var source = value.slice(start, end);
+          var copy = await optimizeConnectImage(source, context);
+          result += value.slice(last, start) + copy;
+          last = end;
+        }
+        if (end === pos) {
+          while (pos < value.length && value.charAt(pos) !== ',') pos++;
+        }
+      }
+      return result + value.slice(last);
+    }
+
+    async function optimizeConnectRichHtml(html, context) {
+      // Replace only image attribute value spans, without reserializing user HTML or its formatting.
+      var tags = /<!--[\s\S]*?-->|<![^>]*>|<([a-z][a-z0-9:-]*)\b(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi;
+      var result = '', last = 0, tag;
+      while ((tag = tags.exec(html))) {
+        var name = (tag[1] || '').toLowerCase();
+        if (/^(script|style|textarea|title)$/.test(name)) {
+          var close = new RegExp('</' + name + '\\s*>', 'gi');
+          close.lastIndex = tags.lastIndex;
+          if (close.exec(html)) tags.lastIndex = close.lastIndex;
+          else break;
+          continue;
+        }
+        if (name !== 'img' && name !== 'source') continue;
+        var attrs = /([^\s=\/>]+)(\s*=\s*)("([^"]*)"|'([^']*)'|([^\s>]+))/g;
+        var attr, rewritten = '', attrLast = 0;
+        while ((attr = attrs.exec(tag[0]))) {
+          var attribute = attr[1].toLowerCase();
+          if (attribute !== 'srcset' && !(name === 'img' && attribute === 'src')) continue;
+          var quoted = attr[3].charAt(0) === '"' || attr[3].charAt(0) === "'";
+          var value = quoted ? attr[3].slice(1, -1) : attr[3];
+          var decoder = document.createElement('textarea');
+          decoder.innerHTML = value;
+          var decoded = decoder.value;
+          var copy = attribute === 'srcset'
+            ? await optimizeConnectSrcset(decoded, context)
+            : await optimizeConnectImage(decoded, context);
+          if (copy === decoded) continue;
+          var start = attr.index + attr[1].length + attr[2].length + (quoted ? 1 : 0);
+          // Preserve other URLs/entities in srcset as well as the original quoting style.
+          copy = copy.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+          rewritten += tag[0].slice(attrLast, start) + copy;
+          attrLast = start + value.length;
+        }
+        if (attrLast) {
+          result += html.slice(last, tag.index) + rewritten + tag[0].slice(attrLast);
+          last = tag.index + tag[0].length;
+        }
+      }
+      return result + html.slice(last);
+    }
+
+    async function optimizeConnectPdf(source, context, label) {
+      if (context.pdfs.has(source)) return context.pdfs.get(source);
+      if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('PDF writing library unavailable');
+      var pdf = null, pages = 0;
+      await renderPdfDataUrlToImages(source, {
+        targetWidth: CONNECT_IMAGE_WIDTH,
+        quality: 0.8,
+        check: context.check,
+        onPage: async function(page, number, total) {
+          context.check();
+          context.progress(label + ': page ' + number + ' of ' + total);
+          var width = page.pageWidth, height = page.pageHeight;
+          var scale = Math.min(1, 14400 / Math.max(width, height));
+          width *= scale;
+          height *= scale;
+          var orientation = width > height ? 'l' : 'p';
+          if (!pdf) {
+            pdf = new window.jspdf.jsPDF({ orientation: orientation, unit: 'pt', format: [width, height], compress: true });
+          } else pdf.addPage([width, height], orientation);
+          pdf.addImage(page.dataUrl, 'JPEG', 0, 0, width, height);
+          pages++;
+          await connectPreparationYield(context.check);
+        }
+      });
+      context.check();
+      if (!pdf || !pages) throw new Error('PDF contains no readable pages');
+      var copy = pdf.output('datauristring');
+      // jsPDF includes a generated filename in this prefix; it is not part of the document.
+      copy = 'data:application/pdf;base64,' + copy.slice(copy.indexOf(',') + 1);
+      var best = copy.length < source.length ? copy : source;
+      context.pdfs.set(source, best);
+      if (best !== source) { context.pdfCopies++; context.pdfPages += pages; }
+      return best;
+    }
+
+    async function optimizeConnectPayload(payload, context) {
+      var ids = Object.keys(payload._images || {});
+      for (var i = 0; i < ids.length; i++) {
+        var images = payload._images[ids[i]];
+        for (var j = 0; j < images.length; j++) {
+          context.progress(ids[i] + ': image ' + (j + 1) + ' of ' + images.length);
+          try { images[j] = await optimizeConnectImage(images[j], context); }
+          catch (e) { throw new Error(ids[i] + ', image ' + (j + 1) + ': ' + e.message); }
+          await connectPreparationYield(context.check);
+        }
+      }
+      var richIds = Object.keys(payload._rich_html || {});
+      for (var r = 0; r < richIds.length; r++) {
+        context.progress(richIds[r] + ': embedded images');
+        try { payload._rich_html[richIds[r]] = await optimizeConnectRichHtml(payload._rich_html[richIds[r]], context); }
+        catch (e) { throw new Error(richIds[r] + ', embedded image: ' + e.message); }
+        await connectPreparationYield(context.check);
+      }
+      var pdfs = [
+        ['_agent_pos_pdf', 'Agent Positions PDF'],
+        ['_dep_gen_dec_pdf', 'Departure Gen Dec PDF'],
+        ['_ramp_roster_pdf', 'Ramp Roster PDF']
+      ];
+      for (var p = 0; p < pdfs.length; p++) {
+        if (!payload[pdfs[p][0]]) continue;
+        context.progress(pdfs[p][1]);
+        try { payload[pdfs[p][0]] = await optimizeConnectPdf(payload[pdfs[p][0]], context, pdfs[p][1]); }
+        catch (e) { throw new Error(pdfs[p][1] + ': ' + e.message); }
+        await connectPreparationYield(context.check);
+      }
+      return payload;
+    }
+
+    function formatConnectBytes(bytes) {
+      return bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(2) + ' MB';
+    }
+
+    function formatConnectCycle(parts) {
+      var seconds = Math.ceil(parts * CONNECT_QR_INTERVAL_MS / 1000);
+      var hours = Math.floor(seconds / 3600);
+      var minutes = Math.floor((seconds % 3600) / 60);
+      return (hours ? hours + 'h ' : '') + (minutes ? minutes + 'm ' : '') + (seconds % 60) + 's';
+    }
+
+    async function generateShareCode(useOriginalAttachments) {
+      useOriginalAttachments = useOriginalAttachments === true;
+      cancelShareQrPreparation();
       stopQrScanner();
       stopShareQrSequence();
       receivedQrTransfers = Object.create(null);
       shareQrValues = [];
       shareQrIndex = 0;
+      shareQrPreparing = true;
+      var requestId = shareQrPreparationId;
+      var modal = document.getElementById('share-modal');
+      var qrEl = document.getElementById('share-qr-output');
+      var errorEl = document.getElementById('share-qr-error');
+      var estimate = document.getElementById('share-transfer-estimate');
+      var originalButton = document.getElementById('share-original-qr-btn');
+      var prepareButton = document.getElementById('share-prepare-btn');
+      function check() {
+        if (requestId !== shareQrPreparationId) throw new Error('QR preparation cancelled');
+      }
+      function progress(message) {
+        check();
+        if (estimate) estimate.textContent = 'Preparing ' + message + '. Desktop originals are unchanged; you can close this dialog or scan to cancel.';
+      }
+      if (modal) modal.style.display = 'flex';
+      if (qrEl) { qrEl.textContent = 'Preparing QR transfer...'; qrEl.setAttribute('aria-busy', 'true'); }
+      if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
+      if (estimate) estimate.style.display = '';
+      if (originalButton) originalButton.style.display = 'none';
+      if (prepareButton) prepareButton.style.display = 'none';
+      ['share-qr-sequence-status', 'share-download-qr-btn'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
       try {
-        var payload = buildConnectPayload(true, true);
+        progress(useOriginalAttachments ? 'original attachments' : 'smaller, readable image/PDF viewing copies');
+        await connectPreparationYield(check);
+        // The builders share live objects. Only this detached snapshot may be optimized.
+        var originalJson = JSON.stringify(buildConnectPayload(true, true));
+        var payload = JSON.parse(originalJson);
         updateShareContentSummary(payload);
         if (typeof LZString === 'undefined' || typeof qrcode === 'undefined') {
           throw new Error('QR libraries unavailable');
         }
-
-        var compressed = LZString.compressToEncodedURIComponent(JSON.stringify(payload));
+        var context = {
+          check: check, progress: progress, images: new Map(), pdfs: new Map(),
+          imageCopies: 0, pdfCopies: 0, pdfPages: 0, retainedImages: 0
+        };
+        if (!useOriginalAttachments) await optimizeConnectPayload(payload, context);
+        context.images.clear();
+        context.pdfs.clear();
+        progress('QR part count and minimum scan-cycle estimate');
+        await connectPreparationYield(check);
+        var optimizedJson = useOriginalAttachments ? originalJson : JSON.stringify(payload);
+        var originalBytes = new Blob([originalJson]).size;
+        var optimizedBytes = new Blob([optimizedJson]).size;
+        if (optimizedBytes >= originalBytes) {
+          optimizedJson = originalJson;
+          optimizedBytes = originalBytes;
+        }
+        var compressed = LZString.compressToEncodedURIComponent(optimizedJson);
+        // Avoid building a huge, unused original sequence merely to display a comparison.
+        var originalCompressed = optimizedJson === originalJson ? compressed
+          : originalBytes <= 8 * 1024 * 1024 ? LZString.compressToEncodedURIComponent(originalJson) : null;
+        var reduced = optimizedBytes < originalBytes &&
+          (originalCompressed === null || compressed.length < originalCompressed.length);
+        if (!reduced && originalCompressed !== null) {
+          compressed = originalCompressed;
+          optimizedBytes = originalBytes;
+        }
+        var originalParts = originalCompressed === null ? null
+          : Math.max(1, Math.ceil(originalCompressed.length / CONNECT_QR_CHUNK_SIZE));
+        var parts = Math.max(1, Math.ceil(compressed.length / CONNECT_QR_CHUNK_SIZE));
+        if (estimate) {
+          estimate.textContent = (useOriginalAttachments ? 'Original attachments selected. ' : reduced
+            ? 'Readable viewing copies; desktop originals unchanged. ' : 'Original attachments retained: viewing copies would not reduce this transfer. ') +
+            'Payload: ' + formatConnectBytes(originalBytes) + ' → ' + formatConnectBytes(optimizedBytes) +
+            '. QR parts: ' + (originalParts === null ? '' : originalParts + ' → ') + parts + '. ' +
+            (parts === 1 ? 'One static QR; allow time for the camera to focus and decode.' :
+              'Minimum full cycle: ' + formatConnectCycle(parts) + ' at 1.1 seconds per part. Allow several cycles if parts are missed; full transfer is not instant.') +
+            (reduced ? ' All text, formatting, images and PDF pages are included. PDF viewing copies are rasterized (not selectable text).' : '') +
+            (context.retainedImages ? ' Vector/animated, external or unusually tall images are kept intact.' : '');
+        }
+        await connectPreparationYield(check);
         var baseUrl = (window.location.protocol === 'http:' || window.location.protocol === 'https:')
           ? window.location.origin + window.location.pathname
           : 'https://jackyyouyang-commits.github.io/PTS-FlightApp/PTS_FlightApp.html';
@@ -4806,7 +5123,7 @@ function renderPaxLoadTable() {
           var transferId = connectPayloadId(compressed);
           var chunkSize = CONNECT_QR_CHUNK_SIZE;
           var total = Math.ceil(compressed.length / chunkSize);
-          if (total > CONNECT_QR_MAX_PARTS) throw new Error('Too much data for one QR transfer. Reduce attachment sizes and try again.');
+          if (total > CONNECT_QR_MAX_PARTS) throw new Error('This complete transfer needs ' + total + ' QR parts (limit ' + CONNECT_QR_MAX_PARTS + '). No data has been omitted; it cannot be sent as one QR sequence.');
           for (var i = 0; i < total; i++) {
             shareQrValues.push(
               baseUrl + '#ptsm=' + transferId + '.' + (i + 1).toString(36) + '.' +
@@ -4821,6 +5138,7 @@ function renderPaxLoadTable() {
         var downloadQrButton = document.getElementById('share-download-qr-btn');
         if (qrEl) {
           qrEl.innerHTML = '';
+          qrEl.removeAttribute('aria-busy');
           qrEl.style.display = 'flex';
         }
         if (errorEl) {
@@ -4831,10 +5149,11 @@ function renderPaxLoadTable() {
         if (downloadQrButton) downloadQrButton.style.display = shareQrValues.length > 1 ? 'none' : '';
 
         renderShareQrFrame();
-        var modal = document.getElementById('share-modal');
-        if (modal) modal.style.display = 'flex';
+        shareQrPreparing = false;
         startShareQrSequence();
       } catch(e) {
+        if (requestId !== shareQrPreparationId) return;
+        shareQrPreparing = false;
         stopShareQrSequence();
         shareQrValues = [];
         var modal = document.getElementById('share-modal');
@@ -4843,15 +5162,18 @@ function renderPaxLoadTable() {
         var sequenceStatus = document.getElementById('share-qr-sequence-status');
         var imageNote = document.getElementById('share-qr-image-note');
         var downloadQrButton = document.getElementById('share-download-qr-btn');
-        if (qrEl) qrEl.innerHTML = '';
+        if (qrEl) { qrEl.innerHTML = ''; qrEl.removeAttribute('aria-busy'); }
         if (sequenceStatus) sequenceStatus.style.display = 'none';
         if (imageNote) imageNote.style.display = 'none';
         if (downloadQrButton) downloadQrButton.style.display = 'none';
         if (errorEl) {
-          errorEl.textContent = 'Unable to generate the QR transfer on this device: ' + e.message;
+          errorEl.textContent = 'Unable to prepare the complete QR transfer: ' + e.message +
+            (useOriginalAttachments ? '' : ' Nothing was sent or omitted. Retry viewing copies, or explicitly choose original attachments (more QR parts and a longer wait).');
           errorEl.style.display = 'block';
         }
-        if (modal) modal.style.display = 'flex';
+        if (estimate) estimate.textContent = 'Preparation failed. Your desktop originals and saved flight have not been changed.';
+        if (originalButton) originalButton.style.display = useOriginalAttachments ? 'none' : '';
+        if (prepareButton) prepareButton.style.display = '';
         showToast('QR code error', 'red');
       }
     }
@@ -5463,7 +5785,7 @@ function renderPaxLoadTable() {
           el.style.color = '#fff';
           return;
         }
-        var countdownStr = departureTimeHtml + '<br><span style="font-size:0.75em;opacity:0.9;color:#fff;">ETD in ' + fmtFromSec(diffSec) + '</span>';
+        var countdownStr = departureTimeHtml + '<br><span style="font-size:0.75em;opacity:0.9;color:#fff;">ETD in -' + fmtFromSec(diffSec) + '</span>';
         var delayStr = '';
 
         // Disruption: Delay whenever the new ATD target is later than the STD. The turnaround
@@ -5687,7 +6009,9 @@ function renderPaxLoadTable() {
     }
 
     function pasteRichContent(textareaId) {
-      if (!navigator.clipboard || !navigator.clipboard.read) {
+      // Open a native paste target during the tap so iOS can focus it without
+      // depending on asynchronous clipboard-read permission.
+      if (navigator.maxTouchPoints > 0 || !navigator.clipboard || !navigator.clipboard.read) {
         showRichPasteModal(textareaId);
         return;
       }
@@ -5716,38 +6040,122 @@ function renderPaxLoadTable() {
       var heading = panel && panel.querySelector('.panel-header h2, .panel-header h3');
       var label = heading ? heading.textContent.trim() : 'Content';
       var modal = document.createElement('div');
-      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;padding:16px;';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-label', 'Paste ' + label);
+      modal.style.cssText = 'position:fixed;left:0;right:0;top:0;height:100%;box-sizing:border-box;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;padding:16px;';
       var box = document.createElement('div');
-      box.style.cssText = 'background:#fff;border-radius:8px;padding:20px;width:100%;max-width:700px;box-shadow:0 4px 6px rgba(0,0,0,0.1);';
+      box.style.cssText = 'background:#fff;border-radius:8px;padding:16px;width:100%;max-width:700px;max-height:100%;overflow:auto;box-sizing:border-box;display:flex;flex-direction:column;box-shadow:0 4px 6px rgba(0,0,0,0.1);';
       box.innerHTML = '<h2 style="margin:0 0 10px;font-size:18px;color:#333;">Paste ' + label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</h2>' +
-        '<p style="margin:0 0 10px;color:#666;font-size:14px;">Paste the formatted content into the box below, then click Import.</p>';
+        '<p style="margin:0 0 10px;color:#666;font-size:14px;">Tap and hold inside the box, choose Paste, then tap Import.</p>';
+      var textEditor = document.createElement('textarea');
+      textEditor.setAttribute('aria-label', 'Paste ' + label + ' text');
+      textEditor.placeholder = 'Tap and hold here to paste';
+      textEditor.wrap = 'off';
+      textEditor.spellcheck = false;
+      textEditor.style.cssText = 'width:100%;height:260px;min-height:80px;flex:0 1 260px;overflow:auto;resize:none;padding:10px;border:1px solid #ccc;border-radius:4px;background:#fff;color:#111827;box-sizing:border-box;font-family:monospace;font-size:16px;line-height:1.5;user-select:text;-webkit-user-select:text;-webkit-touch-callout:default;';
+      var pasteStatus = document.createElement('p');
+      pasteStatus.setAttribute('role', 'status');
+      pasteStatus.style.cssText = 'margin:8px 0 0;color:#374151;font-size:13px;flex-shrink:0;';
+      pasteStatus.textContent = 'Copied formatting is retained when the clipboard provides it.';
+      var clipboardHtml = '', clipboardText = '';
+      textEditor.addEventListener('paste', function(e) {
+        clipboardHtml = '';
+        clipboardText = '';
+        var data = e.clipboardData;
+        if (data && textEditor.selectionStart === 0 && textEditor.selectionEnd === textEditor.value.length) {
+          clipboardHtml = data.getData('text/html');
+          clipboardText = data.getData('text/plain').replace(/\r\n?/g, '\n');
+        }
+        // Leave the native paste action intact, including the iOS Paste menu.
+        setTimeout(function() {
+          if (!modal.isConnected) return;
+          pasteStatus.textContent = textEditor.value.trim()
+            ? 'Content ready. Tap Import to add it to ' + label + '.'
+            : 'The clipboard supplied no readable text. Copy the text again and retry. Company-managed apps may restrict pasting.';
+        }, 0);
+      });
       var editor = document.createElement('div');
       editor.contentEditable = 'true';
-      editor.style.cssText = 'width:100%;height:260px;overflow:auto;padding:10px;border:1px solid #ccc;border-radius:4px;background:#fff;box-sizing:border-box;font-family:Arial,sans-serif;font-size:13px;';
+      editor.setAttribute('role', 'textbox');
+      editor.setAttribute('aria-label', 'Paste ' + label + ' formatted content');
+      editor.setAttribute('aria-multiline', 'true');
+      editor.style.cssText = 'display:none;width:100%;height:260px;min-height:80px;flex:0 1 260px;overflow:auto;padding:10px;border:1px solid #ccc;border-radius:4px;background:#fff;box-sizing:border-box;font-family:Arial,sans-serif;font-size:16px;user-select:text;-webkit-user-select:text;-webkit-touch-callout:default;';
+      var formatted = false;
+      var modeBtn = document.createElement('button');
+      modeBtn.type = 'button';
+      modeBtn.textContent = 'Use formatted paste';
+      modeBtn.style.cssText = 'align-self:flex-start;flex-shrink:0;min-height:44px;margin:0 0 8px;border:1px solid #ccc;border-radius:4px;padding:6px 10px;background:#fff;color:#005c5c;cursor:pointer;';
+      modeBtn.onclick = function() {
+        formatted = !formatted;
+        modeBtn.textContent = formatted ? 'Use text paste' : 'Use formatted paste';
+        if (formatted) {
+          editor.innerHTML = '';
+          if (clipboardHtml && textEditor.value === clipboardText) editor.innerHTML = sanitizePastedHtml(clipboardHtml);
+          else if (textEditor.value) {
+            var pre = document.createElement('pre');
+            pre.style.margin = '0';
+            pre.textContent = textEditor.value;
+            editor.appendChild(pre);
+          }
+        } else {
+          clipboardHtml = editor.innerHTML;
+          clipboardText = editor.innerText.replace(/\r\n?/g, '\n');
+          textEditor.value = clipboardText;
+        }
+        textEditor.style.display = formatted ? 'none' : '';
+        editor.style.display = formatted ? '' : 'none';
+        (formatted ? editor : textEditor).focus();
+      };
       var buttons = document.createElement('div');
-      buttons.style.cssText = 'display:flex;gap:10px;margin-top:15px;justify-content:flex-end;';
+      buttons.style.cssText = 'display:flex;flex-shrink:0;gap:10px;margin-top:15px;justify-content:flex-end;';
+      var viewport = window.visualViewport;
+      function positionModal() {
+        if (!viewport) return;
+        modal.style.top = viewport.offsetTop + 'px';
+        modal.style.height = viewport.height + 'px';
+      }
+      function closePasteModal() {
+        if (viewport) {
+          viewport.removeEventListener('resize', positionModal);
+          viewport.removeEventListener('scroll', positionModal);
+        }
+        modal.remove();
+      }
       var importBtn = document.createElement('button');
+      importBtn.type = 'button';
       importBtn.textContent = 'Import';
-      importBtn.style.cssText = 'background:#10B981;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;';
+      importBtn.style.cssText = 'background:#10B981;color:#fff;border:none;min-height:44px;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;';
       importBtn.onclick = function() {
-        if (!editor.innerHTML.trim()) {
+        if (formatted ? !editor.innerText.trim() && !editor.querySelector('img,table') : !textEditor.value.trim()) {
           showToast('Please paste data first', 'orange');
           return;
         }
-        processRichContentPaste(textareaId, editor.innerHTML, editor.innerText);
-        modal.remove();
+        if (formatted) processRichContentPaste(textareaId, editor.innerHTML, editor.innerText);
+        else if (clipboardHtml && textEditor.value === clipboardText) processRichContentPaste(textareaId, clipboardHtml, textEditor.value);
+        else processPlainContentPaste(textareaId, textEditor.value);
+        closePasteModal();
       };
       var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
       cancelBtn.textContent = 'Cancel';
-      cancelBtn.style.cssText = 'background:#ccc;color:#333;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;';
-      cancelBtn.onclick = function() { modal.remove(); };
+      cancelBtn.style.cssText = 'background:#ccc;color:#333;border:none;min-height:44px;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;';
+      cancelBtn.onclick = closePasteModal;
       buttons.appendChild(importBtn);
       buttons.appendChild(cancelBtn);
+      box.appendChild(modeBtn);
+      box.appendChild(textEditor);
       box.appendChild(editor);
+      box.appendChild(pasteStatus);
       box.appendChild(buttons);
       modal.appendChild(box);
       document.body.appendChild(modal);
-      editor.focus();
+      if (viewport) {
+        viewport.addEventListener('resize', positionModal);
+        viewport.addEventListener('scroll', positionModal);
+        positionModal();
+      }
+      textEditor.focus();
     }
     
     function showPasteModal(textarea) {
@@ -7235,42 +7643,81 @@ function renderPaxLoadTable() {
       if (window._pdfJsLoadPromise) return window._pdfJsLoadPromise;
       window._pdfJsLoadPromise = new Promise(function(resolve, reject) {
         var script = document.createElement('script');
+        var timeout = setTimeout(function() {
+          finish(new Error('PDF.js loading timed out; check connectivity and retry'));
+        }, 30000);
+        function finish(error) {
+          clearTimeout(timeout);
+          script.onload = script.onerror = null;
+          if (error) {
+            script.remove();
+            window._pdfJsLoadPromise = null;
+            reject(error);
+          } else resolve(window.pdfjsLib);
+        }
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
         script.onload = function() {
           try {
             window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-            resolve(window.pdfjsLib);
-          } catch(e) { reject(e); }
+            finish();
+          } catch(e) { finish(e); }
         };
-        script.onerror = function() { reject(new Error('Failed to load PDF.js')); };
+        script.onerror = function() { finish(new Error('Failed to load PDF.js; check connectivity and retry')); };
         document.head.appendChild(script);
       });
       return window._pdfJsLoadPromise;
     }
 
-    // Rasterizes every page of an imported PDF into JPEG images for the generated report.
-    function renderPdfDataUrlToImages(dataUrl) {
-      return ensurePdfJsLoaded().then(function(pdfjsLib) {
-        var base64 = dataUrl.split(',')[1];
-        var binary = atob(base64);
-        var bytes = new Uint8Array(binary.length);
-        for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        return pdfjsLib.getDocument({ data: bytes }).promise.then(function(pdfDoc) {
-          var pagePromises = [];
-          for (var p = 1; p <= pdfDoc.numPages; p++) {
-            pagePromises.push(pdfDoc.getPage(p).then(function(page) {
-              var viewport = page.getViewport({ scale: 2 });
-              var canvas = document.createElement('canvas');
-              canvas.width = viewport.width;
-              canvas.height = viewport.height;
-              return page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise.then(function() {
-                return { dataUrl: canvas.toDataURL('image/jpeg', 0.95), width: canvas.width, height: canvas.height };
-              });
-            }));
+    // Render sequentially; QR preparation can consume each page without retaining every canvas.
+    async function renderPdfDataUrlToImages(dataUrl, options) {
+      options = options || {};
+      var check = options.check || function() {};
+      var pdfjsLib = await ensurePdfJsLoaded();
+      check();
+      var base64 = dataUrl.split(',')[1];
+      var binary = atob(base64);
+      var bytes = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      var loadingTask = pdfjsLib.getDocument({ data: bytes });
+      try {
+        var pdfDoc = await loadingTask.promise;
+        check();
+        var pages = [];
+        for (var p = 1; p <= pdfDoc.numPages; p++) {
+          check();
+          var page = await pdfDoc.getPage(p);
+          var canvas = document.createElement('canvas');
+          try {
+            check();
+            var original = page.getViewport({ scale: 1 });
+            var viewport = page.getViewport({ scale: options.targetWidth ? options.targetWidth / original.width : 2 });
+            var width = Math.ceil(viewport.width), height = Math.ceil(viewport.height);
+            if (options.targetWidth && (height > 32767 || width * height > 16000000)) {
+              throw new Error('Page ' + p + ' is too tall for a readable viewing copy on this browser');
+            }
+            canvas.width = width;
+            canvas.height = height;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('PDF page canvas unavailable');
+            await page.render({ canvasContext: ctx, viewport: viewport, background: 'rgb(255,255,255)' }).promise;
+            check();
+            var image = canvas.toDataURL('image/jpeg', options.quality || 0.95);
+            if (image === 'data:,') throw new Error('PDF page ' + p + ' exceeds browser canvas limits');
+            var rendered = {
+              dataUrl: image, width: canvas.width, height: canvas.height,
+              pageWidth: original.width, pageHeight: original.height
+            };
+            if (options.onPage) await options.onPage(rendered, p, pdfDoc.numPages);
+            else pages.push(rendered);
+          } finally {
+            canvas.width = canvas.height = 0;
+            page.cleanup();
           }
-          return Promise.all(pagePromises);
-        });
-      });
+        }
+        return pages;
+      } finally {
+        await loadingTask.destroy();
+      }
     }
 
     // Renders the report container to a canvas and saves it as a downloadable multi-page PDF.
@@ -7613,6 +8060,8 @@ function renderPaxLoadTable() {
       safeOn('share-close-btn', closeShareModal);
       safeOn('share-scan-btn', startQrScanner);
       safeOn('share-stop-scan-btn', resumeShareQrSequence);
+      safeOn('share-prepare-btn', function() { generateShareCode(); });
+      safeOn('share-original-qr-btn', function() { generateShareCode(true); });
       safeOn('share-download-qr-btn', downloadShareQrImage);
       safeOn('share-upload-qr-btn', openShareQrImagePicker);
       safeOn('share-download-data-btn', downloadConnectDataFile);
