@@ -5758,8 +5758,7 @@ function renderPaxLoadTable() {
           return;
         }
         var diffSec = Math.round((etdTargetMs - nowMs)/1000);
-        // A shifted/manual ETD later than STD is highlighted, but the departure time itself
-        // remains steady. Only countdown elements may use the blinking treatment.
+        // Highlight a shifted/manual ETD later than STD without blinking the departure time or countdown.
         var atdLateBy = null;
         if (depShiftForEtd > 0) {
           atdLateBy = depShiftForEtd;
@@ -5772,7 +5771,7 @@ function renderPaxLoadTable() {
         var departureTimeHtml = '<span style="color:' + departureTimeColor + ';">Departs at: ' + departsAtStr() + '</span>';
 
         if (diffSec < 0) {
-          var overdueCountdownHtml = '<br><span class="blink-countdown" style="font-size:0.75em;opacity:0.9;color:#fff;">ETD +' + fmtFromSec(Math.abs(diffSec)) + '</span>';
+          var overdueCountdownHtml = '<br><span style="font-size:0.75em;opacity:0.9;color:#fff;">ETD +' + fmtFromSec(Math.abs(diffSec)) + '</span>';
           var disruptionStr = '<br><span style="font-size:0.75em;opacity:0.9;">Disruption: Delay</span>';
           el.innerHTML = departureTimeHtml + overdueCountdownHtml + disruptionStr + etaLine;
           el.style.color = '#fff';
@@ -5799,7 +5798,7 @@ function renderPaxLoadTable() {
         }
 
         el.innerHTML = countdownStr + delayStr + etaLine;
-        // ensure visible (in case earlier blinking set visibility)
+        // Keep the countdown visible after updates.
         el.style.visibility = 'visible';
       });
       } // end else (!state._flightCancelled)
