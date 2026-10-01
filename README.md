@@ -1,11 +1,15 @@
 # PTS-FlightApp
 Flight Details and Precision Timing Schedule (PTS) - Interactive web application for flight operations management
 
-## v1.23 beta: Arrival / Departure navigation dropdowns
+## v1.23 beta: Compact QR and navigation dropdowns
 
 Open **v1.23 beta**: https://jackyyouyang-commits.github.io/PTS-FlightApp/beta/PTS_FlightApp.html
 
 In **Flight Info**, **Arrival Info** and **Departure Info** now open dropdown navigation links to their respective sections. Choose a link to scroll to that section without hiding fields or changing flight data. The menus support touch, keyboard navigation and Escape to close. On narrow screens the toolbar remains horizontally scrollable, while open dropdowns fit inside the viewport and scroll vertically as needed. Stable v1.22 is unchanged.
+
+**Compact QR reduces the first complete transfer, not just later updates.** In beta Connect, **Compact** is the default QR format. It keeps the existing readable viewing-copy quality and every text field, image and PDF page, then losslessly packs the complete snapshot using the smaller of LZ bytes and native gzip (when available). Short, uppercase alphanumeric frames carry more compressed data at no higher QR density than the existing full-size Compatible frames. The dialog compares the actual Compact and Compatible part counts for the same content. No flight data is uploaded, and no attachments are deferred to a separate transfer.
+
+Open the updated beta on **both devices** and use **Scan QR Code to Connect** inside the app. Compact QR codes are not ordinary website links. The receiver accepts out-of-order/duplicate parts, checks the complete payload's integrity and imports only after all parts arrive. Closing Connect, stopping scanning or preparing a new sequence cancels pending compact decoding. **Compatible** retains the stable `#pts2` / `#ptsm` formats and remains available for stable/older receivers or browsers that cannot decode gzip. Changing format prepares a new snapshot/sequence; changing Normal/Fast speed preserves the existing sequence. Transfer files are unchanged. Smaller part counts reduce the minimum cycle, but missed camera frames and large attachments can still make scanning slow; physical-iPad throughput has not been measured.
 
 **Special handling keeps the complete Excel value.** Arrival Loading and Final Loading show counts together with seat numbers and notes, for example `4 (22G 23DK)`, across all special-handling categories. Long values wrap within the summary; import preview, fields, reports, saves and transfers retain the text. Previously saved arrival WCHR/S details are recombined with their count when available. Earlier departure imports discarded WCHR/S details, so re-import the original Excel data to restore those missing details.
 
@@ -15,7 +19,7 @@ This updates the existing Fast QR beta in place: saved beta flights and its inst
 
 Speed changes affect only the outgoing timer: the current frame, complete payload, transfer ID and collected receiver parts stay unchanged. One QR remains static in either mode. The dialog shows the actual part count and selected-mode **minimum full cycle**. For 1,000 parts, Normal takes at least **18m 20s**, Fast **8m 20s** per cycle. Missed frames require extra cycles, and Fast may miss more; no physical iPad speed improvement has been measured. Enlarging the QR does **not** reduce the part count.
 
-The stable complete-flight protocol, 650-character parts, integrity checks, viewing-copy quality, every image/PDF page, and all flight/schedule import and auto-field behavior are retained. Flight data travels in QR images only: no backend upload or device-to-device network transfer. Loading the app/PDF.js may require internet access; content is processed locally.
+Compatible mode retains the stable complete-flight protocol and 650-character parts. Compact uses beta-only `PTS3` frames with 1,100 alphanumeric data characters on a fixed QR grid, shared integrity checking and the same complete-flight importer. Viewing-copy quality, every image/PDF page, and flight auto-field behavior are retained. Flight data travels in QR images only: no backend upload or device-to-device network transfer. Loading the app/PDF.js may require internet access; content is processed locally.
 
 Fast QR beta uses a new isolated storage namespace, distinct from both stable and the deleted per-tab beta. To seed it without re-entering a laptop flight, **Save** in stable, then open beta **Connect > Whole-flight beta help / copy saved stable flight > Copy saved flight from stable v1.22**. Confirm replacement of the entire beta flight. This explicitly reads a detached copy of stable's complete snapshot, without changing stable or falling back to stale standalone fields. The existing local transfer-file import/export is also available.
 
