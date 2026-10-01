@@ -22,6 +22,7 @@ var compactQr = (function() {
   var alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
   var chunkSize = 1100;
   var maxBytes = 128 * 1024 * 1024;
+  var gzipUnavailable = 'This browser cannot read compact gzip QR codes. Select Compatible on the sending device, then scan again.';
   var transfers = Object.create(null);
   var generation = 0;
 
@@ -120,7 +121,7 @@ var compactQr = (function() {
     var json;
     if (codec === 'G') {
       if (typeof DecompressionStream !== 'function') {
-        throw new Error('This browser cannot read compact gzip QR codes. Select Compatible on the sending device, then scan again.');
+        throw new Error(gzipUnavailable);
       }
       var unpacked = await readBytes(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip')), check);
       json = new TextDecoder('utf-8', { fatal: true }).decode(unpacked);
@@ -158,6 +159,10 @@ var compactQr = (function() {
     var part = parse(value);
     if (!part) {
       showError('Invalid compact QR part. Keep scanning a clear, complete QR code.');
+      return { handled: true, complete: false };
+    }
+    if (part.codec === 'G' && typeof DecompressionStream !== 'function') {
+      showError(gzipUnavailable);
       return { handled: true, complete: false };
     }
     var transfer = transfers[part.id];

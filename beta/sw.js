@@ -1,5 +1,5 @@
 /* Only Fast QR beta caches and known assets are owned by this worker. */
-var CACHE = 'pts-flightapp-fastqr-beta-v123-4';
+var CACHE = 'pts-flightapp-fastqr-beta-v123-5';
 var PREFIX = 'pts-flightapp-fastqr-beta-';
 var ASSETS = [
   './PTS_FlightApp.html', './fast-qr.js', './compact-qr.js', './manifest.webmanifest',
