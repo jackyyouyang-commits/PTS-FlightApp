@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="PTS Fast QR Beta">
+    <meta name="apple-mobile-web-app-title" content="PTS Beta">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e3a5f">
     <link rel="icon" href="../pts-icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../pts-icon-180.png">
     <link rel="manifest" href="manifest.webmanifest">
-    <title>PTS FlightApp v1.22 beta - Fast QR (whole flight)</title>
+    <title>PTS FlightApp v1.23 beta - Section navigation and Fast QR</title>
     <script src="../lz-string.min.js"></script>
     <script src="../qrcode.min.js"></script>
     <script src="../jsqr.js"></script>
@@ -28,6 +28,28 @@
       #share-modal .modal-card { overscroll-behavior: contain; }
       #share-speed-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
       #share-speed-select { min-height: 44px; max-width: 100%; padding: 8px; border: 1px solid #9CA3AF; border-radius: 6px; background: white; }
+      .flight-info-trigger {
+        display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+        padding: 8px 12px; background: #1a6e4e; color: #fff; border: none;
+        border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+        white-space: nowrap; min-height: 44px;
+      }
+      .flight-info-trigger::after { content: ''; border: 4px solid transparent; border-top-color: currentColor; margin: 5px 0 0 4px; }
+      .flight-info-trigger[aria-expanded="true"] { background: #104b35; }
+      .flight-info-dropdown {
+        position: fixed; z-index: 120; width: 270px; box-sizing: border-box;
+        padding: 4px; margin: 0; background: #fff; color: #111827;
+        border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+        overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y;
+      }
+      .flight-info-dropdown[hidden] { display: none; }
+      .flight-info-dropdown a {
+        display: flex; align-items: center; min-height: 44px; padding: 8px 12px;
+        box-sizing: border-box; color: #005c5c; font: 600 14px/1.4 Arial,sans-serif;
+        text-decoration: none; border-radius: 4px;
+      }
+      .flight-info-dropdown a:hover, .flight-info-dropdown a:focus-visible { background: #e6f3ef; }
+      .flight-info-trigger:focus-visible, .flight-info-dropdown a:focus-visible { outline: 2px solid #d97706; outline-offset: 2px; }
     </style>
     <!-- Google Fonts removed for offline use -->
 <script>
@@ -1215,7 +1237,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       </style>
     <script>
-    window.APP_VERSION = 'v1.22 beta';
+    window.APP_VERSION = 'v1.23 beta';
     document.addEventListener('DOMContentLoaded', function() {
       document.querySelectorAll('[data-app-version]').forEach(function(el) {
         el.textContent = window.APP_VERSION || '';
@@ -2016,10 +2038,30 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div data-id="133" id="tab-pts" class="tab-content active">
 
         <!-- Navigation Menu for Precision Timing Schedules + Action Buttons -->
-        <div style="position:sticky;top:0;z-index:10;background:#005C5C;border-bottom:2px solid #004545;padding:12px 16px;display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center;min-height:48px;box-shadow:0 2px 4px rgba(0,0,0,0.1);width:100%;box-sizing:border-box;">
-          <!-- Navigation buttons -->
-          <button onclick="switchToTab('pts');setTimeout(function(){document.getElementById('flightinfo-arrival').scrollIntoView({behavior:'smooth',block:'start'});},60);" class="flex items-center gap-1" style="flex-shrink:0;padding:8px 14px;background:#1a6e4e;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;"><i data-lucide="plane-landing" class="w-3.5 h-3.5"></i> Arrival Info</button>
-          <button onclick="switchToTab('pts');setTimeout(function(){document.getElementById('flightinfo-departure').scrollIntoView({behavior:'smooth',block:'start'});},60);" class="flex items-center gap-1" style="flex-shrink:0;padding:8px 14px;background:#1a6e4e;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;"><i data-lucide="plane-takeoff" class="w-3.5 h-3.5"></i> Departure Info</button>
+        <div id="flight-info-toolbar" style="position:sticky;top:0;z-index:10;background:#005C5C;border-bottom:2px solid #004545;padding:12px 16px;display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center;min-height:48px;box-shadow:0 2px 4px rgba(0,0,0,0.1);width:100%;box-sizing:border-box;">
+          <button id="arrival-info-trigger" type="button" class="flight-info-trigger" aria-expanded="false" aria-controls="arrival-info-dropdown"><i data-lucide="plane-landing" class="w-3.5 h-3.5"></i> Arrival Info</button>
+          <nav id="arrival-info-dropdown" class="flight-info-dropdown" aria-label="Arrival Info sections" hidden>
+            <a href="#flightinfo-arrival">Arrival overview</a>
+            <a href="#flightinfo-arrival-crew">Arrival Crew</a>
+            <a href="#flightinfo-arrival-pax">Arrival PAX Loading</a>
+            <a href="#flightinfo-arrival-special">Arrival Special Handling</a>
+            <a href="#flightinfo-connections">Connections</a>
+            <a href="#flightinfo-arrival-baggage">Baggage</a>
+          </nav>
+          <button id="departure-info-trigger" type="button" class="flight-info-trigger" aria-expanded="false" aria-controls="departure-info-dropdown"><i data-lucide="plane-takeoff" class="w-3.5 h-3.5"></i> Departure Info</button>
+          <nav id="departure-info-dropdown" class="flight-info-dropdown" aria-label="Departure Info sections" hidden>
+            <a href="#flightinfo-departure">Departure overview</a>
+            <a href="#flightinfo-departure-details">Departure Flight Info</a>
+            <a href="#flightinfo-departure-crew">Departure Crew</a>
+            <a href="#flightinfo-cargo-fuel">Cargo &amp; Fuel</a>
+            <a href="#flightinfo-capacity">Capacity Details</a>
+            <a href="#flightinfo-passenger-loading">Passenger Loading Details</a>
+            <a href="#flightinfo-passenger-info">Passenger Info</a>
+            <a href="#flightinfo-departure-baggage">Baggage Details</a>
+            <a href="#flightinfo-departure-special">Special Handling</a>
+            <a href="#flightinfo-remarks">Remarks</a>
+            <a href="#flightinfo-notices">Notices</a>
+          </nav>
 
           <!-- Divider -->
           <div class="nav-divider"></div>
@@ -2070,7 +2112,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
         <div data-id="167" id="flightinfo-arrival" class="section-hdr green text-center text-base tracking-widest" style="font-size:0.85rem;scroll-margin-top:80px;">Arrival</div>
 
-        <div data-id="168" class="section-hdr">Arrival Crew</div>
+        <div data-id="168" id="flightinfo-arrival-crew" class="section-hdr" tabindex="-1">Arrival Crew</div>
         <div data-id="169" class="card">
           <div data-id="170" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div data-id="171"><label data-id="172" class="field-label">CN</label><input data-id="173" class="field-input sm" id="f-arr_cn" data-key="arr_cn" placeholder="Name"></div>
@@ -2078,7 +2120,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="177" class="section-hdr">Arrival PAX Loading</div>
+        <div data-id="177" id="flightinfo-arrival-pax" class="section-hdr" tabindex="-1">Arrival PAX Loading</div>
         <div data-id="178" class="card">
           <div data-id="179" class="grid grid-cols-5 gap-2 items-end arrival-pax-five-across">
             <div data-id="180"><label data-id="181" class="field-label">J</label><input data-id="182" class="field-input sm" id="f-arr_pax_j" data-key="arr_pax_j" inputmode="numeric" placeholder="0"></div>
@@ -2089,7 +2131,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="195" class="section-hdr">Arrival Special Handling</div>
+        <div data-id="195" id="flightinfo-arrival-special" class="section-hdr" tabindex="-1">Arrival Special Handling</div>
         <div data-id="196" class="card">
           <div data-id="197" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div data-id="198">
@@ -2107,7 +2149,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="224" class="section-hdr">Connections</div>
+        <div data-id="224" id="flightinfo-connections" class="section-hdr" tabindex="-1">Connections</div>
         <div data-id="225" class="card space-y-3">
           <div data-id="226"><label data-id="227" class="field-label">INTL CNX</label><input data-id="228" class="field-input sm" id="f-intl_cnx" data-key="intl_cnx" placeholder="Flight info or NIL"></div>
           <div data-id="229"><label data-id="230" class="field-label">US CNX</label><input data-id="231" class="field-input sm" id="f-us_cnx" data-key="us_cnx" placeholder="Flight info or NIL"></div>
@@ -2116,7 +2158,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div data-id="238"><label data-id="239" class="field-label">AC WCH / MAAS</label><input data-id="240" class="field-input sm" id="f-ac_wch" data-key="ac_wch" placeholder="0"></div>
         </div>
 
-        <div data-id="241" class="section-hdr">Baggage</div>
+        <div data-id="241" id="flightinfo-arrival-baggage" class="section-hdr" tabindex="-1">Baggage</div>
         <div data-id="242" class="card">
           <div class="grid grid-cols-2 gap-3">
             <div><label class="field-label">Doorside</label><textarea class="field-input sm autosize" id="f-arr_doorside" data-key="arr_doorside" placeholder="e.g. 01 WCH" data-autoresize="true"></textarea></div>
@@ -2128,7 +2170,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
         <div data-id="261" id="flightinfo-departure" class="section-hdr green text-center text-base tracking-widest" style="font-size:0.85rem;scroll-margin-top:80px;">Departure</div>
 
-        <div data-id="262" class="section-hdr">Departure Flight Info</div>
+        <div data-id="262" id="flightinfo-departure-details" class="section-hdr" tabindex="-1">Departure Flight Info</div>
         <div data-id="263" class="card">
           <div data-id="264" class="grid grid-cols-3 gap-3">
             <div data-id="265"><label data-id="266" class="field-label">STD</label><input data-id="267" class="field-input sm" id="f-dep_std" data-key="dep_std" placeholder="HH:MM"><div id="dep-std-disruption" style="display:none;font-size:0.7rem;font-weight:700;color:#DC2626;margin-top:2px;"></div></div>
@@ -2148,7 +2190,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="297" class="section-hdr">Departure Crew</div>
+        <div data-id="297" id="flightinfo-departure-crew" class="section-hdr" tabindex="-1">Departure Crew</div>
         <div data-id="298" class="card">
           <div data-id="299" class="grid grid-cols-2 gap-3">
             <div data-id="300"><label data-id="301" class="field-label">CN</label><input data-id="302" class="field-input sm" id="f-dep_cn" data-key="dep_cn" placeholder="Name"></div>
@@ -2160,7 +2202,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="310" class="section-hdr">Cargo &amp; Fuel</div>
+        <div data-id="310" id="flightinfo-cargo-fuel" class="section-hdr" tabindex="-1">Cargo &amp; Fuel</div>
         <div data-id="311" class="card">
           <div class="grid grid-cols-2 gap-3 mb-3">
             <div><label class="field-label">Cargo Type</label><input class="field-input sm" id="f-dep_cargo_type" data-key="dep_cargo_type" placeholder="e.g. 1P 12A Bulk (AVI)" style="min-height:34px;padding:6px 8px;font-size:14px;"></div>
@@ -2179,7 +2221,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="338" class="section-hdr">Capacity Details</div>
+        <div data-id="338" id="flightinfo-capacity" class="section-hdr" tabindex="-1">Capacity Details</div>
         <div data-id="339" class="card">
           <div data-id="340" class="table-scroll-wrap">
           <div class="table-scroll-wrap"><table data-id="341" class="pax-table">
@@ -2227,7 +2269,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="388" class="section-hdr">Passenger Loading Details</div>
+        <div data-id="388" id="flightinfo-passenger-loading" class="section-hdr" tabindex="-1">Passenger Loading Details</div>
         <div data-id="389" class="card">
           <div data-id="390" class="table-scroll-wrap">
           <div class="table-scroll-wrap"><table data-id="391" class="pax-table" id="pax-load-table-c3">
@@ -2239,7 +2281,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="401" class="section-hdr">Passenger Info</div>
+        <div data-id="401" id="flightinfo-passenger-info" class="section-hdr" tabindex="-1">Passenger Info</div>
         <div data-id="402" class="card">
           <div data-id="403" class="grid grid-cols-2 gap-3">
             <div data-id="404"><label data-id="405" class="field-label">IN/DMP</label><input data-id="406" class="field-input sm" id="f-dep_in_dmp" data-key="dep_in_dmp" placeholder="0"></div>
@@ -2259,7 +2301,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="436" class="section-hdr">Baggage Details</div>
+        <div data-id="436" id="flightinfo-departure-baggage" class="section-hdr" tabindex="-1">Baggage Details</div>
         <div data-id="437" class="card">
           <div data-id="438" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div data-id="439"><label data-id="440" class="field-label">Total Bags</label><input data-id="441" class="field-input sm" id="f-dep_total_bags" data-key="dep_total_bags" inputmode="numeric" placeholder="*"></div>
@@ -2270,7 +2312,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div data-id="451" class="mt-3"><label data-id="452" class="field-label">Carry-On Needed</label><input data-id="453" class="field-input sm" id="f-dep_carry_on" data-key="dep_carry_on" placeholder="*"></div>
         </div>
 
-        <div data-id="454" class="section-hdr">Special Handling</div>
+        <div data-id="454" id="flightinfo-departure-special" class="section-hdr" tabindex="-1">Special Handling</div>
         <div data-id="455" class="card">
           <div data-id="456" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div data-id="457">
@@ -2290,12 +2332,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="500" class="section-hdr">Remarks</div>
+        <div data-id="500" id="flightinfo-remarks" class="section-hdr" tabindex="-1">Remarks</div>
         <div data-id="501" class="card">
           <textarea data-id="502" class="field-input autosize" id="f-remarks" data-key="remarks" data-autoresize="true" placeholder="Enter any remarks..." rows="2" style="min-height:60px;"></textarea>
         </div>
 
-        <div data-id="503" class="section-hdr" style="background:#EF4444;">Notices</div>
+        <div data-id="503" id="flightinfo-notices" class="section-hdr" tabindex="-1" style="background:#EF4444;">Notices</div>
         <div data-id="504" class="notice-card">Verify Locks Raised Before Close!!!</div>
         <div data-id="505" class="notice-card">Re-confirm Final Pax Figure with ISM!!!</div>
 
@@ -8597,7 +8639,99 @@ function renderPaxLoadTable() {
     window.addEventListener('orientationchange',function(){setTimeout(setVH,200);});
 
     // === TAB SWITCHING ===
+    function initFlightInfoDropdowns() {
+      var toolbar = document.getElementById('flight-info-toolbar');
+      var main = document.getElementById('main-content-w3x4');
+      var active = null;
+      function closeDropdown(restoreFocus) {
+        if (!active) return;
+        var trigger = active.trigger;
+        active.panel.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+        active = null;
+        if (restoreFocus) trigger.focus({ preventScroll: true });
+      }
+      function openDropdown(trigger, panel) {
+        closeDropdown(false);
+        panel.hidden = false;
+        trigger.setAttribute('aria-expanded', 'true');
+        active = { trigger: trigger, panel: panel };
+        var rect = trigger.getBoundingClientRect();
+        var viewport = window.visualViewport;
+        var left = viewport ? viewport.offsetLeft : 0;
+        var top = viewport ? viewport.offsetTop : 0;
+        var width = viewport ? viewport.width : window.innerWidth;
+        var height = viewport ? viewport.height : window.innerHeight;
+        var below = Math.max(0, top + height - rect.bottom - 12);
+        var above = Math.max(0, rect.top - top - 12);
+        var upwards = below < 160 && above > below;
+        panel.style.width = Math.min(270, width - 16) + 'px';
+        panel.style.maxHeight = Math.min(420, upwards ? above : below) + 'px';
+        panel.style.left = Math.max(left + 8, Math.min(rect.left, left + width - panel.offsetWidth - 8)) + 'px';
+        panel.style.top = (upwards ? rect.top - panel.offsetHeight - 4 : rect.bottom + 4) + 'px';
+        panel.scrollTop = 0;
+        panel.querySelector('a').focus({ preventScroll: true });
+      }
+      toolbar.querySelectorAll('.flight-info-trigger').forEach(function(trigger) {
+        var panel = document.getElementById(trigger.getAttribute('aria-controls'));
+        // The toolbar scrolls horizontally; keep dropdown links outside its clipped touch area.
+        document.body.appendChild(panel);
+        trigger.addEventListener('click', function() {
+          if (active && active.trigger === trigger) closeDropdown(false);
+          else openDropdown(trigger, panel);
+        });
+        trigger.addEventListener('keydown', function(event) {
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            openDropdown(trigger, panel);
+          }
+        });
+        panel.addEventListener('click', function(event) {
+          var link = event.target.closest('a');
+          if (!link) return;
+          event.preventDefault();
+          var target = document.getElementById(link.getAttribute('href').slice(1));
+          closeDropdown(false);
+          if (!target) { showToast('This Flight Info section is unavailable.', 'red'); return; }
+          var scrollTop = main.scrollTop + target.getBoundingClientRect().top
+            - main.getBoundingClientRect().top - toolbar.offsetHeight - 8;
+          target.setAttribute('tabindex', '-1');
+          target.focus({ preventScroll: true });
+          main.scrollTo({ top: Math.max(0, scrollTop), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        });
+        panel.addEventListener('keydown', function(event) {
+          var links = Array.from(panel.querySelectorAll('a'));
+          var index = links.indexOf(document.activeElement);
+          if (['ArrowDown', 'ArrowUp', 'Home', 'End'].indexOf(event.key) < 0) return;
+          event.preventDefault();
+          var next = event.key === 'Home' ? 0 : event.key === 'End' ? links.length - 1
+            : (index + (event.key === 'ArrowDown' ? 1 : -1) + links.length) % links.length;
+          links[next].focus({ preventScroll: true });
+          links[next].scrollIntoView({ block: 'nearest' });
+        });
+      });
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && active) { event.preventDefault(); closeDropdown(true); }
+      });
+      document.addEventListener('pointerdown', function(event) {
+        if (active && !active.panel.contains(event.target) && !active.trigger.contains(event.target)) closeDropdown(false);
+      });
+      document.addEventListener('focusin', function(event) {
+        if (active && !active.panel.contains(event.target) && !active.trigger.contains(event.target)) closeDropdown(false);
+      });
+      document.addEventListener('scroll', function(event) {
+        if (active && event.target !== active.panel && !active.panel.contains(event.target)) closeDropdown(false);
+      }, true);
+      toolbar.addEventListener('close-flight-info-dropdowns', function() { closeDropdown(false); });
+      window.addEventListener('resize', function() { closeDropdown(false); });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function() { closeDropdown(false); });
+        window.visualViewport.addEventListener('scroll', function() { closeDropdown(false); });
+      }
+    }
+
     function switchToTab(tabId){
+      document.getElementById('flight-info-toolbar').dispatchEvent(new Event('close-flight-info-dropdowns'));
       document.querySelectorAll('.tab-content').forEach(function(p){p.classList.remove('active');p.style.display='none';});
       var t=document.getElementById('tab-'+tabId);
       if(t){t.classList.add('active');t.style.display=t.classList.contains('tab-flex-panel')?'flex':'block';if(t.classList.contains('tab-flex-panel'))t.style.flexDirection='column';}
@@ -8618,6 +8752,7 @@ function renderPaxLoadTable() {
     }
     init();
     wireNavTabs();
+    initFlightInfoDropdowns();
 
     // Register service worker for PWA install / offline use
     if ('serviceWorker' in navigator) {

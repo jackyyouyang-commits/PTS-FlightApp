@@ -1,11 +1,13 @@
 # PTS-FlightApp
 Flight Details and Precision Timing Schedule (PTS) - Interactive web application for flight operations management
 
-## v1.22 beta: larger whole-flight QR with Normal / Fast cycling
+## v1.23 beta: Arrival / Departure navigation dropdowns
 
-Open the **Fast QR beta on both devices**: https://jackyyouyang-commits.github.io/PTS-FlightApp/beta/PTS_FlightApp.html
+Open **v1.23 beta**: https://jackyyouyang-commits.github.io/PTS-FlightApp/beta/PTS_FlightApp.html
 
-This is a new **whole-flight** experiment, not the deleted per-tab beta. Stable v1.22 is unchanged. In beta, select **Connect**, then choose **Normal (1.1 seconds/QR)** or **Fast (0.5 seconds/QR)** on the laptop. Normal is the default on each page load. The QR grows to at most 480px where the viewport permits and shrinks on small screens; the dialog scrolls to keep controls reachable. On the other device, use **Scan QR Code to Connect**.
+In **Flight Info**, **Arrival Info** and **Departure Info** now open dropdown navigation links to their respective sections. Choose a link to scroll to that section without hiding fields or changing flight data. The menus support touch, keyboard navigation and Escape to close. On narrow screens the toolbar remains horizontally scrollable, while open dropdowns fit inside the viewport and scroll vertically as needed. Stable v1.22 is unchanged.
+
+This updates the existing Fast QR beta in place: saved beta flights and its installed-app identity are retained, still separate from stable and the deleted per-tab experiment. The previous whole-flight QR features remain: in beta, select **Connect**, then choose **Normal (1.1 seconds/QR)** or **Fast (0.5 seconds/QR)** on the laptop. Normal is the default on each page load. The QR grows to at most 480px where the viewport permits and shrinks on small screens; the dialog scrolls to keep controls reachable. On the other device, use **Scan QR Code to Connect**.
 
 Speed changes affect only the outgoing timer: the current frame, complete payload, transfer ID and collected receiver parts stay unchanged. One QR remains static in either mode. The dialog shows the actual part count and selected-mode **minimum full cycle**. For 1,000 parts, Normal takes at least **18m 20s**, Fast **8m 20s** per cycle. Missed frames require extra cycles, and Fast may miss more; no physical iPad speed improvement has been measured. Enlarging the QR does **not** reduce the part count.
 
