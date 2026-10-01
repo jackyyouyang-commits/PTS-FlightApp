@@ -2885,6 +2885,22 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       m = ((m % 1440) + 1440) % 1440;
       return pad(Math.floor(m/60)) + ':' + pad(m%60);
     }
+    function getTimeVariance(targetMin, actualMin) {
+      if (targetMin == null || actualMin == null) return null;
+      // Time-only entries share the live clock's local day; choose the nearest
+      // adjacent day across midnight, never the saved flight date's age.
+      var targetClock = ((targetMin % 1440) + 1440) % 1440;
+      var actualClock = ((actualMin % 1440) + 1440) % 1440;
+      var diff = actualClock - targetClock;
+      if (diff > 720) diff -= 1440;
+      if (diff < -720) diff += 1440;
+      return diff;
+    }
+    function formatTimeVariance(minutes) {
+      if (minutes == null) return '\u2014';
+      var abs = Math.abs(minutes);
+      return (minutes < 0 ? '-' : '+') + pad(Math.floor(abs / 60)) + ':' + pad(abs % 60);
+    }
     function numOrZero(v) { var n = parseInt(v); return isNaN(n) ? 0 : n; }
     function getPaxTotal(keys) {
       return keys.reduce(function(total, key) { return total + numOrZero(state[key]); }, 0);
@@ -3297,38 +3313,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var tbody = document.getElementById(tbodyId);
       if (!tbody) return null;
       var shift = baseShift || 0; // turnaround compression shift (departure only)
-      var baseMin = parseTime(state[baseTimeKey]);
       var html = '';
-      var targetsOut = [];
-      var prevOrigTarget = null;
-      var drift = 0; // arrival actuals adjust subsequent arrival targets only
-      var prevAbsTarget = null; // for detecting the schedule crossing midnight
-      var dayOffset = 0; // becomes 1440 once the schedule passes midnight (next-day activities)
-      // Anchor targets to the flight date and the logged actual to the current date, so the
-      // difference between the Flight Information date and today's date drives the variance
-      // (e.g. flight 04-Sep target 12:37, actual logged 01:32 on 05-Sep -> +12:55).
-      var now0 = new Date();
-      var todayMid = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
-      var fDate = parseFlightDateStr(state.date);
-      var actualDayOffset = 0; // days from the flight date to today
-      if (fDate) {
-        var fMid = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate()).getTime();
-        actualDayOffset = Math.round((todayMid - fMid) / 86400000);
-      }
+      var targetsOut = computeActivityTargets(defs, baseTimeKey, shift, actualObj);
       for (var i = 0; i < defs.length; i++) {
         var act = defs[i];
-        var origTarget = null;
-        if (act.offset !== null && baseMin !== null) {
-          origTarget = baseMin + act.offset + shift;
-          prevOrigTarget = origTarget;
-        } else if (act.offset === null && prevOrigTarget !== null) {
-          origTarget = prevOrigTarget;
-        }
-        // Detect the schedule crossing midnight (a big drop from the previous target)
-        if (prevAbsTarget !== null && origTarget !== null && origTarget < prevAbsTarget - 720) dayOffset += 1440;
-        var target = origTarget !== null ? origTarget + drift : null;
-        targetsOut.push(target);
-        if (target !== null) prevAbsTarget = target;
+        var target = targetsOut[i];
         var targetStr = target !== null ? fmtMin(target) : '\u2014';
         var logged = actualObj[i];
         var actualCell = '';
@@ -3344,36 +3333,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             '<button class="act-edit-btn" data-ms-type="' + type + '" data-ms-idx="' + i + '" title="Manual input">&#9998;</button>' +
             '</span>';
         }
-        var variance = '\u2014';
-        var varianceIsLate = false;
-        if (target !== null && logged) {
-          var actualMin = parseTime(logged);
-          if (actualMin !== null) {
-            // Anchor the target to the flight date (plus any schedule midnight rollover) and
-            // the actual to today's date via actualDayOffset. When the flight date is already
-            // in the past (actualDayOffset > 0), the date anchor alone places the actual on the
-            // correct day - the schedule's internal midnight rollover (dayOffset) must NOT be
-            // added again, or a post-drift activity (e.g. Chocks On 03:35 after a 03:34 target)
-            // would be read as next-day (+24h). The >6h-early roll-forward only applies when
-            // there is no date anchor at all.
-            var targetAbs = target; // flight-date-based minutes (may exceed 1440 via offsets)
-            var actualAbs = actualMin + actualDayOffset * 1440 + (actualDayOffset > 0 ? 0 : dayOffset);
-            if (actualDayOffset === 0 && dayOffset === 0) {
-              while (actualAbs - targetAbs < -360) actualAbs += 1440;
-            }
-            var diffMin = actualAbs - targetAbs;
-            varianceIsLate = diffMin > 0;
-            var sign = diffMin >= 0 ? '+' : '-';
-            var absMin = Math.abs(diffMin);
-            var h = Math.floor(absMin / 60);
-            var m = absMin % 60;
-            variance = sign + (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
-            // Departure actuals affect variance, not the STD/turnaround-based targets.
-            if (type === 'arr' && origTarget !== null) drift = actualAbs - actualDayOffset * 1440 - origTarget;
-          }
-        }
+        var diffMin = getTimeVariance(target, parseTime(logged));
+        var variance = formatTimeVariance(diffMin);
         var targetTdStyle = (shift > 0 && target !== null) ? ' style="color:#DC2626;font-weight:700;"' : '';
-        var varianceColor = varianceIsLate ? '#DC2626' : '#059669';
+        var varianceColor = diffMin > 0 ? '#DC2626' : '#059669';
         html += '<tr><td>' + act.name + '</td><td' + targetTdStyle + '>' + targetStr + '</td><td>' + actualCell + '</td><td style="text-align:center;font-weight:600;color:' + varianceColor + ';">' + variance + '</td></tr>';
       }
       tbody.innerHTML = html;
@@ -5668,22 +5631,12 @@ function renderPaxLoadTable() {
     }
 
     // Arrival actuals adjust arrival targets; departure uses STD plus the turnaround shift.
-    // Mirrors renderActivityTable without touching the DOM; returns absolute minute targets.
+    // Shared by the table, reports and countdowns; retains schedule minutes across midnight.
     function computeActivityTargets(defs, baseTimeKey, shift, actualObj) {
       var baseMin = parseTime(state[baseTimeKey]);
       var out = [];
       var prevOrigTarget = null;
       var drift = 0;
-      var prevAbsTarget = null;
-      var dayOffset = 0;
-      var now0 = new Date();
-      var todayMid = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
-      var fDate = parseFlightDateStr(state.date);
-      var actualDayOffset = 0;
-      if (fDate) {
-        var fMid = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate()).getTime();
-        actualDayOffset = Math.round((todayMid - fMid) / 86400000);
-      }
       for (var i = 0; i < defs.length; i++) {
         var act = defs[i];
         var origTarget = null;
@@ -5693,18 +5646,12 @@ function renderPaxLoadTable() {
         } else if (act.offset === null && prevOrigTarget !== null) {
           origTarget = prevOrigTarget;
         }
-        if (prevAbsTarget !== null && origTarget !== null && origTarget < prevAbsTarget - 720) dayOffset += 1440;
         var target = origTarget !== null ? origTarget + drift : null;
         out.push(target);
-        if (target !== null) prevAbsTarget = target;
         var logged = actualObj[i];
         if (baseTimeKey !== 'dep_std' && target !== null && logged) {
-          var am = parseTime(logged);
-          if (am !== null) {
-            var aAbs = am + actualDayOffset * 1440 + dayOffset;
-            while (aAbs - target < -360) aAbs += 1440;
-            if (origTarget !== null) drift = aAbs - actualDayOffset * 1440 - origTarget;
-          }
+          var diff = getTimeVariance(target, parseTime(logged));
+          if (diff !== null) drift = target + diff - origTarget;
         }
       }
       return out;
@@ -5767,30 +5714,10 @@ function renderPaxLoadTable() {
       // beyond the scheduled STD (depShiftForEtd > 0). Otherwise a manual ETD stands.
       if (atdTableMin !== null && depShiftForEtd > 0) etdMin = atdTableMin;
 
-      // Real elapsed delay: cross-check the flight's scheduled date (fd) against today's
-      // real calendar date. Actual times logged (e.g. ATD) carry no date of their own, so
-      // if several real days have passed since the scheduled STD, that day gap must be
-      // added on top of the clock-time difference (e.g. a flight from 04SEP still showing
-      // an ATD logged on 06SEP is +48h late, not just a same-day clock delta). Shared by
-      // both the disruption delay calc and the ETA HKG calc below.
-      var daysSinceFlight = 0;
-      if (fd) {
-        var fdMidMs = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate()).getTime();
-        var todayMidMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        daysSinceFlight = Math.round((todayMidMs - fdMidMs) / 86400000);
-        if (daysSinceFlight < 0) daysSinceFlight = 0;
-      }
-
-      // Calculate the final delay only from the logged ATD milestone.
-      var delayMinutes = 0;
-      try {
-        var loggedAtdMin = depActual && depActual[25] ? parseTime(depActual[25]) : null;
-        if (loggedAtdMin != null && stdMin != null) {
-          var actualAtdAbsMin = daysSinceFlight * 1440 + loggedAtdMin;
-          if (daysSinceFlight === 0 && loggedAtdMin < stdMin - 120) actualAtdAbsMin += 1440;
-          if (actualAtdAbsMin > stdMin) delayMinutes = actualAtdAbsMin - stdMin;
-        }
-      } catch (e) { delayMinutes = 0; }
+      // Final disruption compares actual ATD with STD, using the table's time-only rule.
+      var loggedAtdMin = depActual && depActual[25] ? parseTime(depActual[25]) : null;
+      var atdVariance = getTimeVariance(stdMin, loggedAtdMin);
+      var delayMinutes = atdVariance === null ? 0 : Math.max(0, atdVariance);
 
       // STD field disruption badge - flags whenever a logged actual (ultimately ATD) runs later
       // than the scheduled STD, independent of the ETD countdown display above.
@@ -5835,15 +5762,14 @@ function renderPaxLoadTable() {
           var y0 = fd.getFullYear(), mo0 = fd.getMonth(), d0 = fd.getDate();
           // Original STD instant (departure day reference)
           var stdUtcMs = yvrWallToUtcMs(y0, mo0, d0, Math.floor(stdMin/60), stdMin % 60);
-          // ATD instant: start at STD instant, then add whole days until the ATD clock is
-          // reached at/after STD (ATD is always >= STD for a departure), then it may differ.
+          // Keep the logged ATD day consistent with its variance, not the age of the save.
           var atdUtcMs = yvrWallToUtcMs(y0, mo0, d0, Math.floor(atdMinForEta/60), atdMinForEta % 60);
-          // Once a real ATD is logged, anchor it to the number of real calendar days that have
-          // actually elapsed since the scheduled STD date, not just the clock-time difference -
-          // otherwise a multi-day-late ATD whose clock happens to be close to STD's clock (e.g.
-          // 23:10 logged two days after a 23:00 STD) is mistaken for a same-day departure.
-          if (depActual[25]) atdUtcMs += daysSinceFlight * 86400000;
-          while (atdUtcMs < stdUtcMs - 6*3600*1000) atdUtcMs += 86400000; // ATD next day if before STD
+          if (atdVariance !== null) {
+            var atdDay = Math.floor((stdMin + atdVariance) / 1440);
+            atdUtcMs = yvrWallToUtcMs(y0, mo0, d0 + atdDay, Math.floor(loggedAtdMin/60), loggedAtdMin % 60);
+          } else {
+            while (atdUtcMs < stdUtcMs - 6*3600*1000) atdUtcMs += 86400000;
+          }
           // Arrival instant (UTC) = ATD + block time
           var arrUtcMs = atdUtcMs + blkMin * 60000;
           // Arrival HKG wall clock + date
@@ -7408,17 +7334,13 @@ function renderPaxLoadTable() {
         return '<tr><td class="lbl">'+label+'</td><td class="val">J: '+j+' / W: '+w+' / Y: '+y+' / INF: '+inf+' / Total: '+tot+'</td></tr>';
       }
 
-      function activityReportRows(tbodyId, defs, baseKey, shift, actualObj) {
-        var renderedRows = document.querySelectorAll('#' + tbodyId + ' tr');
+      function activityReportRows(defs, baseKey, shift, actualObj) {
         var targets = computeActivityTargets(defs, baseKey, shift, actualObj);
         var html = '';
         defs.forEach(function(activity, index) {
-          var cells = renderedRows[index] ? renderedRows[index].querySelectorAll('td') : [];
-          var target = cells.length >= 2
-            ? cells[1].textContent.trim()
-            : (targets[index] === null || targets[index] === undefined ? '\u2014' : fmtMin(targets[index]));
+          var target = fmtMin(targets[index]);
           var actual = actualObj[index] || '';
-          var variance = cells.length >= 4 ? cells[3].textContent.trim() : '\u2014';
+          var variance = formatTimeVariance(getTimeVariance(targets[index], parseTime(actual)));
           html += row(
             escapeReportValue(activity.name),
             'Target: ' + escapeReportValue(target) +
@@ -7429,9 +7351,8 @@ function renderPaxLoadTable() {
         return html;
       }
 
-      var arrPtsHtml = activityReportRows('arr-milestones-a1', arrActivities, 'eta', 0, arrActual);
+      var arrPtsHtml = activityReportRows(arrActivities, 'eta', 0, arrActual);
       var depPtsHtml = activityReportRows(
-        'dep-milestones-e5',
         depActivities,
         'dep_std',
         computeDepTurnaroundShift(),
