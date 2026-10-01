@@ -11,12 +11,11 @@
     <link rel="icon" href="../pts-icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../pts-icon-180.png">
     <link rel="manifest" href="manifest.webmanifest">
-    <title>PTS FlightApp v1.23 beta - Compact full-flight QR</title>
+    <title>PTS FlightApp v1.23 beta - Section navigation and Fast QR</title>
     <script src="../lz-string.min.js"></script>
     <script src="../qrcode.min.js"></script>
     <script src="../jsqr.js"></script>
     <script src="fast-qr.js"></script>
-    <script src="compact-qr.js"></script>
     <style>
       #share-qr-output svg {
         width: min(100%, 480px, max(220px, calc(100vh - 280px)));
@@ -28,7 +27,7 @@
       }
       #share-modal .modal-card { overscroll-behavior: contain; }
       #share-speed-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-      #share-speed-select, #share-format-select { min-height: 44px; max-width: 100%; padding: 8px; border: 1px solid #9CA3AF; border-radius: 6px; background: white; }
+      #share-speed-select { min-height: 44px; max-width: 100%; padding: 8px; border: 1px solid #9CA3AF; border-radius: 6px; background: white; }
       .flight-info-trigger {
         display: flex; align-items: center; gap: 4px; flex-shrink: 0;
         padding: 8px 12px; background: #1a6e4e; color: #fff; border: none;
@@ -1928,7 +1927,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     <div data-id="120" id="share-modal" class="modal-overlay" style="display:none;">
       <div data-id="121" class="modal-card" style="max-width:640px;">
         <div data-id="122" class="flex items-center justify-between mb-4">
-          <h2 data-id="123" class="text-lg font-bold text-cx-teal-dark">Connect - Compact QR beta</h2>
+          <h2 data-id="123" class="text-lg font-bold text-cx-teal-dark">Connect - Fast QR beta</h2>
           <button data-id="124" id="share-modal-close" class="p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"><i data-id="125" data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
         </div>
         <div id="share-content-summary" role="status" style="margin-bottom:12px;padding:8px 10px;border-radius:8px;background:#F3F4F6;color:#374151;font-size:13px;text-align:center;"></div>
@@ -1938,14 +1937,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             <option value="normal">Normal - 1.1 seconds / QR</option>
             <option value="fast">Fast - 0.5 seconds / QR</option>
           </select>
-          <label for="share-format-select" style="font-weight:700;">QR format</label>
-          <select id="share-format-select" onchange="setShareQrFormat(this.value)">
-            <option value="compact">Compact - fewer QR parts (beta to beta)</option>
-            <option value="compatible">Compatible - stable or older beta</option>
-          </select>
         </div>
-        <p style="margin:0 0 10px;font-size:12px;color:#374151;">Compact sends the complete flight with fewer QR parts and unchanged viewing-copy quality. Open the updated beta on both devices and use its Scan QR Code to Connect button. Choose Compatible for older receivers. Changing format prepares a new sequence; changing speed keeps the current sequence.</p>
-        <p id="compact-receiver-note" style="margin:0 0 10px;font-size:12px;color:#374151;"></p>
         <div id="share-qr-output" style="display:flex;justify-content:center;align-items:center;min-height:160px;padding:12px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;"></div>
         <div id="share-qr-sequence-status" style="display:none;margin-top:10px;color:#1e3a5f;background:#DBEAFE;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;"></div>
         <div id="share-cycle-estimate" role="status" aria-live="polite" style="display:none;margin-top:10px;font-size:13px;text-align:center;"></div>
@@ -4421,7 +4413,6 @@ function renderPaxLoadTable() {
     }
 
     function stopQrScanner() {
-      compactQr.cancel();
       qrScannerRequestId++;
       qrScannerRunning = false;
       qrScannerActive = false;
@@ -4455,7 +4446,6 @@ function renderPaxLoadTable() {
       stopQrScanner();
       stopShareQrSequence();
       receivedQrTransfers = Object.create(null);
-      compactQr.reset();
       var modal = document.getElementById('share-modal');
       if (modal) modal.style.display = 'none';
       updateShareQrCycleEstimate();
@@ -4511,8 +4501,6 @@ function renderPaxLoadTable() {
     }
 
     function collectMultiQrPart(value) {
-      var compactResult = compactQr.collect(value);
-      if (compactResult.handled) return compactResult;
       var part = multiQrPartFromScannedValue(value);
       if (!part) return { handled: false, complete: false };
       var status = document.getElementById('share-scanner-status');
@@ -4929,11 +4917,8 @@ function renderPaxLoadTable() {
       var qrEl = document.getElementById('share-qr-output');
       var sequenceStatus = document.getElementById('share-qr-sequence-status');
       if (!qrEl || !shareQrValues.length) return;
-      var value = shareQrValues[shareQrIndex];
-      var isCompact = value.indexOf('PTS3/') === 0;
-      // A fixed grid keeps the last, shorter compact frame at the same camera scale.
-      var qr = qrcode(isCompact ? 19 : 0, 'L');
-      qr.addData(value, isCompact ? 'Alphanumeric' : 'Byte');
+      var qr = qrcode(0, 'L');
+      qr.addData(shareQrValues[shareQrIndex], 'Byte');
       qr.make();
       qrEl.innerHTML = qr.createSvgTag({
         cellSize: 4,
@@ -5201,12 +5186,10 @@ function renderPaxLoadTable() {
 
     async function generateShareCode(useOriginalAttachments) {
       useOriginalAttachments = useOriginalAttachments === true;
-      shareQrUseOriginalAttachments = useOriginalAttachments;
       cancelShareQrPreparation();
       stopQrScanner();
       stopShareQrSequence();
       receivedQrTransfers = Object.create(null);
-      compactQr.reset();
       shareQrValues = [];
       shareQrIndex = 0;
       shareQrPreparing = true;
@@ -5269,28 +5252,18 @@ function renderPaxLoadTable() {
           (originalCompressed === null || compressed.length < originalCompressed.length);
         if (!reduced && originalCompressed !== null) {
           compressed = originalCompressed;
-          optimizedJson = originalJson;
           optimizedBytes = originalBytes;
         }
         var originalParts = originalCompressed === null ? null
           : Math.max(1, Math.ceil(originalCompressed.length / CONNECT_QR_CHUNK_SIZE));
-        var compatibleParts = Math.max(1, Math.ceil(compressed.length / CONNECT_QR_CHUNK_SIZE));
-        var compact = null;
-        if (shareQrFormat === 'compact') {
-          progress('lossless compact packing of the complete flight');
-          await connectPreparationYield(check);
-          compact = await compactQr.encode(optimizedJson, check);
-        }
-        var parts = compact ? compact.frames.length : compatibleParts;
+        var parts = Math.max(1, Math.ceil(compressed.length / CONNECT_QR_CHUNK_SIZE));
         if (estimate) {
           estimate.textContent = (useOriginalAttachments ? 'Original attachments selected. ' : reduced
             ? 'Readable viewing copies; desktop originals unchanged. ' : 'Original attachments retained: viewing copies would not reduce this transfer. ') +
             'Payload: ' + formatConnectBytes(originalBytes) + ' → ' + formatConnectBytes(optimizedBytes) +
             '. QR parts: ' + (originalParts === null ? '' : originalParts + ' → ') + parts + '. ' +
             (reduced ? ' All text, formatting, images and PDF pages are included. PDF viewing copies are rasterized (not selectable text).' : '') +
-            (context.retainedImages ? ' Vector/animated, external or unusually tall images are kept intact.' : '') +
-            (compact ? ' Same complete content: ' + compatibleParts + ' Compatible parts vs ' + parts +
-              ' Compact parts (' + (compact.codec === 'G' ? 'gzip' : 'LZ') + ', lossless packing). Use the updated beta scanner on both devices.' : ' Compatible QR format selected.');
+            (context.retainedImages ? ' Vector/animated, external or unusually tall images are kept intact.' : '');
         }
         await connectPreparationYield(check);
         var baseUrl = (window.location.protocol === 'http:' || window.location.protocol === 'https:')
@@ -5300,9 +5273,7 @@ function renderPaxLoadTable() {
         // Split before QR capacity is exhausted so each frame stays easy to scan.
         var useMultiple = compressed.length > CONNECT_QR_CHUNK_SIZE;
 
-        if (compact) {
-          shareQrValues = compact.frames;
-        } else if (!useMultiple) {
+        if (!useMultiple) {
           shareQrValues.push(singleUrl);
         } else {
           var transferId = connectPayloadId(compressed);

@@ -2,7 +2,7 @@
   "id": "./fast-qr-v122",
   "name": "PTS FlightApp v1.23 beta",
   "short_name": "PTS Beta",
-  "description": "Compact complete-flight QR transfer with Normal/Fast cycling and arrival/departure navigation",
+  "description": "Arrival and departure section navigation with whole-flight Normal and Fast QR transfer",
   "start_url": "./PTS_FlightApp.html",
   "scope": "./",
   "display": "standalone",
