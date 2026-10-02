@@ -179,6 +179,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
       .tab-content { display: none; width: 100%; box-sizing: border-box; padding: 12px; }
       .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
+      /* Keep main as the scroll ancestor for the sticky Flight Info toolbar. */
+      #tab-pts { overflow: visible !important; }
       /* For textarea tabs, use flex */
       .tab-content.active.tab-flex-panel { display: flex; flex-direction: column; overflow: hidden; }
 
