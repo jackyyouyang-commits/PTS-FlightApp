@@ -1,17 +1,23 @@
 # PTS-FlightApp
 Flight Details and Precision Timing Schedule (PTS) - Interactive web application for flight operations management
 
-## v1.23 beta: Arrival / Departure navigation dropdowns
+## v1.22 stable: Navigation, variance and special-handling updates
 
-Open **v1.23 beta**: https://jackyyouyang-commits.github.io/PTS-FlightApp/beta/PTS_FlightApp.html
+Open **v1.22 stable**: https://jackyyouyang-commits.github.io/PTS-FlightApp/PTS_FlightApp.html
 
-In **Flight Info**, **Arrival Info** and **Departure Info** now open dropdown navigation links to their respective sections. Choose a link to scroll to that section without hiding fields or changing flight data. The menus support touch, keyboard navigation and Escape to close. On narrow screens the toolbar remains horizontally scrollable, while open dropdowns fit inside the viewport and scroll vertically as needed. Stable v1.22 is unchanged.
+The three updates below are now included in the existing stable v1.22 app. Its version label, installed-app identity, saved-flight storage, 1.1-second QR cycling and transfer-file format are unchanged. Open the stable app online once to receive the updated offline assets. No Fast or Compact QR experiment is added to stable.
+
+In **Flight Info**, **Arrival Info** and **Departure Info** now open dropdown navigation links to their respective sections. Choose a link to scroll to that section without hiding fields or changing flight data. The menus support touch, keyboard navigation and Escape to close. On narrow screens the toolbar remains horizontally scrollable, while open dropdowns fit inside the viewport and scroll vertically as needed.
 
 **Special handling keeps the complete Excel value.** Arrival Loading and Final Loading show counts together with seat numbers and notes, for example `4 (22G 23DK)`, across all special-handling categories. Long values wrap within the summary; import preview, fields, reports, saves and transfers retain the text. Previously saved arrival WCHR/S details are recombined with their count when available. Earlier departure imports discarded WCHR/S details, so re-import the original Excel data to restore those missing details.
 
-**Beta PTS variance uses local clock times, not the age of the saved Flight Info date.** All arrival/departure rows and printed variances use the nearest signed time difference across midnight: target 21:06 / actual 21:26 is **+00:20**, 23:50 / 00:10 is **+00:20**, and 00:10 / 23:50 is **-00:20**. The ATD disruption delay uses the same rule against STD; ETA HKG uses that same inferred ATD day. Arrival actuals still adjust subsequent arrival targets; departure targets still use STD and the 95-minute turnaround rule, not departure actuals. Time-only entries cannot distinguish genuine delays longer than 12 hours or multiple days; exactly 12 hours keeps the same-day sign. Reopening a saved flight on another day does not add 24 hours to its variance. Scheduled ETD/boarding countdowns retain their existing flight-date behavior.
+**PTS variance uses local clock times, not the age of the saved Flight Info date.** All arrival/departure rows and printed variances use the nearest signed time difference across midnight: target 21:06 / actual 21:26 is **+00:20**, 23:50 / 00:10 is **+00:20**, and 00:10 / 23:50 is **-00:20**. The ATD disruption delay uses the same rule against STD; ETA HKG uses that same inferred ATD day. Arrival actuals still adjust subsequent arrival targets; departure targets still use STD and the 95-minute turnaround rule, not departure actuals. Time-only entries cannot distinguish genuine delays longer than 12 hours or multiple days; exactly 12 hours keeps the same-day sign. Reopening a saved flight on another day does not add 24 hours to its variance. Scheduled ETD/boarding countdowns retain their existing flight-date behavior.
 
-This updates the existing Fast QR beta in place: saved beta flights and its installed-app identity are retained, still separate from stable and the deleted per-tab experiment. The previous whole-flight QR features remain: in beta, select **Connect**, then choose **Normal (1.1 seconds/QR)** or **Fast (0.5 seconds/QR)** on the laptop. Normal is the default on each page load. The QR grows to at most 480px where the viewport permits and shrinks on small screens; the dialog scrolls to keep controls reachable. On the other device, use **Scan QR Code to Connect**.
+## v1.23 beta: Fast QR experiment
+
+Open **v1.23 beta**: https://jackyyouyang-commits.github.io/PTS-FlightApp/beta/PTS_FlightApp.html
+
+The separate beta also includes the three updates above. Saved beta flights and its installed-app identity are retained, separate from stable and the deleted per-tab experiment. In beta, select **Connect**, then choose **Normal (1.1 seconds/QR)** or **Fast (0.5 seconds/QR)** on the laptop. Normal is the default on each page load. The QR grows to at most 480px where the viewport permits and shrinks on small screens; the dialog scrolls to keep controls reachable. On the other device, use **Scan QR Code to Connect**.
 
 Speed changes affect only the outgoing timer: the current frame, complete payload, transfer ID and collected receiver parts stay unchanged. One QR remains static in either mode. The dialog shows the actual part count and selected-mode **minimum full cycle**. For 1,000 parts, Normal takes at least **18m 20s**, Fast **8m 20s** per cycle. Missed frames require extra cycles, and Fast may miss more; no physical iPad speed improvement has been measured. Enlarging the QR does **not** reduce the part count.
 
@@ -19,7 +25,7 @@ The stable complete-flight protocol, 650-character parts, integrity checks, view
 
 Fast QR beta uses a new isolated storage namespace, distinct from both stable and the deleted per-tab beta. To seed it without re-entering a laptop flight, **Save** in stable, then open beta **Connect > Whole-flight beta help / copy saved stable flight > Copy saved flight from stable v1.22**. Confirm replacement of the entire beta flight. This explicitly reads a detached copy of stable's complete snapshot, without changing stable or falling back to stale standalone fields. The existing local transfer-file import/export is also available.
 
-Its separate PWA identity and beta-scoped worker use only Fast QR beta caches, never an old per-tab cache or stable cache. Open online once to replace an old beta worker and install this experiment's offline assets. The unchanged stable worker can evict other caches on a future activation; reopen beta online if its offline cache is lost. PDF viewing-copy preparation may still need PDF.js online; the original-attachment fallback remains explicit.
+Its separate PWA identity and beta-scoped worker use only Fast QR beta caches, never an old per-tab cache or stable cache. Open online once to replace an old beta worker and install this experiment's offline assets. The stable worker can evict other caches on activation; reopen beta online if its offline cache is lost. PDF viewing-copy preparation may still need PDF.js online; the original-attachment fallback remains explicit.
 
 ## Import a downloaded transfer file on iPad
 

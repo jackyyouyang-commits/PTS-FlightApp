@@ -15,6 +15,30 @@
     <script src="lz-string.min.js"></script>
     <script src="qrcode.min.js"></script>
     <script src="jsqr.js"></script>
+    <style>
+      .flight-info-trigger {
+        display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+        padding: 8px 12px; background: #1a6e4e; color: #fff; border: none;
+        border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+        white-space: nowrap; min-height: 44px;
+      }
+      .flight-info-trigger::after { content: ''; border: 4px solid transparent; border-top-color: currentColor; margin: 5px 0 0 4px; }
+      .flight-info-trigger[aria-expanded="true"] { background: #104b35; }
+      .flight-info-dropdown {
+        position: fixed; z-index: 120; width: 270px; box-sizing: border-box;
+        padding: 4px; margin: 0; background: #fff; color: #111827;
+        border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+        overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y;
+      }
+      .flight-info-dropdown[hidden] { display: none; }
+      .flight-info-dropdown a {
+        display: flex; align-items: center; min-height: 44px; padding: 8px 12px;
+        box-sizing: border-box; color: #005c5c; font: 600 14px/1.4 Arial,sans-serif;
+        text-decoration: none; border-radius: 4px;
+      }
+      .flight-info-dropdown a:hover, .flight-info-dropdown a:focus-visible { background: #e6f3ef; }
+      .flight-info-trigger:focus-visible, .flight-info-dropdown a:focus-visible { outline: 2px solid #d97706; outline-offset: 2px; }
+    </style>
     <!-- Google Fonts removed for offline use -->
 <script>
 // Lucide offline stub - replaces CDN icons with simple SVG equivalents
@@ -420,6 +444,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
       .sum-label { font-size: 0.7rem; font-weight: 600; color: #6B7280; text-transform: uppercase; }
       .sum-value { font-size: 0.95rem; font-weight: 400; color: var(--cx-teal-dark); margin-top: 2px; }
+      .special-handling-badge {
+        background: #F3F4F6; border: 1px solid #E5E7EB; border-radius: 10px;
+        padding: 6px 10px; min-width: 70px; max-width: 100%; text-align: center;
+        flex: 0 1 auto; height: auto; overflow: visible;
+      }
+      .special-handling-value {
+        font-size: 12px; font-weight: 600; color: #111827;
+        white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word;
+      }
+      .special-handling-label {
+        font-size: 0.7rem; color: #6B7280; margin-top: 2px;
+        text-transform: uppercase; font-weight: 600;
+      }
+      .special-handling-badge.has-value { background: #004545; border-color: #004545; }
+      .special-handling-badge.has-value .special-handling-value { color: white; }
+      .special-handling-badge.has-value .special-handling-label { color: rgba(255,255,255,0.8); }
 
       .import-field-preview {
         display: flex; justify-content: space-between; align-items: center;
@@ -1977,10 +2017,30 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div data-id="133" id="tab-pts" class="tab-content active">
 
         <!-- Navigation Menu for Precision Timing Schedules + Action Buttons -->
-        <div style="position:sticky;top:0;z-index:10;background:#005C5C;border-bottom:2px solid #004545;padding:12px 16px;display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center;min-height:48px;box-shadow:0 2px 4px rgba(0,0,0,0.1);width:100%;box-sizing:border-box;">
-          <!-- Navigation buttons -->
-          <button onclick="switchToTab('pts');setTimeout(function(){document.getElementById('flightinfo-arrival').scrollIntoView({behavior:'smooth',block:'start'});},60);" class="flex items-center gap-1" style="flex-shrink:0;padding:8px 14px;background:#1a6e4e;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;"><i data-lucide="plane-landing" class="w-3.5 h-3.5"></i> Arrival Info</button>
-          <button onclick="switchToTab('pts');setTimeout(function(){document.getElementById('flightinfo-departure').scrollIntoView({behavior:'smooth',block:'start'});},60);" class="flex items-center gap-1" style="flex-shrink:0;padding:8px 14px;background:#1a6e4e;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:32px;transition:background 0.2s;"><i data-lucide="plane-takeoff" class="w-3.5 h-3.5"></i> Departure Info</button>
+        <div id="flight-info-toolbar" style="position:sticky;top:0;z-index:10;background:#005C5C;border-bottom:2px solid #004545;padding:12px 16px;display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center;min-height:48px;box-shadow:0 2px 4px rgba(0,0,0,0.1);width:100%;box-sizing:border-box;">
+          <button id="arrival-info-trigger" type="button" class="flight-info-trigger" aria-expanded="false" aria-controls="arrival-info-dropdown"><i data-lucide="plane-landing" class="w-3.5 h-3.5"></i> Arrival Info</button>
+          <nav id="arrival-info-dropdown" class="flight-info-dropdown" aria-label="Arrival Info sections" hidden>
+            <a href="#flightinfo-arrival">Arrival overview</a>
+            <a href="#flightinfo-arrival-crew">Arrival Crew</a>
+            <a href="#flightinfo-arrival-pax">Arrival PAX Loading</a>
+            <a href="#flightinfo-arrival-special">Arrival Special Handling</a>
+            <a href="#flightinfo-connections">Connections</a>
+            <a href="#flightinfo-arrival-baggage">Baggage</a>
+          </nav>
+          <button id="departure-info-trigger" type="button" class="flight-info-trigger" aria-expanded="false" aria-controls="departure-info-dropdown"><i data-lucide="plane-takeoff" class="w-3.5 h-3.5"></i> Departure Info</button>
+          <nav id="departure-info-dropdown" class="flight-info-dropdown" aria-label="Departure Info sections" hidden>
+            <a href="#flightinfo-departure">Departure overview</a>
+            <a href="#flightinfo-departure-details">Departure Flight Info</a>
+            <a href="#flightinfo-departure-crew">Departure Crew</a>
+            <a href="#flightinfo-cargo-fuel">Cargo &amp; Fuel</a>
+            <a href="#flightinfo-capacity">Capacity Details</a>
+            <a href="#flightinfo-passenger-loading">Passenger Loading Details</a>
+            <a href="#flightinfo-passenger-info">Passenger Info</a>
+            <a href="#flightinfo-departure-baggage">Baggage Details</a>
+            <a href="#flightinfo-departure-special">Special Handling</a>
+            <a href="#flightinfo-remarks">Remarks</a>
+            <a href="#flightinfo-notices">Notices</a>
+          </nav>
           
           <!-- Divider -->
           <div class="nav-divider"></div>
@@ -2031,7 +2091,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
         <div data-id="167" id="flightinfo-arrival" class="section-hdr green text-center text-base tracking-widest" style="font-size:0.85rem;scroll-margin-top:80px;">Arrival</div>
 
-        <div data-id="168" class="section-hdr">Arrival Crew</div>
+        <div data-id="168" id="flightinfo-arrival-crew" class="section-hdr" tabindex="-1">Arrival Crew</div>
         <div data-id="169" class="card">
           <div data-id="170" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div data-id="171"><label data-id="172" class="field-label">CN</label><input data-id="173" class="field-input sm" id="f-arr_cn" data-key="arr_cn" placeholder="Name"></div>
@@ -2039,7 +2099,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="177" class="section-hdr">Arrival PAX Loading</div>
+        <div data-id="177" id="flightinfo-arrival-pax" class="section-hdr" tabindex="-1">Arrival PAX Loading</div>
         <div data-id="178" class="card">
           <div data-id="179" class="grid grid-cols-5 gap-2 items-end arrival-pax-five-across">
             <div data-id="180"><label data-id="181" class="field-label">J</label><input data-id="182" class="field-input sm" id="f-arr_pax_j" data-key="arr_pax_j" inputmode="numeric" placeholder="0"></div>
@@ -2050,7 +2110,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="195" class="section-hdr">Arrival Special Handling</div>
+        <div data-id="195" id="flightinfo-arrival-special" class="section-hdr" tabindex="-1">Arrival Special Handling</div>
         <div data-id="196" class="card">
           <div data-id="197" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div data-id="198">
@@ -2068,7 +2128,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="224" class="section-hdr">Connections</div>
+        <div data-id="224" id="flightinfo-connections" class="section-hdr" tabindex="-1">Connections</div>
         <div data-id="225" class="card space-y-3">
           <div data-id="226"><label data-id="227" class="field-label">INTL CNX</label><input data-id="228" class="field-input sm" id="f-intl_cnx" data-key="intl_cnx" placeholder="Flight info or NIL"></div>
           <div data-id="229"><label data-id="230" class="field-label">US CNX</label><input data-id="231" class="field-input sm" id="f-us_cnx" data-key="us_cnx" placeholder="Flight info or NIL"></div>
@@ -2077,7 +2137,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div data-id="238"><label data-id="239" class="field-label">AC WCH / MAAS</label><input data-id="240" class="field-input sm" id="f-ac_wch" data-key="ac_wch" placeholder="0"></div>
         </div>
 
-        <div data-id="241" class="section-hdr">Baggage</div>
+        <div data-id="241" id="flightinfo-arrival-baggage" class="section-hdr" tabindex="-1">Baggage</div>
         <div data-id="242" class="card">
           <div class="grid grid-cols-2 gap-3">
             <div><label class="field-label">Doorside</label><textarea class="field-input sm autosize" id="f-arr_doorside" data-key="arr_doorside" placeholder="e.g. 01 WCH" data-autoresize="true"></textarea></div>
@@ -2089,7 +2149,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
         <div data-id="261" id="flightinfo-departure" class="section-hdr green text-center text-base tracking-widest" style="font-size:0.85rem;scroll-margin-top:80px;">Departure</div>
 
-        <div data-id="262" class="section-hdr">Departure Flight Info</div>
+        <div data-id="262" id="flightinfo-departure-details" class="section-hdr" tabindex="-1">Departure Flight Info</div>
         <div data-id="263" class="card">
           <div data-id="264" class="grid grid-cols-3 gap-3">
             <div data-id="265"><label data-id="266" class="field-label">STD</label><input data-id="267" class="field-input sm" id="f-dep_std" data-key="dep_std" placeholder="HH:MM"><div id="dep-std-disruption" style="display:none;font-size:0.7rem;font-weight:700;color:#DC2626;margin-top:2px;"></div></div>
@@ -2109,7 +2169,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="297" class="section-hdr">Departure Crew</div>
+        <div data-id="297" id="flightinfo-departure-crew" class="section-hdr" tabindex="-1">Departure Crew</div>
         <div data-id="298" class="card">
           <div data-id="299" class="grid grid-cols-2 gap-3">
             <div data-id="300"><label data-id="301" class="field-label">CN</label><input data-id="302" class="field-input sm" id="f-dep_cn" data-key="dep_cn" placeholder="Name"></div>
@@ -2121,7 +2181,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="310" class="section-hdr">Cargo &amp; Fuel</div>
+        <div data-id="310" id="flightinfo-cargo-fuel" class="section-hdr" tabindex="-1">Cargo &amp; Fuel</div>
         <div data-id="311" class="card">
           <div class="grid grid-cols-2 gap-3 mb-3">
             <div><label class="field-label">Cargo Type</label><input class="field-input sm" id="f-dep_cargo_type" data-key="dep_cargo_type" placeholder="e.g. 1P 12A Bulk (AVI)" style="min-height:34px;padding:6px 8px;font-size:14px;"></div>
@@ -2140,7 +2200,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="338" class="section-hdr">Capacity Details</div>
+        <div data-id="338" id="flightinfo-capacity" class="section-hdr" tabindex="-1">Capacity Details</div>
         <div data-id="339" class="card">
           <div data-id="340" class="table-scroll-wrap">
           <div class="table-scroll-wrap"><table data-id="341" class="pax-table">
@@ -2188,7 +2248,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="388" class="section-hdr">Passenger Loading Details</div>
+        <div data-id="388" id="flightinfo-passenger-loading" class="section-hdr" tabindex="-1">Passenger Loading Details</div>
         <div data-id="389" class="card">
           <div data-id="390" class="table-scroll-wrap">
           <div class="table-scroll-wrap"><table data-id="391" class="pax-table" id="pax-load-table-c3">
@@ -2200,7 +2260,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="401" class="section-hdr">Passenger Info</div>
+        <div data-id="401" id="flightinfo-passenger-info" class="section-hdr" tabindex="-1">Passenger Info</div>
         <div data-id="402" class="card">
           <div data-id="403" class="grid grid-cols-2 gap-3">
             <div data-id="404"><label data-id="405" class="field-label">IN/DMP</label><input data-id="406" class="field-input sm" id="f-dep_in_dmp" data-key="dep_in_dmp" placeholder="0"></div>
@@ -2220,7 +2280,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="436" class="section-hdr">Baggage Details</div>
+        <div data-id="436" id="flightinfo-departure-baggage" class="section-hdr" tabindex="-1">Baggage Details</div>
         <div data-id="437" class="card">
           <div data-id="438" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div data-id="439"><label data-id="440" class="field-label">Total Bags</label><input data-id="441" class="field-input sm" id="f-dep_total_bags" data-key="dep_total_bags" inputmode="numeric" placeholder="*"></div>
@@ -2231,7 +2291,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div data-id="451" class="mt-3"><label data-id="452" class="field-label">Carry-On Needed</label><input data-id="453" class="field-input sm" id="f-dep_carry_on" data-key="dep_carry_on" placeholder="*"></div>
         </div>
 
-        <div data-id="454" class="section-hdr">Special Handling</div>
+        <div data-id="454" id="flightinfo-departure-special" class="section-hdr" tabindex="-1">Special Handling</div>
         <div data-id="455" class="card">
           <div data-id="456" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div data-id="457">
@@ -2251,12 +2311,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
 
-        <div data-id="500" class="section-hdr">Remarks</div>
+        <div data-id="500" id="flightinfo-remarks" class="section-hdr" tabindex="-1">Remarks</div>
         <div data-id="501" class="card">
           <textarea data-id="502" class="field-input autosize" id="f-remarks" data-key="remarks" data-autoresize="true" placeholder="Enter any remarks..." rows="2" style="min-height:60px;"></textarea>
         </div>
 
-        <div data-id="503" class="section-hdr" style="background:#EF4444;">Notices</div>
+        <div data-id="503" id="flightinfo-notices" class="section-hdr" tabindex="-1" style="background:#EF4444;">Notices</div>
         <div data-id="504" class="notice-card">Verify Locks Raised Before Close!!!</div>
         <div data-id="505" class="notice-card">Re-confirm Final Pax Figure with ISM!!!</div>
 
@@ -2804,6 +2864,22 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       m = ((m % 1440) + 1440) % 1440;
       return pad(Math.floor(m/60)) + ':' + pad(m%60);
     }
+    function getTimeVariance(targetMin, actualMin) {
+      if (targetMin == null || actualMin == null) return null;
+      // Time-only entries share the live clock's local day; choose the nearest
+      // adjacent day across midnight, never the saved flight date's age.
+      var targetClock = ((targetMin % 1440) + 1440) % 1440;
+      var actualClock = ((actualMin % 1440) + 1440) % 1440;
+      var diff = actualClock - targetClock;
+      if (diff > 720) diff -= 1440;
+      if (diff < -720) diff += 1440;
+      return diff;
+    }
+    function formatTimeVariance(minutes) {
+      if (minutes == null) return '\u2014';
+      var abs = Math.abs(minutes);
+      return (minutes < 0 ? '-' : '+') + pad(Math.floor(abs / 60)) + ':' + pad(abs % 60);
+    }
     function numOrZero(v) { var n = parseInt(v); return isNaN(n) ? 0 : n; }
     function getPaxTotal(keys) {
       return keys.reduce(function(total, key) { return total + numOrZero(state[key]); }, 0);
@@ -3144,6 +3220,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     // RENDER
     // ===========================
     function syncInputsFromState() {
+      // Older imports stored arrival WCHR/S seats separately from the visible count.
+      var wchr = String(state.arr_wchr_s || '').trim();
+      var details = String(state.arr_wchr_s_details || '').trim();
+      if (/^\d+$/.test(wchr) && details) {
+        state.arr_wchr_s = wchr + ' (' + details + ')';
+        state.arr_wchr_s_details = '';
+      }
       document.querySelectorAll('[data-key]').forEach(function(el) {
         var k = el.dataset.key;
         if (k in state && el.value !== (state[k] || '')) {
@@ -3216,38 +3299,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var tbody = document.getElementById(tbodyId);
       if (!tbody) return null;
       var shift = baseShift || 0; // turnaround compression shift (departure only)
-      var baseMin = parseTime(state[baseTimeKey]);
       var html = '';
-      var targetsOut = [];
-      var prevOrigTarget = null;
-      var drift = 0; // arrival actuals adjust subsequent arrival targets only
-      var prevAbsTarget = null; // for detecting the schedule crossing midnight
-      var dayOffset = 0; // becomes 1440 once the schedule passes midnight (next-day activities)
-      // Anchor targets to the flight date and the logged actual to the current date, so the
-      // difference between the Flight Information date and today's date drives the variance
-      // (e.g. flight 04-Sep target 12:37, actual logged 01:32 on 05-Sep -> +12:55).
-      var now0 = new Date();
-      var todayMid = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
-      var fDate = parseFlightDateStr(state.date);
-      var actualDayOffset = 0; // days from the flight date to today
-      if (fDate) {
-        var fMid = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate()).getTime();
-        actualDayOffset = Math.round((todayMid - fMid) / 86400000);
-      }
+      var targetsOut = computeActivityTargets(defs, baseTimeKey, shift, actualObj);
       for (var i = 0; i < defs.length; i++) {
         var act = defs[i];
-        var origTarget = null;
-        if (act.offset !== null && baseMin !== null) {
-          origTarget = baseMin + act.offset + shift;
-          prevOrigTarget = origTarget;
-        } else if (act.offset === null && prevOrigTarget !== null) {
-          origTarget = prevOrigTarget;
-        }
-        // Detect the schedule crossing midnight (a big drop from the previous target)
-        if (prevAbsTarget !== null && origTarget !== null && origTarget < prevAbsTarget - 720) dayOffset += 1440;
-        var target = origTarget !== null ? origTarget + drift : null;
-        targetsOut.push(target);
-        if (target !== null) prevAbsTarget = target;
+        var target = targetsOut[i];
         var targetStr = target !== null ? fmtMin(target) : '\u2014';
         var logged = actualObj[i];
         var actualCell = '';
@@ -3263,36 +3319,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             '<button class="act-edit-btn" data-ms-type="' + type + '" data-ms-idx="' + i + '" title="Manual input">&#9998;</button>' +
             '</span>';
         }
-        var variance = '\u2014';
-        var varianceIsLate = false;
-        if (target !== null && logged) {
-          var actualMin = parseTime(logged);
-          if (actualMin !== null) {
-            // Anchor the target to the flight date (plus any schedule midnight rollover) and
-            // the actual to today's date via actualDayOffset. When the flight date is already
-            // in the past (actualDayOffset > 0), the date anchor alone places the actual on the
-            // correct day - the schedule's internal midnight rollover (dayOffset) must NOT be
-            // added again, or a post-drift activity (e.g. Chocks On 03:35 after a 03:34 target)
-            // would be read as next-day (+24h). The >6h-early roll-forward only applies when
-            // there is no date anchor at all.
-            var targetAbs = target; // flight-date-based minutes (may exceed 1440 via offsets)
-            var actualAbs = actualMin + actualDayOffset * 1440 + (actualDayOffset > 0 ? 0 : dayOffset);
-            if (actualDayOffset === 0 && dayOffset === 0) {
-              while (actualAbs - targetAbs < -360) actualAbs += 1440;
-            }
-            var diffMin = actualAbs - targetAbs;
-            varianceIsLate = diffMin > 0;
-            var sign = diffMin >= 0 ? '+' : '-';
-            var absMin = Math.abs(diffMin);
-            var h = Math.floor(absMin / 60);
-            var m = absMin % 60;
-            variance = sign + (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
-            // Departure actuals affect variance, not the STD/turnaround-based targets.
-            if (type === 'arr' && origTarget !== null) drift = actualAbs - actualDayOffset * 1440 - origTarget;
-          }
-        }
+        var diffMin = getTimeVariance(target, parseTime(logged));
+        var variance = formatTimeVariance(diffMin);
         var targetTdStyle = (shift > 0 && target !== null) ? ' style="color:#DC2626;font-weight:700;"' : '';
-        var varianceColor = varianceIsLate ? '#DC2626' : '#059669';
+        var varianceColor = diffMin > 0 ? '#DC2626' : '#059669';
         html += '<tr><td>' + act.name + '</td><td' + targetTdStyle + '>' + targetStr + '</td><td>' + actualCell + '</td><td style="text-align:center;font-weight:600;color:' + varianceColor + ';">' + variance + '</td></tr>';
       }
       tbody.innerHTML = html;
@@ -3506,6 +3536,25 @@ function renderPaxLoadTable() {
       });
     }
 
+    function renderSpecialHandlingBadges(fields) {
+      return fields.map(function(field) {
+        var raw = String(state[field[1]] || '').trim();
+        var hasValue = raw !== '' && raw !== '0';
+        var badge = document.createElement('div');
+        badge.className = 'special-handling-badge' + (hasValue ? ' has-value' : '');
+        badge.dataset.specialHandling = field[1];
+        var value = document.createElement('div');
+        value.className = 'special-handling-value';
+        value.textContent = hasValue ? raw : '-';
+        var label = document.createElement('div');
+        label.className = 'special-handling-label';
+        label.textContent = field[0];
+        badge.appendChild(value);
+        badge.appendChild(label);
+        return badge.outerHTML;
+      }).join('');
+    }
+
     function renderSummary() {
       var c = document.getElementById('summary-content-g7');
       if (!c) return;
@@ -3543,10 +3592,10 @@ function renderPaxLoadTable() {
           '<div class="mt-4">' +
             '<div class="sum-label" style="display:block;margin-bottom:8px;">Special Handling</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
-              ['WCHR/S:'+(state.arr_wchr_s||0),'WCHC:'+(state.arr_wchc||0),'MAAS:'+(state.arr_maas||0),'MEDA:'+(state.arr_meda||0),'UMNR:'+(state.arr_umnr||0),'SVIP:'+(state.arr_svip||0),'DEAF:'+(state.arr_deaf||0),'BLND:'+(state.arr_blnd||0)].map(function(s) {
-                var ci = s.indexOf(':'); var lbl = s.slice(0, ci); var raw = String(s.slice(ci + 1)).trim(); var val = raw && raw !== '0'; var display = val ? raw : '-';
-                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;min-width:70px;text-align:center;flex-shrink:0;height:auto;overflow:visible;"><div style="font-size:12px;font-weight:600;color:'+ (val ? 'white' : '#111827')+';white-space:normal;overflow:visible;word-break:break-word;">'+display+'</div><div style="font-size:0.7rem;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+lbl+'</div></div>';
-              }).join('') +
+              renderSpecialHandlingBadges([
+                ['WCHR/S','arr_wchr_s'], ['WCHC','arr_wchc'], ['MAAS','arr_maas'], ['MEDA','arr_meda'],
+                ['UMNR','arr_umnr'], ['SVIP','arr_svip'], ['DEAF','arr_deaf'], ['BLND','arr_blnd']
+              ]) +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -3596,10 +3645,11 @@ function renderPaxLoadTable() {
           '<div class="mt-4">' +
             '<div class="sum-label" style="display:block;margin-bottom:8px;">Special Handling</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
-              ['INF OCC:'+(state.dep_inf_occ||0),'WCHR/S:'+(state.dep_wchr_s||0),'WCHC:'+(state.dep_wchc||0),'MAAS:'+(state.dep_maas||0),'UMNR:'+(state.dep_umnr||0),'SVIP:'+(state.dep_svip||0),'MEDA:'+(state.dep_meda||0),'DEAF:'+(state.dep_deaf||0),'BLND:'+(state.dep_blnd||0),'CHD:'+(state.dep_chd||0)].map(function(s) {
-                var ci = s.indexOf(':'); var lbl = s.slice(0, ci); var raw = String(s.slice(ci + 1)).trim(); var val = raw && raw !== '0'; var display = val ? raw : '-';
-                return '<div style="background:'+( val ? '#004545' : '#F3F4F6') +';border:1px solid '+ (val ? '#004545' : '#E5E7EB')+';border-radius:10px;padding:6px 10px;min-width:70px;text-align:center;flex-shrink:0;height:auto;overflow:visible;"><div style="font-size:12px;font-weight:600;color:'+ (val ? 'white' : '#111827')+';white-space:normal;overflow:visible;word-break:break-word;">'+display+'</div><div style="font-size:0.7rem;color:'+(val ? 'rgba(255,255,255,0.8)' : '#6B7280')+';margin-top:2px;text-transform:uppercase;font-weight:600;">'+lbl+'</div></div>';
-              }).join('') +
+              renderSpecialHandlingBadges([
+                ['INF OCC','dep_inf_occ'], ['WCHR/S','dep_wchr_s'], ['WCHC','dep_wchc'], ['MAAS','dep_maas'],
+                ['UMNR','dep_umnr'], ['SVIP','dep_svip'], ['MEDA','dep_meda'], ['DEAF','dep_deaf'],
+                ['BLND','dep_blnd'], ['CHD','dep_chd']
+              ]) +
             '</div>' +
           '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">' +
@@ -5257,6 +5307,7 @@ function renderPaxLoadTable() {
       Object.keys(data.state).forEach(function(k) {
         if (k in state) state[k] = data.state[k] || '';
       });
+      if ('arr_wchr_s' in data.state && !('arr_wchr_s_details' in data.state)) state.arr_wchr_s_details = '';
       Object.keys(arrActual).forEach(function(k) { delete arrActual[k]; });
       Object.keys(depActual).forEach(function(k) { delete depActual[k]; });
       if (data.arrActual) Object.assign(arrActual, data.arrActual);
@@ -5394,14 +5445,6 @@ function renderPaxLoadTable() {
         return v;
       }
 
-      function splitWchr(v) {
-        if (!v || v === '-' || v === '*') return { count: '', seats: '' };
-        var m = v.match(/^(\d+)\s*\(([^)]+)\)/);
-        if (m) return { count: m[1], seats: m[2].trim() };
-        if (/^\d+$/.test(v)) return { count: v, seats: '' };
-        return { count: v, seats: '' };
-      }
-
       var s = {};
 
       s.flight    = g(2, 0);
@@ -5424,10 +5467,8 @@ function renderPaxLoadTable() {
       s.arr_pax_y   = g(9, 9);
       s.arr_pax_inf = g(9, 11);
 
-      var wchrArr = splitWchr(g(11, 5));
-      s.arr_wchr_s         = wchrArr.count;
-      s.arr_wchr_s_details = wchrArr.seats;
-      s.arr_deaf           = g(11, 10);
+      s.arr_wchr_s = g(11, 5);
+      s.arr_deaf   = g(11, 10);
 
       s.arr_wchc = g(12, 5);
       s.arr_blnd = g(12, 10);
@@ -5527,8 +5568,7 @@ function renderPaxLoadTable() {
 
       s.dep_inf_occ = g(50, 5);
 
-      var wchrDep = splitWchr(g(51, 5));
-      s.dep_wchr_s = wchrDep.count;
+      s.dep_wchr_s = g(51, 5);
       s.dep_meda   = g(51, 12);
 
       s.dep_wchc = g(52, 5);
@@ -5582,22 +5622,12 @@ function renderPaxLoadTable() {
     }
 
     // Arrival actuals adjust arrival targets; departure uses STD plus the turnaround shift.
-    // Mirrors renderActivityTable without touching the DOM; returns absolute minute targets.
+    // Shared by the table, reports and countdowns; retains schedule minutes across midnight.
     function computeActivityTargets(defs, baseTimeKey, shift, actualObj) {
       var baseMin = parseTime(state[baseTimeKey]);
       var out = [];
       var prevOrigTarget = null;
       var drift = 0;
-      var prevAbsTarget = null;
-      var dayOffset = 0;
-      var now0 = new Date();
-      var todayMid = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
-      var fDate = parseFlightDateStr(state.date);
-      var actualDayOffset = 0;
-      if (fDate) {
-        var fMid = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate()).getTime();
-        actualDayOffset = Math.round((todayMid - fMid) / 86400000);
-      }
       for (var i = 0; i < defs.length; i++) {
         var act = defs[i];
         var origTarget = null;
@@ -5607,18 +5637,12 @@ function renderPaxLoadTable() {
         } else if (act.offset === null && prevOrigTarget !== null) {
           origTarget = prevOrigTarget;
         }
-        if (prevAbsTarget !== null && origTarget !== null && origTarget < prevAbsTarget - 720) dayOffset += 1440;
         var target = origTarget !== null ? origTarget + drift : null;
         out.push(target);
-        if (target !== null) prevAbsTarget = target;
         var logged = actualObj[i];
         if (baseTimeKey !== 'dep_std' && target !== null && logged) {
-          var am = parseTime(logged);
-          if (am !== null) {
-            var aAbs = am + actualDayOffset * 1440 + dayOffset;
-            while (aAbs - target < -360) aAbs += 1440;
-            if (origTarget !== null) drift = aAbs - actualDayOffset * 1440 - origTarget;
-          }
+          var diff = getTimeVariance(target, parseTime(logged));
+          if (diff !== null) drift = target + diff - origTarget;
         }
       }
       return out;
@@ -5681,30 +5705,10 @@ function renderPaxLoadTable() {
       // beyond the scheduled STD (depShiftForEtd > 0). Otherwise a manual ETD stands.
       if (atdTableMin !== null && depShiftForEtd > 0) etdMin = atdTableMin;
       
-      // Real elapsed delay: cross-check the flight's scheduled date (fd) against today's
-      // real calendar date. Actual times logged (e.g. ATD) carry no date of their own, so
-      // if several real days have passed since the scheduled STD, that day gap must be
-      // added on top of the clock-time difference (e.g. a flight from 04SEP still showing
-      // an ATD logged on 06SEP is +48h late, not just a same-day clock delta). Shared by
-      // both the disruption delay calc and the ETA HKG calc below.
-      var daysSinceFlight = 0;
-      if (fd) {
-        var fdMidMs = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate()).getTime();
-        var todayMidMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        daysSinceFlight = Math.round((todayMidMs - fdMidMs) / 86400000);
-        if (daysSinceFlight < 0) daysSinceFlight = 0;
-      }
-
-      // Calculate the final delay only from the logged ATD milestone.
-      var delayMinutes = 0;
-      try {
-        var loggedAtdMin = depActual && depActual[25] ? parseTime(depActual[25]) : null;
-        if (loggedAtdMin != null && stdMin != null) {
-          var actualAtdAbsMin = daysSinceFlight * 1440 + loggedAtdMin;
-          if (daysSinceFlight === 0 && loggedAtdMin < stdMin - 120) actualAtdAbsMin += 1440;
-          if (actualAtdAbsMin > stdMin) delayMinutes = actualAtdAbsMin - stdMin;
-        }
-      } catch (e) { delayMinutes = 0; }
+      // Final disruption compares actual ATD with STD, using the table's time-only rule.
+      var loggedAtdMin = depActual && depActual[25] ? parseTime(depActual[25]) : null;
+      var atdVariance = getTimeVariance(stdMin, loggedAtdMin);
+      var delayMinutes = atdVariance === null ? 0 : Math.max(0, atdVariance);
 
       // STD field disruption badge - flags whenever a logged actual (ultimately ATD) runs later
       // than the scheduled STD, independent of the ETD countdown display above.
@@ -5749,15 +5753,14 @@ function renderPaxLoadTable() {
           var y0 = fd.getFullYear(), mo0 = fd.getMonth(), d0 = fd.getDate();
           // Original STD instant (departure day reference)
           var stdUtcMs = yvrWallToUtcMs(y0, mo0, d0, Math.floor(stdMin/60), stdMin % 60);
-          // ATD instant: start at STD instant, then add whole days until the ATD clock is
-          // reached at/after STD (ATD is always >= STD for a departure), then it may differ.
+          // Keep the logged ATD day consistent with its variance, not the age of the save.
           var atdUtcMs = yvrWallToUtcMs(y0, mo0, d0, Math.floor(atdMinForEta/60), atdMinForEta % 60);
-          // Once a real ATD is logged, anchor it to the number of real calendar days that have
-          // actually elapsed since the scheduled STD date, not just the clock-time difference -
-          // otherwise a multi-day-late ATD whose clock happens to be close to STD's clock (e.g.
-          // 23:10 logged two days after a 23:00 STD) is mistaken for a same-day departure.
-          if (depActual[25]) atdUtcMs += daysSinceFlight * 86400000;
-          while (atdUtcMs < stdUtcMs - 6*3600*1000) atdUtcMs += 86400000; // ATD next day if before STD
+          if (atdVariance !== null) {
+            var atdDay = Math.floor((stdMin + atdVariance) / 1440);
+            atdUtcMs = yvrWallToUtcMs(y0, mo0, d0 + atdDay, Math.floor(loggedAtdMin/60), loggedAtdMin % 60);
+          } else {
+            while (atdUtcMs < stdUtcMs - 6*3600*1000) atdUtcMs += 86400000;
+          }
           // Arrival instant (UTC) = ATD + block time
           var arrUtcMs = atdUtcMs + blkMin * 60000;
           // Arrival HKG wall clock + date
@@ -7322,17 +7325,13 @@ function renderPaxLoadTable() {
         return '<tr><td class="lbl">'+label+'</td><td class="val">J: '+j+' / W: '+w+' / Y: '+y+' / INF: '+inf+' / Total: '+tot+'</td></tr>';
       }
 
-      function activityReportRows(tbodyId, defs, baseKey, shift, actualObj) {
-        var renderedRows = document.querySelectorAll('#' + tbodyId + ' tr');
+      function activityReportRows(defs, baseKey, shift, actualObj) {
         var targets = computeActivityTargets(defs, baseKey, shift, actualObj);
         var html = '';
         defs.forEach(function(activity, index) {
-          var cells = renderedRows[index] ? renderedRows[index].querySelectorAll('td') : [];
-          var target = cells.length >= 2
-            ? cells[1].textContent.trim()
-            : (targets[index] === null || targets[index] === undefined ? '\u2014' : fmtMin(targets[index]));
+          var target = fmtMin(targets[index]);
           var actual = actualObj[index] || '';
-          var variance = cells.length >= 4 ? cells[3].textContent.trim() : '\u2014';
+          var variance = formatTimeVariance(getTimeVariance(targets[index], parseTime(actual)));
           html += row(
             escapeReportValue(activity.name),
             'Target: ' + escapeReportValue(target) +
@@ -7343,9 +7342,8 @@ function renderPaxLoadTable() {
         return html;
       }
 
-      var arrPtsHtml = activityReportRows('arr-milestones-a1', arrActivities, 'eta', 0, arrActual);
+      var arrPtsHtml = activityReportRows(arrActivities, 'eta', 0, arrActual);
       var depPtsHtml = activityReportRows(
-        'dep-milestones-e5',
         depActivities,
         'dep_std',
         computeDepTurnaroundShift(),
@@ -8060,9 +8058,13 @@ function renderPaxLoadTable() {
             ?'<div style="color:#D97706;font-weight:600;">&#9888; '+fc+' fields detected</div>'
             :'<div style="color:#16A34A;font-weight:600;">&#10003; '+fc+' fields detected</div>';
           if(previewFields){
-            var fHTML='';
-            for(var k in parsed){var lbl=FIELD_LABELS[k]||k;fHTML+='<div class="import-field-preview"><span class="ifp-label">'+lbl+'</span><span class="ifp-value">'+parsed[k]+'</span></div>';}
-            previewFields.innerHTML=fHTML;
+            previewFields.textContent='';
+            Object.keys(parsed).forEach(function(k) {
+              var row=document.createElement('div'); row.className='import-field-preview';
+              var label=document.createElement('span'); label.className='ifp-label'; label.textContent=FIELD_LABELS[k]||k;
+              var value=document.createElement('span'); value.className='ifp-value'; value.textContent=parsed[k];
+              row.appendChild(label); row.appendChild(value); previewFields.appendChild(row);
+            });
           }
           if(ib)ib.style.display='none';
           if(previewContainer)previewContainer.style.display='block';
@@ -8089,6 +8091,7 @@ function renderPaxLoadTable() {
         delete lastParsedResult.dep_strl;
         delete lastParsedResult.dep_wch;
         Object.keys(lastParsedResult).forEach(function(k){ if(k in state) state[k]=lastParsedResult[k]||''; });
+        if ('arr_wchr_s' in lastParsedResult) state.arr_wchr_s_details = '';
         updateUnderloadFromWeights();
         syncInputsFromState(); renderActivities(); renderPaxLoadTable();
         updateArrPaxTotal(); renderSummary(); updateHeaderFlightNum(); updateETDCountdown();
@@ -8553,7 +8556,99 @@ function renderPaxLoadTable() {
     window.addEventListener('orientationchange',function(){setTimeout(setVH,200);});
 
     // === TAB SWITCHING ===
+    function initFlightInfoDropdowns() {
+      var toolbar = document.getElementById('flight-info-toolbar');
+      var main = document.getElementById('main-content-w3x4');
+      var active = null;
+      function closeDropdown(restoreFocus) {
+        if (!active) return;
+        var trigger = active.trigger;
+        active.panel.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+        active = null;
+        if (restoreFocus) trigger.focus({ preventScroll: true });
+      }
+      function openDropdown(trigger, panel) {
+        closeDropdown(false);
+        panel.hidden = false;
+        trigger.setAttribute('aria-expanded', 'true');
+        active = { trigger: trigger, panel: panel };
+        var rect = trigger.getBoundingClientRect();
+        var viewport = window.visualViewport;
+        var left = viewport ? viewport.offsetLeft : 0;
+        var top = viewport ? viewport.offsetTop : 0;
+        var width = viewport ? viewport.width : window.innerWidth;
+        var height = viewport ? viewport.height : window.innerHeight;
+        var below = Math.max(0, top + height - rect.bottom - 12);
+        var above = Math.max(0, rect.top - top - 12);
+        var upwards = below < 160 && above > below;
+        panel.style.width = Math.min(270, width - 16) + 'px';
+        panel.style.maxHeight = Math.min(420, upwards ? above : below) + 'px';
+        panel.style.left = Math.max(left + 8, Math.min(rect.left, left + width - panel.offsetWidth - 8)) + 'px';
+        panel.style.top = (upwards ? rect.top - panel.offsetHeight - 4 : rect.bottom + 4) + 'px';
+        panel.scrollTop = 0;
+        panel.querySelector('a').focus({ preventScroll: true });
+      }
+      toolbar.querySelectorAll('.flight-info-trigger').forEach(function(trigger) {
+        var panel = document.getElementById(trigger.getAttribute('aria-controls'));
+        // The toolbar scrolls horizontally; keep dropdown links outside its clipped touch area.
+        document.body.appendChild(panel);
+        trigger.addEventListener('click', function() {
+          if (active && active.trigger === trigger) closeDropdown(false);
+          else openDropdown(trigger, panel);
+        });
+        trigger.addEventListener('keydown', function(event) {
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            openDropdown(trigger, panel);
+          }
+        });
+        panel.addEventListener('click', function(event) {
+          var link = event.target.closest('a');
+          if (!link) return;
+          event.preventDefault();
+          var target = document.getElementById(link.getAttribute('href').slice(1));
+          closeDropdown(false);
+          if (!target) { showToast('This Flight Info section is unavailable.', 'red'); return; }
+          var scrollTop = main.scrollTop + target.getBoundingClientRect().top
+            - main.getBoundingClientRect().top - toolbar.offsetHeight - 8;
+          target.setAttribute('tabindex', '-1');
+          target.focus({ preventScroll: true });
+          main.scrollTo({ top: Math.max(0, scrollTop), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        });
+        panel.addEventListener('keydown', function(event) {
+          var links = Array.from(panel.querySelectorAll('a'));
+          var index = links.indexOf(document.activeElement);
+          if (['ArrowDown', 'ArrowUp', 'Home', 'End'].indexOf(event.key) < 0) return;
+          event.preventDefault();
+          var next = event.key === 'Home' ? 0 : event.key === 'End' ? links.length - 1
+            : (index + (event.key === 'ArrowDown' ? 1 : -1) + links.length) % links.length;
+          links[next].focus({ preventScroll: true });
+          links[next].scrollIntoView({ block: 'nearest' });
+        });
+      });
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && active) { event.preventDefault(); closeDropdown(true); }
+      });
+      document.addEventListener('pointerdown', function(event) {
+        if (active && !active.panel.contains(event.target) && !active.trigger.contains(event.target)) closeDropdown(false);
+      });
+      document.addEventListener('focusin', function(event) {
+        if (active && !active.panel.contains(event.target) && !active.trigger.contains(event.target)) closeDropdown(false);
+      });
+      document.addEventListener('scroll', function(event) {
+        if (active && event.target !== active.panel && !active.panel.contains(event.target)) closeDropdown(false);
+      }, true);
+      toolbar.addEventListener('close-flight-info-dropdowns', function() { closeDropdown(false); });
+      window.addEventListener('resize', function() { closeDropdown(false); });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function() { closeDropdown(false); });
+        window.visualViewport.addEventListener('scroll', function() { closeDropdown(false); });
+      }
+    }
+
     function switchToTab(tabId){
+      document.getElementById('flight-info-toolbar').dispatchEvent(new Event('close-flight-info-dropdowns'));
       document.querySelectorAll('.tab-content').forEach(function(p){p.classList.remove('active');p.style.display='none';});
       var t=document.getElementById('tab-'+tabId);
       if(t){t.classList.add('active');t.style.display=t.classList.contains('tab-flex-panel')?'flex':'block';if(t.classList.contains('tab-flex-panel'))t.style.flexDirection='column';}
@@ -8574,6 +8669,7 @@ function renderPaxLoadTable() {
     }
     init();
     wireNavTabs();
+    initFlightInfoDropdowns();
 
     // Register service worker for PWA install / offline use
     if ('serviceWorker' in navigator) {
