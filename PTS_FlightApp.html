@@ -16,6 +16,21 @@
     <script src="qrcode.min.js"></script>
     <script src="jsqr.js"></script>
     <style>
+      #flight-info-toolbar {
+        position: relative; z-index: 10; flex: 0 0 auto; display: flex;
+        align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 16px;
+        background: #005C5C; border-bottom: 2px solid #004545;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); box-sizing: border-box;
+        overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      #flight-info-toolbar[hidden] { display: none; }
+      #flight-info-toolbar::-webkit-scrollbar { display: none; }
+      @media (max-width: 767px) { #flight-info-toolbar { padding: 8px; } }
+      @media (max-width: 430px) { #flight-info-toolbar { padding: 6px; } }
+      @media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+        #flight-info-toolbar { padding: 6px 8px; }
+      }
       .flight-info-trigger {
         display: flex; align-items: center; gap: 4px; flex-shrink: 0;
         padding: 8px 12px; background: #1a6e4e; color: #fff; border: none;
@@ -179,8 +194,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
       .tab-content { display: none; width: 100%; box-sizing: border-box; padding: 12px; }
       .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
-      /* Keep main as the scroll ancestor for the sticky Flight Info toolbar. */
-      #tab-pts { overflow: visible !important; }
       /* For textarea tabs, use flex */
       .tab-content.active.tab-flex-panel { display: flex; flex-direction: column; overflow: hidden; }
 
@@ -1104,15 +1117,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         #hdr-mobile>div[data-id="50"],
         #tab-pts>.tab-content-menu,
-        #tab-pts>div:first-child{
+        #flight-info-toolbar{
           max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;
           -webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;touch-action:pan-x!important;
           justify-content:flex-start!important;flex-wrap:nowrap!important;
         }
         #hdr-mobile>div[data-id="50"]::-webkit-scrollbar,
-        #tab-pts>div:first-child::-webkit-scrollbar{display:none!important;}
+        #flight-info-toolbar::-webkit-scrollbar{display:none!important;}
         #hdr-mobile>div[data-id="50"] button,
-        #tab-pts>div:first-child button{flex:0 0 auto!important;min-width:max-content!important;}
+        #flight-info-toolbar button{flex:0 0 auto!important;min-width:max-content!important;}
 
         #bottom-nav-k1{
           overflow-x:auto!important;overflow-y:hidden!important;-webkit-overflow-scrolling:touch!important;
@@ -2012,14 +2025,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </div>
     </nav>
 
-    <!-- MAIN CONTENT -->
-    <main data-id="132" id="main-content-w3x4" class="w-full" style="flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;display:block;">
-
-      <!-- ========== TAB 1: PTS ========== -->
-      <div data-id="133" id="tab-pts" class="tab-content active">
-
-        <!-- Navigation Menu for Precision Timing Schedules + Action Buttons -->
-        <div id="flight-info-toolbar" style="position:sticky;top:0;z-index:10;background:#005C5C;border-bottom:2px solid #004545;padding:12px 16px;display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center;min-height:48px;box-shadow:0 2px 4px rgba(0,0,0,0.1);width:100%;box-sizing:border-box;">
+        <!-- Outside main so the toolbar never participates in content scrolling. -->
+        <div id="flight-info-toolbar">
           <button id="arrival-info-trigger" type="button" class="flight-info-trigger" aria-expanded="false" aria-controls="arrival-info-dropdown"><i data-lucide="plane-landing" class="w-3.5 h-3.5"></i> Arrival Info</button>
           <nav id="arrival-info-dropdown" class="flight-info-dropdown" aria-label="Arrival Info sections" hidden>
             <a href="#flightinfo-arrival">Arrival overview</a>
@@ -2075,6 +2082,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             <i id="cancel-flight-icon-nav" data-lucide="ban" class="w-3.5 h-3.5"></i> <span id="cancel-flight-text-nav">FX - Cancel</span>
           </button>
         </div>
+
+    <!-- MAIN CONTENT -->
+    <main data-id="132" id="main-content-w3x4" class="w-full" style="flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;display:block;">
+
+      <!-- ========== TAB 1: PTS ========== -->
+      <div data-id="133" id="tab-pts" class="tab-content active">
 
         <div data-id="134" class="section-hdr">Flight Information</div>
         <div data-id="135" class="card">
@@ -7959,11 +7972,7 @@ function renderPaxLoadTable() {
     // === END PRINT / PDF REPORT ===
 
     function openSummaryTab() {
-      document.querySelectorAll('.tab-content').forEach(function(el){ el.classList.remove('active'); });
-      var ts=document.getElementById('tab-summary'); if(ts) ts.classList.add('active');
-      document.querySelectorAll('.bottom-tab').forEach(function(b){
-        b.classList.toggle('active', b.dataset.tab==='summary');
-      });
+      switchToTab('summary');
       renderSummary();
       var mc = document.getElementById('main-content-w3x4');
       if (mc) mc.scrollTo({top:0,behavior:'smooth'});
@@ -8613,7 +8622,7 @@ function renderPaxLoadTable() {
           closeDropdown(false);
           if (!target) { showToast('This Flight Info section is unavailable.', 'red'); return; }
           var scrollTop = main.scrollTop + target.getBoundingClientRect().top
-            - main.getBoundingClientRect().top - toolbar.offsetHeight - 8;
+            - main.getBoundingClientRect().top - 8;
           target.setAttribute('tabindex', '-1');
           target.focus({ preventScroll: true });
           main.scrollTo({ top: Math.max(0, scrollTop), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
@@ -8650,12 +8659,15 @@ function renderPaxLoadTable() {
     }
 
     function switchToTab(tabId){
-      document.getElementById('flight-info-toolbar').dispatchEvent(new Event('close-flight-info-dropdowns'));
+      var toolbar = document.getElementById('flight-info-toolbar');
+      toolbar.dispatchEvent(new Event('close-flight-info-dropdowns'));
       document.querySelectorAll('.tab-content').forEach(function(p){p.classList.remove('active');p.style.display='none';});
       var t=document.getElementById('tab-'+tabId);
       if(t){t.classList.add('active');t.style.display=t.classList.contains('tab-flex-panel')?'flex':'block';if(t.classList.contains('tab-flex-panel'))t.style.flexDirection='column';}
+      toolbar.hidden = tabId !== 'pts' || !t;
       document.querySelectorAll('.bottom-tab').forEach(function(b){
         var on=b.getAttribute('data-tab')===tabId;
+        b.classList.toggle('active', on);
         b.style.color=on?'#005c5c':'';b.style.borderTop=on?'3px solid #005c5c':'';b.style.fontWeight=on?'700':'';b.style.background=on?'rgba(0,92,92,0.07)':'';
       });
       if(tabId==='summary'){try{refreshSummarySpans();}catch(e){}}
