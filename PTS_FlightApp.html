@@ -5994,7 +5994,7 @@ function renderPaxLoadTable() {
         // Boarding Closed once Last Pax Onboard (idx 20) is logged - gate close no longer shows
         var lastPaxLogged = depActual[20];
         if (lastPaxLogged) {
-          bl.innerHTML = '<div class="boarding-status-label">Boarding Closed</div>' + boardingTimeLine;
+          bl.innerHTML = '<div class="boarding-status-label">Boarding Closed</div>';
           bl.style.color = '#FCA5A5';
           return;
         }
@@ -6002,14 +6002,14 @@ function renderPaxLoadTable() {
         // A logged Boarding Signal Released actual always ends the late-boarding state.
         var boardSignalLogged = depActual[13];
         if (boardSignalLogged) {
-          bl.innerHTML = '<div class="boarding-status-label">Boarding' + gateLine + '</div>' + boardingTimeLine;
+          bl.innerHTML = '<div class="boarding-status-label">Boarding' + gateLine + '</div>';
           bl.style.color = '#fff';
           return;
         }
 
         // Past the target with no actual: keep Boarding Soon and count upward until logged.
         if (dBoardSec <= 0) {
-          bl.innerHTML = '<div class="boarding-status-label">Boarding Soon<br><span style="font-size:0.5625em;opacity:0.9;color:#fff;">Late Boarding </span><span class="blink-countdown" style="font-size:0.5625em;opacity:0.9;color:#FCA5A5;">+' + fmtFromSec(Math.abs(dBoardSec)) + '</span>' + gateLine + '</div>' + boardingTimeLine;
+          bl.innerHTML = '<div class="boarding-status-label">Boarding Soon<br><span style="font-size:0.5625em;opacity:0.9;color:#fff;">Late Boarding </span><span class="blink-countdown" style="font-size:0.5625em;opacity:0.9;color:#FCA5A5;">+' + fmtFromSec(Math.abs(dBoardSec)) + '</span>' + gateLine + '</div>';
           bl.style.color = '#fff';
           return;
         }
