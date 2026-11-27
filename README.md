@@ -15,7 +15,7 @@ The header displays the current boarding status/countdown above the smaller **Bo
 
 **Special handling keeps the complete Excel value.** Arrival Loading and Final Loading show counts together with seat numbers and notes, for example `4 (22G 23DK)`, across all special-handling categories. Long values wrap within the summary; import preview, fields, reports, saves and transfers retain the text. Previously saved arrival WCHR/S details are recombined with their count when available. Earlier departure imports discarded WCHR/S details, so re-import the original Excel data to restore those missing details.
 
-The Summary tab includes **Connections** and **Baggage** subsections below Special Handling. Connections shows INTL CNX, US CNX, WS CNX / ITD Bags, WS WCH / MAAS, and AC WCH / MAAS; Baggage shows Doorside, Total Bags, First Bag, and Last Bag from Flight Info.
+The Summary tab includes **Connections** and **Baggage** subsections below Special Handling. Connections shows INTL CNX, US CNX, WS CNX / ITD Bags, WS WCH / MAAS, and AC WCH / MAAS; Baggage shows Doorside and Total Bags from Flight Info.
 
 In the **Arrival Offload** preview, tap a position such as `31L` to mark it offloaded. A green check appears at that position on the instruction; marks remain for the same instruction on this device and clear when its content changes or is cleared.
 
