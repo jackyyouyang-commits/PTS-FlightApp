@@ -3404,7 +3404,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     }
 
     // Track last auto-computed values so manual user edits are not overwritten
-    var _autoDepTimes = { etd: null, board: null, dct: null, gateclose: null };
+    var _autoDepTimes = { etd: null, etdBeforeCompression: null, board: null, dct: null, gateclose: null };
 
     // Auto-populate ETD / Board Time / DCT / Gate Close from the (possibly
     // compressed) departure targets, based on the 95-min turnaround.
@@ -3424,10 +3424,20 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       }
       var atdTarget = depTargets[25];
       if (shift > 0 && atdTarget !== null && atdTarget !== undefined) {
+        if (_autoDepTimes.etd === null) _autoDepTimes.etdBeforeCompression = state.dep_etd || '';
         // ATD becomes the new ETD when the schedule is compressed (force overwrite)
         applyField('dep_etd', 'f-dep_etd', 'etd', atdTarget, true);
       } else {
+        if (_autoDepTimes.etd !== null) {
+          var etdField = document.getElementById('f-dep_etd');
+          var currentEtd = etdField ? etdField.value : (state.dep_etd || '');
+          if (currentEtd === _autoDepTimes.etd) {
+            state.dep_etd = _autoDepTimes.etdBeforeCompression;
+            if (etdField) etdField.value = _autoDepTimes.etdBeforeCompression;
+          }
+        }
         _autoDepTimes.etd = null;
+        _autoDepTimes.etdBeforeCompression = null;
       }
       applyField('dep_board_time', 'f-dep_board_time', 'board', depTargets[13], false);
       applyField('dep_dct', 'f-dep_dct', 'dct', depTargets[23], false);
