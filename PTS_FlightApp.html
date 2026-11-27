@@ -15,7 +15,40 @@
     <script src="lz-string.min.js"></script>
     <script src="qrcode.min.js"></script>
     <script src="jsqr.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+      #supabase-auth-gate {
+        position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center;
+        justify-content: center; padding: 20px; background: #f3f6f8; font-family: Arial,sans-serif;
+      }
+      #supabase-auth-card {
+        width: min(100%, 380px); padding: 24px; background: #fff; border: 1px solid #d1d5db;
+        border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,.12);
+      }
+      #supabase-auth-card h1 { margin: 0 0 8px; color: #1e3a5f; font-size: 22px; }
+      #supabase-auth-card p { margin: 0 0 18px; color: #4b5563; font-size: 14px; line-height: 1.5; }
+      #supabase-auth-card label { display: block; margin: 12px 0 5px; color: #374151; font-size: 13px; font-weight: 700; }
+      #supabase-auth-card input {
+        width: 100%; min-height: 42px; padding: 9px 10px; border: 1px solid #9ca3af;
+        border-radius: 6px; font-size: 16px; box-sizing: border-box;
+      }
+      #supabase-auth-submit, #supabase-auth-retry {
+        width: 100%; min-height: 42px; margin-top: 16px; border: 0; border-radius: 6px;
+        background: #1a6e4e; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
+      }
+      #supabase-auth-error { min-height: 18px; margin-top: 12px; color: #991b1b; font-size: 13px; line-height: 1.4; }
+      #auth-session-bar {
+        display: none; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 10px;
+        min-height: 27px; padding: 2px 8px; background: #ecfdf5; color: #374151; font-size: 11px;
+      }
+      #auth-signout {
+        border: 0; padding: 4px 8px; border-radius: 5px; background: #1a6e4e;
+        color: #fff; font-size: 11px; font-weight: 700; cursor: pointer;
+      }
+      @media (max-width: 430px) {
+        #auth-session-bar { justify-content: space-between; gap: 4px; font-size: 10px; }
+        #auth-user-email { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      }
       #flight-info-toolbar {
         position: relative; z-index: 10; flex: 0 0 auto; display: flex;
         align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 16px;
@@ -1777,7 +1810,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     <div data-id="2" id="clear-confirm-modal" class="modal-overlay" style="display:none;">
       <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
         <div style="font-size:15px;font-weight:700;color:#7F1D1D;">Clear all data? This cannot be undone.</div>
-        <div style="margin-top:14px;color:#374151;font-size:13px;">This will remove all current form data and cannot be undone.</div>
+        <div style="margin-top:14px;color:#374151;font-size:13px;">This removes all current form data from this device and the shared cloud flight for all signed-in devices. This cannot be undone.</div>
         <div style="margin-top:18px;display:flex;gap:12px;justify-content:center;">
           <button data-id="5" id="clear-confirm-yes" style="background:#EF4444;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">Yes, Clear All</button>
           <button data-id="6" id="clear-confirm-no" style="background:#F3F4F6;color:#111827;border:1px solid #E5E7EB;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;min-height:40px;">Cancel</button>
@@ -1879,7 +1912,21 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </div>
     </div>
 
-    <div data-id="7" id="app-shell">
+    <div id="supabase-auth-gate" role="dialog" aria-modal="true" aria-labelledby="supabase-auth-title">
+      <form id="supabase-auth-card">
+        <h1 id="supabase-auth-title">Sign in to PTS Flight App</h1>
+        <p>Sign in with your approved account to access and sync flight information.</p>
+        <label for="supabase-auth-email">Email</label>
+        <input id="supabase-auth-email" type="email" autocomplete="username" required>
+        <label for="supabase-auth-password">Password</label>
+        <input id="supabase-auth-password" type="password" autocomplete="current-password" required>
+        <button id="supabase-auth-submit" type="submit">Sign in</button>
+        <button id="supabase-auth-retry" type="button" style="display:none;">Retry connection</button>
+        <div id="supabase-auth-error" role="alert"></div>
+      </form>
+    </div>
+
+    <div data-id="7" id="app-shell" style="display:none;">
 
     <!-- HEADER -->
     <header data-id="8" id="app-header" class="bg-cx-teal text-white shadow-lg" style="padding-top: env(safe-area-inset-top, 0px);">
@@ -1938,6 +1985,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
       </div>
     </header>
+    <div id="auth-session-bar">
+      <span id="auth-user-email"></span>
+      <span id="cloud-sync-status" role="status">Connecting to cloud…</span>
+      <button id="auth-reload-cloud" type="button" style="border:0;padding:4px 8px;border-radius:5px;background:#d1fae5;color:#065f46;font-size:11px;font-weight:700;cursor:pointer;">Reload</button>
+      <button id="auth-signout" type="button">Sign out</button>
+    </div>
 
     <!-- IMPORT MODAL -->
     <div data-id="70" id="import-modal-k1l2" class="modal-overlay" style="display:none;">
@@ -2715,7 +2768,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       clearRampRoster();
       refreshSummarySpans();
       refreshFinalLoading();
-      if (typeof showToast === 'function') showToast('All data cleared', 'red');
+      persistCompleteFlight(false);
+      if (typeof showToast === 'function') showToast('All data cleared; cloud sync queued', 'red');
     }
 
     function cancelClear() {
@@ -2773,6 +2827,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         payload.depActual = (typeof depActual !== 'undefined') ? depActual : payload.depActual;
         payload.savedAt = new Date().toISOString();
         localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(payload));
+        scheduleCloudSave(payload);
       } catch(e) {}
     }
 
@@ -4034,6 +4089,17 @@ function renderPaxLoadTable() {
       return buildPrintReport();
     }
     var PTS_SAVE_KEY = 'pts_saved_state_v1';
+    var PTS_SUPABASE_URL = 'https://udptzwymfjuocjohhion.supabase.co';
+    var PTS_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_xhKt9WPPE1agTYza9GTz_Q_0yab3Awk';
+    var supabaseClient = null;
+    var cloudUser = null;
+    var cloudReady = false;
+    var cloudLastSavedAt = null;
+    var cloudPendingPayload = null;
+    var cloudSaveTimer = null;
+    var cloudSaveQueue = Promise.resolve();
+    var cloudAppInitialized = false;
+    var cloudAppStarting = false;
 
     // ===========================
     // IMAGE PASTE SUPPORT (content boxes)
@@ -4635,6 +4701,7 @@ function renderPaxLoadTable() {
         var payload = buildLocalSavePayload();
         localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(payload));
         updateLastUpdatedDisplay(payload.savedAt);
+        scheduleCloudSave(payload);
         localSaveFailureShown = false;
         return true;
       } catch(e) {
@@ -8347,7 +8414,7 @@ function renderPaxLoadTable() {
     // ===========================
     // DOMContentLoaded
     // ===========================
-    document.addEventListener('DOMContentLoaded', function() {
+    function initEventHandlers() {
 
       // Header buttons (desktop)
       safeOn('btn-import-q7r8', openImportModal);
@@ -8703,11 +8770,250 @@ function renderPaxLoadTable() {
         refreshFinalLoading();
       });
 
-    }); // end DOMContentLoaded
+      function queueFlightAutosave(event) {
+        var shell = document.getElementById('app-shell');
+        if (!cloudAppInitialized || !shell || !shell.contains(event.target)) return;
+        var status = document.getElementById('cloud-sync-status');
+        if (status) status.textContent = 'Changes pending…';
+        clearTimeout(window._flightAutosaveTimer);
+        window._flightAutosaveTimer = setTimeout(function() {
+          persistCompleteFlight(false);
+        }, 900);
+      }
+      document.addEventListener('input', queueFlightAutosave);
+      document.addEventListener('change', queueFlightAutosave);
+    }
 
     // ===========================
     // INIT
     // ===========================
+    function setCloudStatus(message) {
+      var el = document.getElementById('cloud-sync-status');
+      if (el) el.textContent = message;
+    }
+
+    function showAuthGate(message, canRetry) {
+      var gate = document.getElementById('supabase-auth-gate');
+      var shell = document.getElementById('app-shell');
+      var bar = document.getElementById('auth-session-bar');
+      var error = document.getElementById('supabase-auth-error');
+      var retry = document.getElementById('supabase-auth-retry');
+      if (gate) gate.style.display = 'flex';
+      if (shell) shell.style.display = 'none';
+      if (bar) bar.style.display = 'none';
+      if (error) error.textContent = message || '';
+      if (retry) retry.style.display = canRetry ? 'block' : 'none';
+    }
+
+    function setAuthBusy(busy) {
+      var submit = document.getElementById('supabase-auth-submit');
+      if (submit) {
+        submit.disabled = busy;
+        submit.textContent = busy ? 'Signing in…' : 'Sign in';
+      }
+    }
+
+    function readLocalFlightPayload() {
+      try {
+        var raw = localStorage.getItem(PTS_SAVE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        throw new Error('Could not read the saved flight on this device: ' + error.message);
+      }
+    }
+
+    async function writeCloudFlightPayload(payload) {
+      var savedAt = new Date().toISOString();
+      var result = await supabaseClient.from('flight_state').upsert({
+        user_id: cloudUser.id,
+        state: payload,
+        updated_at: savedAt
+      }, { onConflict: 'user_id' }).select('updated_at').single();
+      if (result.error) throw result.error;
+      cloudLastSavedAt = result.data && result.data.updated_at ? result.data.updated_at : savedAt;
+      updateLastUpdatedDisplay(cloudLastSavedAt);
+      return cloudLastSavedAt;
+    }
+
+    function scheduleCloudSave(payload) {
+      if (!cloudReady || !cloudUser) return;
+      cloudPendingPayload = payload;
+      setCloudStatus('Changes pending…');
+      clearTimeout(cloudSaveTimer);
+      cloudSaveTimer = setTimeout(flushCloudSave, 900);
+    }
+
+    function flushCloudSave() {
+      clearTimeout(cloudSaveTimer);
+      cloudSaveTimer = null;
+      if (!cloudReady || !cloudUser || !cloudPendingPayload) return cloudSaveQueue;
+      var payload = cloudPendingPayload;
+      cloudPendingPayload = null;
+      cloudSaveQueue = cloudSaveQueue.then(async function() {
+        if (!cloudReady || !cloudUser) return;
+        setCloudStatus('Syncing…');
+        var failed = false;
+        try {
+          var savedAt = await writeCloudFlightPayload(payload);
+          var savedDate = new Date(savedAt);
+          var time = isNaN(savedDate.getTime()) ? '' :
+            ' ' + String(savedDate.getHours()).padStart(2, '0') + ':' + String(savedDate.getMinutes()).padStart(2, '0');
+          setCloudStatus('Synced' + time);
+        } catch (error) {
+          if (!cloudPendingPayload) cloudPendingPayload = payload;
+          failed = true;
+          setCloudStatus('Sync failed — retry required');
+          showToast('Cloud sync failed: ' + error.message, 'red');
+        }
+        if (!failed && cloudPendingPayload) flushCloudSave();
+      });
+      return cloudSaveQueue;
+    }
+
+    async function loadCloudFlight(user) {
+      cloudUser = user;
+      var result = await supabaseClient.from('flight_state')
+        .select('state, updated_at').eq('user_id', user.id).maybeSingle();
+      if (result.error) throw result.error;
+
+      var localPayload = readLocalFlightPayload();
+      var remotePayload = result.data && result.data.state;
+      if (remotePayload && typeof remotePayload === 'object') {
+        var localTime = localPayload && Date.parse(localPayload.savedAt);
+        var remoteTime = Date.parse(result.data.updated_at);
+        if (localPayload && Number.isFinite(localTime) && Number.isFinite(remoteTime) && localTime > remoteTime) {
+          localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(localPayload));
+          await writeCloudFlightPayload(localPayload);
+          setCloudStatus('Local changes synced');
+        } else {
+          localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(remotePayload));
+          cloudLastSavedAt = result.data.updated_at;
+          updateLastUpdatedDisplay(cloudLastSavedAt);
+          setCloudStatus('Cloud flight loaded');
+        }
+      } else if (localPayload) {
+        localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(localPayload));
+        await writeCloudFlightPayload(localPayload);
+        setCloudStatus('Existing local flight synced');
+      } else {
+        localStorage.removeItem(PTS_SAVE_KEY);
+        cloudLastSavedAt = null;
+        setCloudStatus('No active cloud flight');
+      }
+    }
+
+    async function startAuthenticatedApp(user) {
+      if (cloudAppInitialized || cloudAppStarting) return;
+      cloudAppStarting = true;
+      var email = document.getElementById('auth-user-email');
+      if (email) email.textContent = user.email || 'Signed in';
+      showAuthGate('Loading your shared flight…', false);
+      try {
+        await loadCloudFlight(user);
+        cloudReady = true;
+        var gate = document.getElementById('supabase-auth-gate');
+        var shell = document.getElementById('app-shell');
+        var bar = document.getElementById('auth-session-bar');
+        if (gate) gate.style.display = 'none';
+        if (bar) bar.style.display = 'flex';
+        if (shell) shell.style.display = '';
+        initEventHandlers();
+        init();
+        wireNavTabs();
+        initFlightInfoDropdowns();
+        cloudAppInitialized = true;
+        if (!cloudLastSavedAt && !cloudPendingPayload) persistCompleteFlight(false);
+      } catch (error) {
+        cloudUser = user;
+        showAuthGate('Could not load cloud flight data: ' + error.message, true);
+      } finally {
+        cloudAppStarting = false;
+        setAuthBusy(false);
+      }
+    }
+
+    function startSupabaseAuthentication() {
+      var form = document.getElementById('supabase-auth-card');
+      var retry = document.getElementById('supabase-auth-retry');
+      var signout = document.getElementById('auth-signout');
+      var reload = document.getElementById('auth-reload-cloud');
+      if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+        showAuthGate('The sign-in service did not load. Check your internet connection and reload the page.', false);
+        return;
+      }
+      supabaseClient = window.supabase.createClient(PTS_SUPABASE_URL, PTS_SUPABASE_PUBLISHABLE_KEY);
+      if (form) form.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        setAuthBusy(true);
+        showAuthGate('', false);
+        var email = document.getElementById('supabase-auth-email').value.trim();
+        var password = document.getElementById('supabase-auth-password').value;
+        var result;
+        try {
+          result = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
+        } catch (error) {
+          setAuthBusy(false);
+          showAuthGate('Sign in failed: ' + error.message, false);
+          return;
+        }
+        if (result.error) {
+          setAuthBusy(false);
+          showAuthGate('Sign in failed: ' + result.error.message, false);
+          return;
+        }
+        if (cloudAppInitialized) {
+          window.location.reload();
+          return;
+        }
+        await startAuthenticatedApp(result.data.user);
+      });
+      if (retry) retry.addEventListener('click', async function() {
+        setAuthBusy(true);
+        var result = await supabaseClient.auth.getUser();
+        if (result.error || !result.data.user) {
+          setAuthBusy(false);
+          showAuthGate('Could not verify the signed-in account. Please sign in again.', false);
+          return;
+        }
+        await startAuthenticatedApp(result.data.user);
+      });
+      if (signout) signout.addEventListener('click', async function() {
+        signout.disabled = true;
+        if (cloudAppInitialized) persistCompleteFlight(false);
+        await flushCloudSave();
+        var result;
+        try {
+          result = await supabaseClient.auth.signOut();
+        } catch (error) {
+          signout.disabled = false;
+          showToast('Sign out failed: ' + error.message, 'red');
+          return;
+        }
+        if (result.error) {
+          signout.disabled = false;
+          showToast('Sign out failed: ' + result.error.message, 'red');
+          return;
+        }
+        window.location.reload();
+      });
+      if (reload) reload.addEventListener('click', function() { window.location.reload(); });
+      supabaseClient.auth.onAuthStateChange(function(event, session) {
+        if (event === 'SIGNED_OUT' && cloudAppInitialized) {
+          cloudReady = false;
+          showAuthGate('You have been signed out. Sign in again to continue.', false);
+        }
+      });
+      supabaseClient.auth.getSession().then(function(result) {
+        if (result.error) {
+          showAuthGate('Could not check your sign-in session: ' + result.error.message, false);
+        } else if (result.data.session) {
+          startAuthenticatedApp(result.data.session.user);
+        }
+      }).catch(function(error) {
+        showAuthGate('Could not connect to Supabase: ' + error.message, false);
+      });
+    }
+
     function init() {
       // Auto-import shared data from a scanned QR URL (legacy share links still work).
       var hashCode = getShareCodeFromHash();
@@ -8920,9 +9226,17 @@ function renderPaxLoadTable() {
     // Mobile browsers may suspend or reload the app while it is in the background.
     // Save the complete flight before suspension rather than waiting for the next interval.
     document.addEventListener('visibilitychange', function() {
-      if (document.visibilityState === 'hidden') persistCompleteFlight(false);
+      if (document.visibilityState === 'hidden' && cloudAppInitialized) {
+        persistCompleteFlight(false);
+        flushCloudSave();
+      }
     });
-    window.addEventListener('pagehide', function() { persistCompleteFlight(false); });
+    window.addEventListener('pagehide', function() {
+      if (!cloudAppInitialized) return;
+      persistCompleteFlight(false);
+      flushCloudSave();
+    });
+    window.addEventListener('online', function() { flushCloudSave(); });
 
     // === VIEWPORT HEIGHT (Android Chrome address bar) ===
     function setVH(){document.documentElement.style.setProperty('--vh',(window.innerHeight*0.01)+'px');}
@@ -9045,9 +9359,7 @@ function renderPaxLoadTable() {
       });
       switchToTab('pts');
     }
-    init();
-    wireNavTabs();
-    initFlightInfoDropdowns();
+    document.addEventListener('DOMContentLoaded', startSupabaseAuthentication);
 
     // Register service worker for PWA install / offline use
     if ('serviceWorker' in navigator) {
