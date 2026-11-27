@@ -4099,6 +4099,8 @@ function renderPaxLoadTable() {
     var cloudSaveTimer = null;
     var cloudSaveQueue = Promise.resolve();
     var cloudSaveInProgress = false;
+    var cloudRealtimeChannel = null;
+    var cloudRealtimeWarningShown = false;
     var cloudAppInitialized = false;
     var cloudAppStarting = false;
 
@@ -8907,6 +8909,64 @@ function renderPaxLoadTable() {
       }
     }
 
+    function handleCloudFlightChange(change) {
+      var row = change && change.new;
+      var payload = row && row.state;
+      if (!payload || typeof payload !== 'object') return;
+
+      var incomingTime = Date.parse(row.updated_at);
+      var currentTime = Date.parse(cloudLastSavedAt);
+      if (Number.isFinite(incomingTime) && Number.isFinite(currentTime) && incomingTime <= currentTime) return;
+
+      if (window._flightAutosaveTimer || cloudSaveTimer || cloudPendingPayload || cloudSaveInProgress) {
+        setCloudStatus('Another device updated the flight; local edits are syncing');
+        showToast('Flight updated on another device. This device has unsynced edits, so they are being kept and synced.', 'red');
+        return;
+      }
+
+      try {
+        payload.savedAt = row.updated_at || payload.savedAt || new Date().toISOString();
+        localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(payload));
+        var restored = restoreFromLocal();
+        if (!restored) throw new Error('The updated flight could not be restored on this device.');
+        applyRestoredFlight(restored);
+        cloudLastSavedAt = row.updated_at || payload.savedAt;
+        updateLastUpdatedDisplay(cloudLastSavedAt);
+        setCloudStatus('Live sync updated ' + new Date(cloudLastSavedAt).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit'
+        }));
+        showToast('Flight updated from another device.', 'green');
+      } catch (error) {
+        setCloudStatus('Live sync failed');
+        showToast('Could not apply the update from another device: ' + error.message, 'red');
+      }
+    }
+
+    function subscribeToCloudFlight(user) {
+      if (cloudRealtimeChannel) supabaseClient.removeChannel(cloudRealtimeChannel);
+      cloudRealtimeChannel = supabaseClient
+        .channel('flight-state-' + user.id)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'flight_state',
+          filter: 'user_id=eq.' + user.id
+        }, handleCloudFlightChange)
+        .subscribe(function(status) {
+          if (status === 'SUBSCRIBED') {
+            cloudRealtimeWarningShown = false;
+            setCloudStatus('Live sync connected');
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            setCloudStatus('Live sync unavailable');
+            if (!cloudRealtimeWarningShown) {
+              cloudRealtimeWarningShown = true;
+              showToast('Live sync is unavailable. Enable Realtime for public.flight_state in Supabase.', 'red');
+            }
+          }
+        });
+    }
+
     async function startAuthenticatedApp(user) {
       if (cloudAppInitialized || cloudAppStarting) return;
       cloudAppStarting = true;
@@ -8924,6 +8984,7 @@ function renderPaxLoadTable() {
         initFlightInfoDropdowns();
         cloudAppInitialized = true;
         if (!cloudLastSavedAt && !cloudPendingPayload) persistCompleteFlight(false);
+        subscribeToCloudFlight(user);
       } catch (error) {
         cloudUser = user;
         showAuthGate('Could not load cloud flight data: ' + error.message, true);
