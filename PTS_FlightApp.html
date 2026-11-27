@@ -1890,7 +1890,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             <div style="font-size:16px;font-weight:600;opacity:0.75;color:#fff;letter-spacing:0.04em;white-space:nowrap;">Flight Info &amp; Precision Timing Schedule <span data-app-version style="font-size:0.72em;font-weight:500;opacity:0.85;letter-spacing:0;"></span></div>
             <div style="display:flex;align-items:baseline;gap:8px;min-width:0;">
               <div id="hdr-flight-num" data-summary="flight" style="font-weight:500;letter-spacing:0.02em;"></div>
-              <span id="last-updated" style="font-size:10px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;">Last Updated: --:--</span>
+              <span id="last-updated" aria-label="Last updated --:--" title="Last updated --:--" style="display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"><svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5"></path><path d="M4 17v-5h5"></path><path d="M5.64 9A7 7 0 0 1 17.5 6.5L20 12"></path><path d="M18.36 15A7 7 0 0 1 6.5 17.5L4 12"></path></svg><span class="last-updated-time">--:--</span></span>
             </div>
             <div id="hdr-aircraft-details" style="display:none;align-items:center;gap:20px;margin-left:0;font-size:16px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"></div>
           </div>
@@ -1918,7 +1918,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
               <div style="font-size:16px;font-weight:600;opacity:0.75;color:#fff;letter-spacing:0.03em;white-space:nowrap;">Flight Info &amp; Precision Timing Schedule <span data-app-version style="font-size:0.72em;font-weight:500;opacity:0.85;letter-spacing:0;"></span></div>
               <div style="display:flex;align-items:baseline;gap:6px;min-width:0;">
                 <div id="hdr-flight-num-m" data-summary="flight" style="font-weight:500;letter-spacing:0.02em;"></div>
-                <span id="last-updated-m" style="font-size:10px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;">Last Updated: --:--</span>
+                <span id="last-updated-m" aria-label="Last updated --:--" title="Last updated --:--" style="display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"><svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5"></path><path d="M4 17v-5h5"></path><path d="M5.64 9A7 7 0 0 1 17.5 6.5L20 12"></path><path d="M18.36 15A7 7 0 0 1 6.5 17.5L4 12"></path></svg><span class="last-updated-time">--:--</span></span>
               </div>
               <div id="hdr-aircraft-details-m" style="display:none;align-items:center;gap:20px;font-size:16px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"></div>
             </div>
@@ -4595,7 +4595,12 @@ function renderPaxLoadTable() {
       }
       ['last-updated', 'last-updated-m'].forEach(function(id) {
         var el = document.getElementById(id);
-        if (el) el.textContent = 'Last Updated: ' + value;
+        if (el) {
+          el.setAttribute('aria-label', 'Last updated ' + value);
+          el.title = 'Last updated ' + value;
+          var time = el.querySelector('.last-updated-time');
+          if (time) time.textContent = value;
+        }
       });
     }
 
