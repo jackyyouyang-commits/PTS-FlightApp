@@ -9019,9 +9019,17 @@ function renderPaxLoadTable() {
             showToast('Refresh stopped because the latest changes could not be synced. Try again when online.', 'red');
             return;
           }
+          var restoredAt = new Date(cloudLastSavedAt || Date.now());
+          var restoreText = document.getElementById('restore-success-text');
+          var restoreModal = document.getElementById('restore-success-modal');
+          if (restoreText) {
+            restoreText.textContent = 'Flight Information Updated at ' +
+              String(restoredAt.getHours()).padStart(2, '0') + ':' +
+              String(restoredAt.getMinutes()).padStart(2, '0');
+          }
+          if (restoreModal) restoreModal.style.display = 'flex';
         }
-        sessionStorage.setItem('pts_show_restore_notice', '1');
-        window.location.reload();
+        refresh.disabled = false;
       });
       supabaseClient.auth.onAuthStateChange(function(event, session) {
         if (event === 'SIGNED_OUT' && cloudAppInitialized) {
@@ -9041,8 +9049,6 @@ function renderPaxLoadTable() {
     }
 
     function init() {
-      var showRestoreNotice = sessionStorage.getItem('pts_show_restore_notice') === '1';
-      sessionStorage.removeItem('pts_show_restore_notice');
       // Auto-import shared data from a scanned QR URL (legacy share links still work).
       var hashCode = getShareCodeFromHash();
       if (hashCode && loadShareCode(hashCode)) {
@@ -9084,17 +9090,6 @@ function renderPaxLoadTable() {
         } else if (state._locked) {
           setTimeout(lockFields, 100);
         }
-        (function(){
-          var m = document.getElementById('restore-success-modal');
-          var t = document.getElementById('restore-success-text');
-          if (t) {
-            var restoredAt = new Date(restored.savedAt);
-            var hours = String(restoredAt.getHours()).padStart(2, '0');
-            var minutes = String(restoredAt.getMinutes()).padStart(2, '0');
-            t.textContent = 'Flight Information Updated at ' + hours + ':' + minutes;
-          }
-          if (m && showRestoreNotice) m.style.display = 'flex';
-        })();
       } else {
         renderAll();
        // ensure autosize textareas (e.g., Doorside) start as single-line if empty
