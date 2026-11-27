@@ -4098,6 +4098,7 @@ function renderPaxLoadTable() {
     var cloudPendingPayload = null;
     var cloudSaveTimer = null;
     var cloudSaveQueue = Promise.resolve();
+    var cloudSaveInProgress = false;
     var cloudAppInitialized = false;
     var cloudAppStarting = false;
 
@@ -8776,6 +8777,7 @@ function renderPaxLoadTable() {
         setCloudStatus('Changes pending…');
         clearTimeout(window._flightAutosaveTimer);
         window._flightAutosaveTimer = setTimeout(function() {
+          window._flightAutosaveTimer = null;
           persistCompleteFlight(false);
         }, 900);
       }
@@ -8851,6 +8853,7 @@ function renderPaxLoadTable() {
       cloudPendingPayload = null;
       cloudSaveQueue = cloudSaveQueue.then(async function() {
         if (!cloudReady || !cloudUser) return;
+        cloudSaveInProgress = true;
         setCloudStatus('Syncing…');
         var failed = false;
         try {
@@ -8864,6 +8867,8 @@ function renderPaxLoadTable() {
           failed = true;
           setCloudStatus('Sync failed — retry required');
           showToast('Cloud sync failed: ' + error.message, 'red');
+        } finally {
+          cloudSaveInProgress = false;
         }
         if (!failed && cloudPendingPayload) flushCloudSave();
       });
@@ -9011,15 +9016,33 @@ function renderPaxLoadTable() {
       });
       if (refresh) refresh.addEventListener('click', async function() {
         refresh.disabled = true;
-        if (cloudAppInitialized) {
-          persistCompleteFlight(false);
-          await flushCloudSave();
-          if (cloudPendingPayload) {
-            refresh.disabled = false;
-            showToast('Refresh stopped because the latest changes could not be synced. Try again when online.', 'red');
+        try {
+          if (!cloudAppInitialized || !cloudReady || !cloudUser) {
+            showToast('The shared flight is not ready to refresh yet.', 'red');
             return;
           }
-          var restoredAt = new Date(cloudLastSavedAt || Date.now());
+          if (window._flightAutosaveTimer || cloudSaveTimer || cloudPendingPayload || cloudSaveInProgress) {
+            showToast('Refresh stopped because this device has unsynced changes. Wait for sync to finish, then refresh again.', 'red');
+            return;
+          }
+          var result = await supabaseClient.from('flight_state')
+            .select('state, updated_at').eq('user_id', cloudUser.id).maybeSingle();
+          if (result.error) throw result.error;
+          if (!result.data || !result.data.state || typeof result.data.state !== 'object') {
+            setCloudStatus('No active cloud flight');
+            showToast('No active flight is saved in the cloud.', 'red');
+            return;
+          }
+          var restoredPayload = result.data.state;
+          restoredPayload.savedAt = result.data.updated_at || restoredPayload.savedAt || new Date().toISOString();
+          localStorage.setItem(PTS_SAVE_KEY, JSON.stringify(restoredPayload));
+          var restored = restoreFromLocal();
+          if (!restored) throw new Error('The saved flight could not be restored on this device.');
+          applyRestoredFlight(restored);
+          cloudLastSavedAt = result.data.updated_at || restoredPayload.savedAt;
+          updateLastUpdatedDisplay(cloudLastSavedAt);
+          setCloudStatus('Cloud flight refreshed');
+          var restoredAt = new Date(cloudLastSavedAt);
           var restoreText = document.getElementById('restore-success-text');
           var restoreModal = document.getElementById('restore-success-modal');
           if (restoreText) {
@@ -9028,8 +9051,12 @@ function renderPaxLoadTable() {
               String(restoredAt.getMinutes()).padStart(2, '0');
           }
           if (restoreModal) restoreModal.style.display = 'flex';
+        } catch (error) {
+          setCloudStatus('Refresh failed');
+          showToast('Refresh failed: ' + error.message, 'red');
+        } finally {
+          refresh.disabled = false;
         }
-        refresh.disabled = false;
       });
       supabaseClient.auth.onAuthStateChange(function(event, session) {
         if (event === 'SIGNED_OUT' && cloudAppInitialized) {
@@ -9048,6 +9075,46 @@ function renderPaxLoadTable() {
       });
     }
 
+    function applyRestoredFlight(restored) {
+      updateLastUpdatedDisplay(restored.savedAt);
+      var textFields = OPERATIONAL_TEXT_FIELDS;
+      Object.keys(textFields).forEach(function(id) {
+        var textarea = document.getElementById(id);
+        if (textarea) {
+          textarea.value = restored[textFields[id]] || '';
+          if (textarea.value) {
+            try { processPastedData(textarea, textarea.value, true); } catch (error) {}
+          }
+        }
+      });
+      restoreRichContent(restored);
+      pastedImages = restored._images || {};
+      PASTE_IMAGE_IDS.forEach(renderPastedImageGallery);
+      if (restored._agent_pos_pdf) showAgentPosPdf(restored._agent_pos_pdf);
+      else removeAgentPosPdf();
+      if (restored._dep_gen_dec_pdf) showContentPdf('depGenDec', restored._dep_gen_dec_pdf);
+      else removeContentPdf('depGenDec');
+      if (restored._ramp_roster_pdf) showContentPdf('rampRoster', restored._ramp_roster_pdf);
+      else removeContentPdf('rampRoster');
+      updateUnderloadFromWeights();
+      syncInputsFromState();
+      renderActivities();
+      renderPaxLoadTable();
+      updateArrPaxTotal();
+      renderSummary();
+      updateHeaderFlightNum();
+      refreshFinalLoading();
+      if (state._badgeVisible) {
+        if (state._locked) {
+          setTimeout(lockFields, 100);
+        } else {
+          setTimeout(unlockFields, 100);
+        }
+      } else if (state._locked) {
+        setTimeout(lockFields, 100);
+      }
+    }
+
     function init() {
       // Auto-import shared data from a scanned QR URL (legacy share links still work).
       var hashCode = getShareCodeFromHash();
@@ -9056,40 +9123,7 @@ function renderPaxLoadTable() {
       } else {
       var restored = restoreFromLocal();
       if (restored) {
-        updateLastUpdatedDisplay(restored.savedAt);
-        // Restore paste-tab textarea content from local storage payload
-        (function(){
-          var m = OPERATIONAL_TEXT_FIELDS;
-          Object.keys(m).forEach(function(id){
-            var ta=document.getElementById(id);
-            if(ta&&restored[m[id]]) {
-              ta.value=restored[m[id]];
-              try { processPastedData(ta, ta.value, true); } catch(e) {}
-            }
-          });
-          restoreRichContent(restored);
-        })();
-        if (restored._images) pastedImages = restored._images;
-        if (restored._agent_pos_pdf) showAgentPosPdf(restored._agent_pos_pdf);
-        if (restored._dep_gen_dec_pdf) showContentPdf('depGenDec', restored._dep_gen_dec_pdf);
-        if (restored._ramp_roster_pdf) showContentPdf('rampRoster', restored._ramp_roster_pdf);
-        updateUnderloadFromWeights();
-        syncInputsFromState();
-        renderActivities();
-        renderPaxLoadTable();
-        updateArrPaxTotal();
-        renderSummary();
-        updateHeaderFlightNum();
-        refreshFinalLoading();
-        if (state._badgeVisible) {
-          if (state._locked) {
-            setTimeout(lockFields, 100);
-          } else {
-            setTimeout(unlockFields, 100);
-          }
-        } else if (state._locked) {
-          setTimeout(lockFields, 100);
-        }
+        applyRestoredFlight(restored);
       } else {
         renderAll();
        // ensure autosize textareas (e.g., Doorside) start as single-line if empty
