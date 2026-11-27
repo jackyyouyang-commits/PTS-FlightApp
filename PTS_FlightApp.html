@@ -3042,8 +3042,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     // ===========================
     // HEADER FLIGHT NUMBER
     // ===========================
+    function getHeaderFlightNumber() {
+      var flight = state && state.flight ? String(state.flight).trim() : '';
+      var match = flight.match(/^([A-Za-z]+)\d+\/(\d+)$/);
+      return match ? match[1] + match[2] : flight;
+    }
+
     function updateHeaderFlightNum() {
-      var val = (state && state.flight) ? state.flight : '';
+      var val = getHeaderFlightNumber();
       ['hdr-flight-num','hdr-flight-num-m'].forEach(function(id){
         var el = document.getElementById(id); if(el) el.textContent = val;
       });
@@ -3055,7 +3061,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
      function refreshSummarySpans() {
        document.querySelectorAll('[data-summary]').forEach(function(el) {
          var key = el.getAttribute('data-summary');
-         var val = (state && state[key] && String(state[key]).trim()) ? state[key] : (key === 'flight' ? '' : '-');
+         var val = key === 'flight'
+           ? getHeaderFlightNumber()
+           : (state && state[key] && String(state[key]).trim()) ? state[key] : '-';
          el.textContent = val;
        });
        var regn = state && state.regn ? String(state.regn).trim() : '';
