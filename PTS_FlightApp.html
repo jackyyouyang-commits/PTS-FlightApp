@@ -7906,7 +7906,7 @@ function renderPaxLoadTable() {
           row('Flight',v('flight'))+row('Date',v('date'))+row('REGN',v('regn'))+row('Config',v('config'))+
           row('STA',v('sta'))+row('ETA',v('eta'))+row('ATA',escapeReportValue(arrActual[0] || s.ata || ''))+
           row('Gate',v('gate'))+row('Carousel',v('carousel'))+row('Weather',v('weather'))+
-          row('Delay Code(s) ex HKG',v('delayCode'))+row('Flight Status',s._flightCancelled ? 'Cancelled' : 'Active')
+          row('Delay Code(s)',v('delayCode'))+row('Flight Status',s._flightCancelled ? 'Cancelled' : 'Active')
         ),
         section('Arrival Crew', row('CN',v('arr_cn'))+row('ISM',v('arr_ism'))),
         section('Arrival Pax',
@@ -7928,7 +7928,7 @@ function renderPaxLoadTable() {
         ),
         arrPtsHtml ? section('Arrival Precision Timing Schedule', arrPtsHtml) : section('Arrival Precision Timing Schedule', ''),
         section('Departure Flight Info',
-          row('STD',v('dep_std'))+row('ETD',v('dep_etd'))+row('Delay Code(s) ex HKG',v('dep_delay'))+
+          row('STD',v('dep_std'))+row('ETD',v('dep_etd'))+row('Delay Code(s)',v('dep_delay'))+
           row('Board Time',v('dep_board_time'))+row('Gate Close',v('dep_gate_close'))+
           row('DCT',v('dep_dct'))+row('FT',v('dep_ft'))+row('BLK',v('dep_blk'))+
           row('ETA HKG',v('dep_eta_hkg'))+row('STA HKG',v('dep_sta_hkg'))
