@@ -3695,6 +3695,16 @@ function renderPaxLoadTable() {
             '<div><div class="sum-label">Total</div><div class="sum-value text-cx-teal">' + (arrTotal||'-') + '</div></div>' +
           '</div>' +
           '<div class="mt-4">' +
+            '<div class="sum-label" style="display:block;margin-bottom:8px;">Connections</div>' +
+            '<div class="grid grid-cols-2 sm:grid-cols-3 gap-3">' +
+              '<div><div class="sum-label">INTL CNX</div><div class="sum-value">' + v('intl_cnx') + '</div></div>' +
+              '<div><div class="sum-label">US CNX</div><div class="sum-value">' + v('us_cnx') + '</div></div>' +
+              '<div><div class="sum-label">WS CNX / ITD Bags</div><div class="sum-value">' + v('ws_cnx') + '</div></div>' +
+              '<div><div class="sum-label">WS WCH / MAAS</div><div class="sum-value">' + v('ws_wch') + '</div></div>' +
+              '<div><div class="sum-label">AC WCH / MAAS</div><div class="sum-value">' + v('ac_wch') + '</div></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="mt-4">' +
             '<div class="sum-label" style="display:block;margin-bottom:8px;">Special Handling</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
               renderSpecialHandlingBadges([

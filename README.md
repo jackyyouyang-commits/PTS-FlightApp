@@ -15,6 +15,8 @@ The header displays the current boarding status/countdown above the smaller **Bo
 
 **Special handling keeps the complete Excel value.** Arrival Loading and Final Loading show counts together with seat numbers and notes, for example `4 (22G 23DK)`, across all special-handling categories. Long values wrap within the summary; import preview, fields, reports, saves and transfers retain the text. Previously saved arrival WCHR/S details are recombined with their count when available. Earlier departure imports discarded WCHR/S details, so re-import the original Excel data to restore those missing details.
 
+The Summary tab includes a **Connections** subsection under Arrival Loading, showing INTL CNX, US CNX, WS CNX / ITD Bags, WS WCH / MAAS, and AC WCH / MAAS from Flight Info.
+
 In the **Arrival Offload** preview, tap a position such as `31L` to mark it offloaded. A green check appears at that position on the instruction; marks remain for the same instruction on this device and clear when its content changes or is cleared.
 
 The Arrival Offload header summarizes recognized ULD positions as **Cargo AKE**, **Cargo pallets**, **Mail**, and **Pax AKE**. It reads the AKE/PMC/PLA identifier and its corresponding second-line code: `/C/` is cargo, `/M/` is mail, and other codes (such as `/BP/`, `/BY/`, `/BF/`, `/ED/`, or `/BT/`) count as Pax AKE. A numbered position without a ULD identifier is included when its corresponding code is `/M/`.
