@@ -1906,8 +1906,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div data-id="19" id="etd-countdown" class="tabular-nums leading-none" style="font-size:22px;">Departs at: --:--</div>
           <div data-id="20" class="etd-divider"></div>
           <div data-id="21" id="boarding-countdown" class="tabular-nums leading-none" style="font-size:22px;">--:--:--</div>
-          <div class="etd-divider"></div>
-          <div data-id="21-gate" id="gate-display" class="tabular-nums leading-none" style="font-size:22px;white-space:nowrap;">Gate: --</div>
         </div>
       </div>
       <!-- MOBILE: two rows (<md) -->
@@ -3074,6 +3072,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
        var flightTimeText = flightTimeMatch
          ? flightTimeMatch[1] + 'h ' + String(Number(flightTimeMatch[2])) + 'm'
          : '';
+       var gateNum = state && state.gate && String(state.gate).trim() !== '' ? String(state.gate).trim() : '--';
        ['hdr-aircraft-details','hdr-aircraft-details-m'].forEach(function(id) {
          var el = document.getElementById(id);
          if (!el) return;
@@ -3104,7 +3103,16 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
            duration.appendChild(durationLabel);
            el.appendChild(duration);
          }
-         el.style.display = aircraftDetails || flightTimeText ? 'flex' : 'none';
+         if (id === 'hdr-aircraft-details') {
+           var gate = document.createElement('span');
+           gate.id = 'gate-display';
+           gate.className = 'tabular-nums leading-none';
+           gate.style.fontSize = '22px';
+           gate.style.whiteSpace = 'nowrap';
+           gate.textContent = 'Gate: ' + gateNum;
+           el.appendChild(gate);
+         }
+         el.style.display = aircraftDetails || flightTimeText || (id === 'hdr-aircraft-details' && gateNum !== '--') ? 'flex' : 'none';
        });
      }
 
