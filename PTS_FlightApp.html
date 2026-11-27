@@ -4132,19 +4132,36 @@ function renderPaxLoadTable() {
       var lines = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
       for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
         if (/^\s*SI\.\s*$/i.test(lines[lineIndex])) break;
-        var matches = [], pattern = /\b\d{2}[A-Z]\s+(AKE|PMC|PLA)[A-Z0-9]+\b/gi, match;
-        while ((match = pattern.exec(lines[lineIndex]))) {
-          matches.push({ index: match.index, type: match[1].toUpperCase() });
+        var matches = [], separators = /[|│\t]/, positionCells = lines[lineIndex].split(separators);
+        var hasCells = separators.test(lines[lineIndex]);
+        var pattern = /\b\d{2}[A-Z]\s+(AKE|PMC|PLA)[A-Z0-9]+\b/gi, match;
+        if (hasCells) {
+          positionCells.forEach(function(cell, cellIndex) {
+            var cellPattern = /\b\d{2}[A-Z]\s+(AKE|PMC|PLA)[A-Z0-9]+\b/gi, cellMatch;
+            while ((cellMatch = cellPattern.exec(cell))) {
+              matches.push({ index: cellMatch.index, cellIndex: cellIndex, type: cellMatch[1].toUpperCase() });
+            }
+            if (!cellPattern.lastIndex && /^\d{2}$/.test(cell.trim())) {
+              matches.push({ index: 0, cellIndex: cellIndex, type: null });
+            }
+          });
+        } else {
+          while ((match = pattern.exec(lines[lineIndex]))) {
+            matches.push({ index: match.index, type: match[1].toUpperCase() });
+          }
+          if (!matches.length && /^\s*\d{2}\s*$/.test(lines[lineIndex])) {
+            matches.push({ index: lines[lineIndex].search(/\d{2}/), type: null });
+          }
         }
         if (!matches.length) continue;
 
         var detailLine = lines[lineIndex + 1] || '';
-        var detailCells = detailLine.split(/[|│\t]/);
-        var positionCells = lines[lineIndex].split(/[|│\t]/);
+        var detailCells = detailLine.split(separators);
         matches.forEach(function(unit, unitIndex) {
-          var cellIndex = (lines[lineIndex].slice(0, unit.index).match(/[|│\t]/g) || []).length;
+          var cellIndex = hasCells ? unit.cellIndex
+            : (lines[lineIndex].slice(0, unit.index).match(/[|│\t]/g) || []).length;
           var detailCell = detailCells[cellIndex] || '';
-          if (!/[|│\t]/.test(detailLine)) {
+          if (!separators.test(detailLine)) {
             var nextUnitIndex = matches[unitIndex + 1];
             var start = unit.index;
             var end = nextUnitIndex ? nextUnitIndex.index : start + 32;
@@ -4155,10 +4172,10 @@ function renderPaxLoadTable() {
 
           if (/\/C\//i.test(detailCell)) {
             if (unit.type === 'AKE') counts.cargoAke++;
-            else counts.cargoPallets++;
+            else if (unit.type === 'PMC' || unit.type === 'PLA') counts.cargoPallets++;
           } else if (/\/M\//i.test(detailCell)) {
             counts.mail++;
-          } else {
+          } else if (unit.type) {
             counts.paxAke++;
           }
         });
