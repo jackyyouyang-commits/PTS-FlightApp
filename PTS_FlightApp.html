@@ -4604,10 +4604,17 @@ function renderPaxLoadTable() {
       ['last-updated', 'last-updated-m'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) {
-          el.setAttribute('aria-label', 'Last updated ' + value);
-          el.title = 'Last updated ' + value;
           var time = el.querySelector('.last-updated-time');
-          if (time) time.textContent = value;
+          var displayValue = value;
+          if (date && !isNaN(date.getTime())) {
+            var dayLabel = date.toDateString() === new Date().toDateString()
+              ? 'Today'
+              : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            displayValue = dayLabel + ' ' + value;
+          }
+          el.setAttribute('aria-label', 'Last updated ' + displayValue);
+          el.title = 'Last updated ' + displayValue;
+          if (time) time.textContent = displayValue;
         }
       });
     }
