@@ -1892,7 +1892,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
               <div id="hdr-flight-num" data-summary="flight" style="font-weight:500;letter-spacing:0.02em;"></div>
               <span id="last-updated" style="font-size:10px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;">Last Updated: --:--</span>
             </div>
-            <div id="hdr-aircraft-details" style="display:none;margin-left:0;font-size:16px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"></div>
+            <div id="hdr-aircraft-details" style="display:none;align-items:center;gap:20px;margin-left:0;font-size:16px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"></div>
           </div>
         </div>
         <div data-id="14" class="flex items-center gap-2 flex-shrink-0">
@@ -1920,7 +1920,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
                 <div id="hdr-flight-num-m" data-summary="flight" style="font-weight:500;letter-spacing:0.02em;"></div>
                 <span id="last-updated-m" style="font-size:10px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;">Last Updated: --:--</span>
               </div>
-              <div id="hdr-aircraft-details-m" style="display:none;font-size:16px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"></div>
+              <div id="hdr-aircraft-details-m" style="display:none;align-items:center;gap:20px;font-size:16px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"></div>
             </div>
           </div>
           <div data-id="42" class="flex items-center gap-1 flex-shrink-0">
@@ -3060,11 +3060,43 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
        });
        var regn = state && state.regn ? String(state.regn).trim() : '';
        var config = state && state.config ? String(state.config).trim() : '';
+       var flightTime = state && state.dep_ft ? String(state.dep_ft).trim() : '';
+       var flightTimeMatch = flightTime.match(/^(\d+):(\d{2})$/);
+       var aircraftDetails = [config, regn].filter(Boolean).join(' | ');
+       var flightTimeText = flightTimeMatch
+         ? flightTimeMatch[1] + 'h ' + String(Number(flightTimeMatch[2])) + 'm'
+         : '';
        ['hdr-aircraft-details','hdr-aircraft-details-m'].forEach(function(id) {
          var el = document.getElementById(id);
          if (!el) return;
-         el.textContent = [config, regn].filter(Boolean).join(' | ');
-         el.style.display = regn || config ? 'block' : 'none';
+         while (el.firstChild) el.removeChild(el.firstChild);
+         if (aircraftDetails) {
+           var aircraftLabel = document.createElement('span');
+           aircraftLabel.textContent = aircraftDetails;
+           el.appendChild(aircraftLabel);
+         }
+         if (flightTimeText) {
+           var duration = document.createElement('span');
+           duration.style.display = 'inline-flex';
+           duration.style.alignItems = 'center';
+           duration.style.gap = '5px';
+           var plane = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+           plane.setAttribute('viewBox', '0 0 24 24');
+           plane.setAttribute('width', '17');
+           plane.setAttribute('height', '17');
+           plane.setAttribute('aria-hidden', 'true');
+           plane.style.fill = 'currentColor';
+           var planePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+           planePath.setAttribute('d', 'M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z');
+           planePath.setAttribute('transform', 'rotate(90 12 12)');
+           plane.appendChild(planePath);
+           var durationLabel = document.createElement('span');
+           durationLabel.textContent = flightTimeText;
+           duration.appendChild(plane);
+           duration.appendChild(durationLabel);
+           el.appendChild(duration);
+         }
+         el.style.display = aircraftDetails || flightTimeText ? 'flex' : 'none';
        });
      }
 
