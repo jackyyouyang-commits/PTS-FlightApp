@@ -108,6 +108,7 @@ window.lucide = {
   createIcons: function() {
     var icons = {
       'plane': 'M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z',
+      'log-out': 'M10 17l5-5-5-5M15 12H3M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6',
       'upload': 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12',
       'save': 'M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM17 21v-8H7v8M7 3v5h8',
       'share-2': 'M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13',
@@ -2180,7 +2181,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </button>
           <div class="nav-divider"></div>
           <button id="auth-refresh-cloud" type="button" aria-label="Refresh shared flight from cloud" title="Refresh shared flight from cloud" style="flex:0 0 auto;border:0;padding:6px 10px;border-radius:6px;background:#374151;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:32px;">Refresh</button>
-          <button id="auth-signout" type="button" aria-label="Sign out of the PTS Flight App" style="flex:0 0 auto;border:0;padding:6px 10px;border-radius:6px;background:#374151;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:32px;">Sign Out</button>
+          <button id="auth-signout" type="button" aria-label="Sign out of the PTS Flight App" style="flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;border:0;padding:6px 10px;border-radius:6px;background:#374151;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:32px;"><i data-lucide="log-out" style="width:14px;height:14px;"></i>Sign Out</button>
         </div>
 
     <!-- MAIN CONTENT -->
