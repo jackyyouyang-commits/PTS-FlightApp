@@ -37,6 +37,17 @@
       .boarding-status-label {
         display: block; color: #fff; font-size: 1em; line-height: 1.2;
       }
+      .oir-offload-position {
+        position: relative; cursor: pointer; border-radius: 2px;
+      }
+      .oir-offload-position:focus-visible {
+        outline: 2px solid #16a34a; outline-offset: 1px;
+      }
+      .oir-offload-position.is-checked[data-offload-primary="true"]::after {
+        content: '\2713'; position: absolute; top: 0.05em; right: -0.85em;
+        color: #16a34a; font: 700 0.9em/1 Arial,sans-serif;
+        text-shadow: 0 0 2px #fff; pointer-events: none;
+      }
       #etd-countdown, #etd-countdown-m { align-self: baseline; }
       #boarding-countdown, #boarding-countdown-m { align-self: center; }
       .flight-info-trigger {
@@ -4039,6 +4050,8 @@ function renderPaxLoadTable() {
     }
 
     var operationalPreviewWidths = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+    var OIR_OFFLOAD_CHECKS_KEY = 'pts_oir_offload_checks_v1';
+    var oirOffloadChecksState = { sourceKey: '', positions: [] };
     var operationalPreviewResizeObserver = typeof ResizeObserver !== 'undefined'
       ? new ResizeObserver(function(entries) {
           entries.forEach(function(entry) {
@@ -4098,6 +4111,116 @@ function renderPaxLoadTable() {
         );
       });
     }
+
+    function getOirOffloadSourceKey(text) {
+      var value = String(text || ''), hash = 2166136261;
+      for (var i = 0; i < value.length; i++) {
+        hash ^= value.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return value.length + ':' + (hash >>> 0).toString(36);
+    }
+
+    function persistOirOffloadChecks() {
+      try {
+        localStorage.setItem(OIR_OFFLOAD_CHECKS_KEY, JSON.stringify(oirOffloadChecksState));
+      } catch(e) {
+        console.error('Unable to save arrival offload checks:', e);
+        showToast('Unable to save offload checks: ' + e.message, 'red');
+      }
+    }
+
+    function loadOirOffloadChecks(sourceText) {
+      var sourceKey = getOirOffloadSourceKey(sourceText);
+      if (oirOffloadChecksState.sourceKey === sourceKey) return oirOffloadChecksState;
+      var stored = null;
+      try {
+        stored = JSON.parse(localStorage.getItem(OIR_OFFLOAD_CHECKS_KEY) || 'null');
+      } catch(e) {
+        console.error('Unable to restore arrival offload checks:', e);
+        showToast('Unable to restore offload checks: ' + e.message, 'red');
+      }
+      oirOffloadChecksState = {
+        sourceKey: sourceKey,
+        positions: stored && stored.sourceKey === sourceKey && Array.isArray(stored.positions)
+          ? stored.positions.filter(function(position) { return /^(?:\d{2}[A-Z]|5[12])$/.test(position); })
+          : []
+      };
+      if (!stored || stored.sourceKey !== sourceKey) persistOirOffloadChecks();
+      return oirOffloadChecksState;
+    }
+
+    function decorateOirOffloadPositions(preview, textarea) {
+      if (!preview || !textarea || textarea.id !== 'oir-textarea') return;
+      var state = loadOirOffloadChecks(textarea.value);
+      preview.querySelectorAll('pre').forEach(function(pre) {
+        var walker = document.createTreeWalker(pre, NodeFilter.SHOW_TEXT);
+        var textNodes = [], node;
+        while ((node = walker.nextNode())) {
+          if (/\b(?:\d{2}[A-Z]|5[12])\b/.test(node.nodeValue)) textNodes.push(node);
+        }
+        var seenPositions = {};
+        textNodes.forEach(function(textNode) {
+          var text = textNode.nodeValue;
+          var pattern = /\b(?:\d{2}[A-Z]|5[12])\b/g;
+          var match, lastIndex = 0;
+          var fragment = document.createDocumentFragment();
+          while ((match = pattern.exec(text))) {
+            if (match.index > lastIndex) fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+            var position = match[0];
+            var marker = document.createElement('span');
+            marker.className = 'oir-offload-position';
+            marker.setAttribute('data-position', position);
+            marker.setAttribute('role', 'button');
+            marker.setAttribute('tabindex', '0');
+            marker.setAttribute('aria-label', 'Mark ' + position + ' offloaded');
+            marker.setAttribute('title', 'Tap to mark ' + position + ' offloaded');
+            marker.textContent = position;
+            if (!seenPositions[position]) {
+              marker.setAttribute('data-offload-primary', 'true');
+              seenPositions[position] = true;
+            }
+            if (state.positions.indexOf(position) >= 0) {
+              marker.classList.add('is-checked');
+              marker.setAttribute('aria-pressed', 'true');
+            } else {
+              marker.setAttribute('aria-pressed', 'false');
+            }
+            fragment.appendChild(marker);
+            lastIndex = pattern.lastIndex;
+          }
+          if (lastIndex < text.length) fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+          textNode.parentNode.replaceChild(fragment, textNode);
+        });
+      });
+      if (preview._oirOffloadTrackingBound) return;
+      preview._oirOffloadTrackingBound = true;
+      function togglePosition(position) {
+        var checks = loadOirOffloadChecks(textarea.value);
+        var index = checks.positions.indexOf(position);
+        if (index >= 0) checks.positions.splice(index, 1);
+        else checks.positions.push(position);
+        persistOirOffloadChecks();
+        preview.querySelectorAll('.oir-offload-position').forEach(function(marker) {
+          if (marker.getAttribute('data-position') !== position) return;
+          var checked = index < 0;
+          marker.classList.toggle('is-checked', checked);
+          marker.setAttribute('aria-pressed', checked ? 'true' : 'false');
+          marker.setAttribute('aria-label', (checked ? 'Unmark ' : 'Mark ') + position + ' offloaded');
+        });
+      }
+      preview.addEventListener('click', function(event) {
+        var marker = event.target.closest('.oir-offload-position');
+        if (marker && preview.contains(marker)) togglePosition(marker.getAttribute('data-position'));
+      });
+      preview.addEventListener('keydown', function(event) {
+        var marker = event.target.closest('.oir-offload-position');
+        if (!marker || !preview.contains(marker) || (event.key !== 'Enter' && event.key !== ' ')) return;
+        event.preventDefault();
+        togglePosition(marker.getAttribute('data-position'));
+      });
+    }
+
     window.addEventListener('resize', fitAllOperationalPastePreviews);
     window.addEventListener('orientationchange', function() {
       setTimeout(fitAllOperationalPastePreviews, 250);
@@ -4139,6 +4262,7 @@ function renderPaxLoadTable() {
       preview.querySelectorAll('img').forEach(function(image) {
         if (!image.complete) image.addEventListener('load', function() { fitOperationalPastePreview(preview); }, { once: true });
       });
+      decorateOirOffloadPositions(preview, ta);
       ta.style.display = 'none';
       fitOperationalPastePreview(preview);
     }
@@ -6437,6 +6561,7 @@ function renderPaxLoadTable() {
       }
       preview.innerHTML = '<div class="operational-paste-content">' + previewHTML + '</div>';
       preview.style.display = 'block';
+      decorateOirOffloadPositions(preview, textarea);
       watchOperationalPastePreview(preview);
       fitOperationalPastePreview(preview);
       
@@ -6761,7 +6886,15 @@ function renderPaxLoadTable() {
       var ta = document.getElementById('oir-textarea'); if(ta) { ta.value=''; ta.style.display=''; }
       var preview = document.getElementById('oir-textarea-preview'); if(preview) preview.remove();
       clearRichContent('oir-textarea');
-      try { localStorage.removeItem('pts_oir'); localStorage.removeItem('pts_oir_locked'); } catch(e) {}
+      oirOffloadChecksState = { sourceKey: getOirOffloadSourceKey(''), positions: [] };
+      try {
+        localStorage.removeItem(OIR_OFFLOAD_CHECKS_KEY);
+        localStorage.removeItem('pts_oir');
+        localStorage.removeItem('pts_oir_locked');
+      } catch(e) {
+        console.error('Unable to clear arrival offload data:', e);
+        showToast('Unable to clear arrival offload data: ' + e.message, 'red');
+      }
       var badge = document.getElementById('oir-lock-badge'); if(badge) badge.style.display='none';
       clearPastedImages('oir-textarea');
       if(ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
