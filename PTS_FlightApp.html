@@ -32,10 +32,10 @@
         #flight-info-toolbar { padding: 6px 8px; }
       }
       .boarding-time-label {
-        display: block; color: #fff; font-size: 1em; line-height: 1.2; white-space: nowrap;
+        display: block; color: #fff; font-size: 0.75em; line-height: 1.2; white-space: nowrap;
       }
       .boarding-status-label {
-        display: block; color: #fff; font-size: 0.75em; line-height: 1.2;
+        display: block; color: #fff; font-size: 1em; line-height: 1.2;
       }
       .flight-info-trigger {
         display: flex; align-items: center; gap: 4px; flex-shrink: 0;
@@ -5936,7 +5936,7 @@ function renderPaxLoadTable() {
           var gcColor, gcPrefix, gcBlink = '';
           if (dGateSec <= 0) { gcColor = '#FCA5A5'; gcPrefix = '+'; }
           else { gcColor = '#FFD700'; gcPrefix = '-'; gcBlink = ' class="blink-countdown"'; }
-          gateLine = '<br><span style="font-size:0.75em;opacity:0.9;color:#fff;">Gate Close </span><span' + gcBlink + ' style="font-size:0.75em;opacity:0.9;color:' + gcColor + ';">' + gcPrefix + fmtFromSec(Math.abs(dGateSec)) + '</span>';
+          gateLine = '<br><span style="font-size:0.5625em;opacity:0.9;color:#fff;">Gate Close </span><span' + gcBlink + ' style="font-size:0.5625em;opacity:0.9;color:' + gcColor + ';">' + gcPrefix + fmtFromSec(Math.abs(dGateSec)) + '</span>';
         }
 
         // Boarding Closed once Last Pax Onboard (idx 20) is logged - gate close no longer shows
@@ -5957,7 +5957,7 @@ function renderPaxLoadTable() {
 
         // Past the target with no actual: keep Boarding Soon and count upward until logged.
         if (dBoardSec <= 0) {
-          bl.innerHTML = boardingTimeLine + '<div class="boarding-status-label">Boarding Soon<br><span style="opacity:0.9;color:#fff;">Late Boarding </span><span class="blink-countdown" style="opacity:0.9;color:#FCA5A5;">+' + fmtFromSec(Math.abs(dBoardSec)) + '</span>' + gateLine + '</div>' + sep;
+          bl.innerHTML = boardingTimeLine + '<div class="boarding-status-label">Boarding Soon<br><span style="font-size:0.5625em;opacity:0.9;color:#fff;">Late Boarding </span><span class="blink-countdown" style="font-size:0.5625em;opacity:0.9;color:#FCA5A5;">+' + fmtFromSec(Math.abs(dBoardSec)) + '</span>' + gateLine + '</div>' + sep;
           bl.style.color = '#fff';
           return;
         }
