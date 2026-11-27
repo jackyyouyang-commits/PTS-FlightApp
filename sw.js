@@ -1,5 +1,5 @@
 /* PTS Flight App service worker - offline cache */
-var CACHE = 'pts-flightapp-v97';
+var CACHE = 'pts-flightapp-v98';
 var ASSETS = [
   './',
   './PTS_FlightApp.html',
