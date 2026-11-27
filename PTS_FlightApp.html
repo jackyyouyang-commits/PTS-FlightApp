@@ -9020,6 +9020,7 @@ function renderPaxLoadTable() {
             return;
           }
         }
+        sessionStorage.setItem('pts_show_restore_notice', '1');
         window.location.reload();
       });
       supabaseClient.auth.onAuthStateChange(function(event, session) {
@@ -9040,6 +9041,8 @@ function renderPaxLoadTable() {
     }
 
     function init() {
+      var showRestoreNotice = sessionStorage.getItem('pts_show_restore_notice') === '1';
+      sessionStorage.removeItem('pts_show_restore_notice');
       // Auto-import shared data from a scanned QR URL (legacy share links still work).
       var hashCode = getShareCodeFromHash();
       if (hashCode && loadShareCode(hashCode)) {
@@ -9090,7 +9093,7 @@ function renderPaxLoadTable() {
             var minutes = String(restoredAt.getMinutes()).padStart(2, '0');
             t.textContent = 'Flight Information Updated at ' + hours + ':' + minutes;
           }
-          if (m) m.style.display = 'flex';
+          if (m && showRestoreNotice) m.style.display = 'flex';
         })();
       } else {
         renderAll();
