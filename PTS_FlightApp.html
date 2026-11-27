@@ -1892,7 +1892,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
               <div id="hdr-flight-num" data-summary="flight" style="font-weight:500;letter-spacing:0.02em;"></div>
               <span id="last-updated" style="font-size:10px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;">Last Updated: --:--</span>
             </div>
-            <div id="hdr-aircraft-details" style="display:none;margin-left:0;font-size:12px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"></div>
+            <div id="hdr-aircraft-details" style="display:none;margin-left:0;font-size:16px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"></div>
           </div>
         </div>
         <div data-id="14" class="flex items-center gap-2 flex-shrink-0">
@@ -1920,7 +1920,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
                 <div id="hdr-flight-num-m" data-summary="flight" style="font-weight:500;letter-spacing:0.02em;"></div>
                 <span id="last-updated-m" style="font-size:10px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;">Last Updated: --:--</span>
               </div>
-              <div id="hdr-aircraft-details-m" style="display:none;font-size:11px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"></div>
+              <div id="hdr-aircraft-details-m" style="display:none;font-size:16px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"></div>
             </div>
           </div>
           <div data-id="42" class="flex items-center gap-1 flex-shrink-0">
@@ -3063,7 +3063,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
        ['hdr-aircraft-details','hdr-aircraft-details-m'].forEach(function(id) {
          var el = document.getElementById(id);
          if (!el) return;
-         el.textContent = [regn, config].filter(Boolean).join(' | ');
+         el.textContent = [config, regn].filter(Boolean).join(' | ');
          el.style.display = regn || config ? 'block' : 'none';
        });
      }
