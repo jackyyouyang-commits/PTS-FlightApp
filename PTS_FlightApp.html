@@ -9460,7 +9460,7 @@ function renderPaxLoadTable() {
       document.querySelectorAll('.tab-content').forEach(function(p){p.classList.remove('active');p.style.display='none';});
       var t=document.getElementById('tab-'+tabId);
       if(t){t.classList.add('active');t.style.display=t.classList.contains('tab-flex-panel')?'flex':'block';if(t.classList.contains('tab-flex-panel'))t.style.flexDirection='column';}
-      toolbar.hidden = tabId !== 'pts' || !t;
+      toolbar.hidden = !t;
       document.querySelectorAll('.bottom-tab').forEach(function(b){
         var on=b.getAttribute('data-tab')===tabId;
         b.classList.toggle('active', on);
