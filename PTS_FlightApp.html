@@ -37,18 +37,6 @@
         background: #1a6e4e; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
       }
       #supabase-auth-error { min-height: 18px; margin-top: 12px; color: #991b1b; font-size: 13px; line-height: 1.4; }
-      #auth-session-bar {
-        display: none; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 10px;
-        min-height: 27px; padding: 2px 8px; background: #ecfdf5; color: #374151; font-size: 11px;
-      }
-      #auth-signout {
-        border: 0; padding: 4px 8px; border-radius: 5px; background: #1a6e4e;
-        color: #fff; font-size: 11px; font-weight: 700; cursor: pointer;
-      }
-      @media (max-width: 430px) {
-        #auth-session-bar { justify-content: space-between; gap: 4px; font-size: 10px; }
-        #auth-user-email { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      }
       #flight-info-toolbar {
         position: relative; z-index: 10; flex: 0 0 auto; display: flex;
         align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 16px;
@@ -1985,13 +1973,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
       </div>
     </header>
-    <div id="auth-session-bar">
-      <span id="auth-user-email"></span>
-      <span id="cloud-sync-status" role="status">Connecting to cloud…</span>
-      <button id="auth-reload-cloud" type="button" style="border:0;padding:4px 8px;border-radius:5px;background:#d1fae5;color:#065f46;font-size:11px;font-weight:700;cursor:pointer;">Reload</button>
-      <button id="auth-signout" type="button">Sign out</button>
-    </div>
-
     <!-- IMPORT MODAL -->
     <div data-id="70" id="import-modal-k1l2" class="modal-overlay" style="display:none;">
       <div data-id="71" class="modal-card">
@@ -2196,6 +2177,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <button id="btn-cancel-flight-nav" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-white text-xs font-semibold hover:bg-white/20 transition-colors flex-shrink-0" style="background:#7F1D1D;min-height:32px;white-space:nowrap;border:none;cursor:pointer;">
             <i id="cancel-flight-icon-nav" data-lucide="ban" class="w-3.5 h-3.5"></i> <span id="cancel-flight-text-nav">FX - Cancel</span>
           </button>
+          <div class="nav-divider"></div>
+          <span id="cloud-sync-status" role="status" style="flex:0 0 auto;color:#fff;font-size:11px;white-space:nowrap;">Connecting…</span>
+          <button id="auth-signout" type="button" aria-label="Sign out of the PTS Flight App" style="flex:0 0 auto;border:0;padding:6px 10px;border-radius:6px;background:#374151;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:32px;">Sign Out</button>
         </div>
 
     <!-- MAIN CONTENT -->
@@ -8795,12 +8779,10 @@ function renderPaxLoadTable() {
     function showAuthGate(message, canRetry) {
       var gate = document.getElementById('supabase-auth-gate');
       var shell = document.getElementById('app-shell');
-      var bar = document.getElementById('auth-session-bar');
       var error = document.getElementById('supabase-auth-error');
       var retry = document.getElementById('supabase-auth-retry');
       if (gate) gate.style.display = 'flex';
       if (shell) shell.style.display = 'none';
-      if (bar) bar.style.display = 'none';
       if (error) error.textContent = message || '';
       if (retry) retry.style.display = canRetry ? 'block' : 'none';
     }
@@ -8905,17 +8887,13 @@ function renderPaxLoadTable() {
     async function startAuthenticatedApp(user) {
       if (cloudAppInitialized || cloudAppStarting) return;
       cloudAppStarting = true;
-      var email = document.getElementById('auth-user-email');
-      if (email) email.textContent = user.email || 'Signed in';
       showAuthGate('Loading your shared flight…', false);
       try {
         await loadCloudFlight(user);
         cloudReady = true;
         var gate = document.getElementById('supabase-auth-gate');
         var shell = document.getElementById('app-shell');
-        var bar = document.getElementById('auth-session-bar');
         if (gate) gate.style.display = 'none';
-        if (bar) bar.style.display = 'flex';
         if (shell) shell.style.display = '';
         initEventHandlers();
         init();
@@ -8936,7 +8914,6 @@ function renderPaxLoadTable() {
       var form = document.getElementById('supabase-auth-card');
       var retry = document.getElementById('supabase-auth-retry');
       var signout = document.getElementById('auth-signout');
-      var reload = document.getElementById('auth-reload-cloud');
       if (!window.supabase || typeof window.supabase.createClient !== 'function') {
         showAuthGate('The sign-in service did not load. Check your internet connection and reload the page.', false);
         return;
@@ -8996,7 +8973,6 @@ function renderPaxLoadTable() {
         }
         window.location.reload();
       });
-      if (reload) reload.addEventListener('click', function() { window.location.reload(); });
       supabaseClient.auth.onAuthStateChange(function(event, session) {
         if (event === 'SIGNED_OUT' && cloudAppInitialized) {
           cloudReady = false;
