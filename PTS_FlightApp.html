@@ -1830,6 +1830,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div data-id="19" id="etd-countdown" class="tabular-nums leading-none" style="font-size:22px;">Departs at: --:--</div>
           <div data-id="20" class="etd-divider"></div>
           <div data-id="21" id="boarding-countdown" class="tabular-nums leading-none" style="font-size:22px;">--:--:--</div>
+          <div class="etd-divider"></div>
           <div data-id="21-gate" id="gate-display" class="tabular-nums leading-none" style="font-size:22px;white-space:nowrap;">Gate: --</div>
         </div>
       </div>
@@ -1858,6 +1859,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div data-id="47" id="etd-countdown-m" class="tabular-nums leading-none" style="font-size:20px;">Departs at: --:--</div>
           <div data-id="48" class="etd-divider"></div>
           <div data-id="49" id="boarding-countdown-m" class="tabular-nums leading-none" style="font-size:20px;">--:--:--</div>
+          <div class="etd-divider"></div>
           <div data-id="49-gate" id="gate-display-m" class="tabular-nums leading-none" style="font-size:20px;white-space:nowrap;">Gate: --</div>
         </div>
         <div data-id="50" class="flex items-center justify-around px-2 pb-2 gap-1" style="display:none;">
@@ -5913,20 +5915,17 @@ function renderPaxLoadTable() {
         bl.style.lineHeight = '1.2';
         bl.style.minHeight = '28px';
         bl.style.verticalAlign = 'middle';
-        var isMobile = id.includes('-m');
-        var sepMargin = isMobile ? '4px' : '10px';
-        var sep = '<span style="width:1px;height:28px;background:rgba(255,255,255,0.3);display:inline-block;margin:0 ' + sepMargin + ';vertical-align:middle;flex-shrink:0;font-size:0;"></span>';
         var boardingTimeLine = '<div class="boarding-time-label">Boarding: ' +
           (anchorMin == null ? '--:--' : fmtMin(anchorMin)) + '</div>';
 
         // Flight cancelled: the boarding widget goes blank rather than showing live status.
         if (state._flightCancelled) {
-          bl.innerHTML = boardingTimeLine + sep;
+          bl.innerHTML = boardingTimeLine;
           bl.style.color = '#fff';
           return;
         }
 
-        if (!anchorTargetMs) { bl.innerHTML = boardingTimeLine + sep; bl.style.color = '#fff'; return; }
+        if (!anchorTargetMs) { bl.innerHTML = boardingTimeLine; bl.style.color = '#fff'; return; }
         var dBoardSec = Math.round((anchorTargetMs - nowMs)/1000);
         var dGateSec = gctTargetMs ? Math.round((gctTargetMs - nowMs)/1000) : null;
 
@@ -5942,7 +5941,7 @@ function renderPaxLoadTable() {
         // Boarding Closed once Last Pax Onboard (idx 20) is logged - gate close no longer shows
         var lastPaxLogged = depActual[20];
         if (lastPaxLogged) {
-          bl.innerHTML = '<div class="boarding-status-label">Boarding Closed</div>' + boardingTimeLine + sep;
+          bl.innerHTML = '<div class="boarding-status-label">Boarding Closed</div>' + boardingTimeLine;
           bl.style.color = '#FCA5A5';
           return;
         }
@@ -5950,26 +5949,26 @@ function renderPaxLoadTable() {
         // A logged Boarding Signal Released actual always ends the late-boarding state.
         var boardSignalLogged = depActual[13];
         if (boardSignalLogged) {
-          bl.innerHTML = '<div class="boarding-status-label">Boarding' + gateLine + '</div>' + boardingTimeLine + sep;
+          bl.innerHTML = '<div class="boarding-status-label">Boarding' + gateLine + '</div>' + boardingTimeLine;
           bl.style.color = '#fff';
           return;
         }
 
         // Past the target with no actual: keep Boarding Soon and count upward until logged.
         if (dBoardSec <= 0) {
-          bl.innerHTML = '<div class="boarding-status-label">Boarding Soon<br><span style="font-size:0.5625em;opacity:0.9;color:#fff;">Late Boarding </span><span class="blink-countdown" style="font-size:0.5625em;opacity:0.9;color:#FCA5A5;">+' + fmtFromSec(Math.abs(dBoardSec)) + '</span>' + gateLine + '</div>' + boardingTimeLine + sep;
+          bl.innerHTML = '<div class="boarding-status-label">Boarding Soon<br><span style="font-size:0.5625em;opacity:0.9;color:#fff;">Late Boarding </span><span class="blink-countdown" style="font-size:0.5625em;opacity:0.9;color:#FCA5A5;">+' + fmtFromSec(Math.abs(dBoardSec)) + '</span>' + gateLine + '</div>' + boardingTimeLine;
           bl.style.color = '#fff';
           return;
         }
 
         // Within 10 min before the Boarding Signal Released target -> Boarding Soon
         if (dBoardSec > 0 && dBoardSec <= 600) {
-          bl.innerHTML = '<div class="boarding-status-label">Boarding Soon' + gateLine + '</div>' + boardingTimeLine + sep;
+          bl.innerHTML = '<div class="boarding-status-label">Boarding Soon' + gateLine + '</div>' + boardingTimeLine;
           bl.style.color = '#fff';
           return;
         }
         // More than 10 min before the target -> Boarding Open with countdown
-        bl.innerHTML = '<div class="boarding-status-label">Boarding Open -' + fmtFromSec(dBoardSec) + '</div>' + boardingTimeLine + sep;
+        bl.innerHTML = '<div class="boarding-status-label">Boarding Open -' + fmtFromSec(dBoardSec) + '</div>' + boardingTimeLine;
         bl.style.color = '#fff';
       });
       
