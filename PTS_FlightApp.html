@@ -48,6 +48,12 @@
         color: #16a34a; font: 700 0.9em/1 Arial,sans-serif;
         text-shadow: 0 0 2px #fff; pointer-events: none;
       }
+      .oir-offload-summary {
+        display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap;
+        gap: 4px 10px; margin-left: auto; color: #374151;
+        font-size: 11px; font-weight: 700;
+      }
+      .oir-offload-summary span { white-space: nowrap; }
       #etd-countdown, #etd-countdown-m { align-self: baseline; }
       #boarding-countdown, #boarding-countdown-m { align-self: center; }
       .flight-info-trigger {
@@ -2519,6 +2525,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <div data-id="527" class="textarea-panel-wrapper">
           <div data-id="528" class="panel-header">
             <h2 data-id="529" style="font-size:18px;font-weight:700;margin:0;">Arrival Offload</h2>
+            <div id="oir-offload-summary" class="oir-offload-summary" role="status" aria-live="polite">
+              <span>Cargo AKE: <b id="oir-count-cargo-ake">0</b></span>
+              <span>Cargo pallets: <b id="oir-count-cargo-pallets">0</b></span>
+              <span>Mail: <b id="oir-count-mail">0</b></span>
+              <span>Pax AKE: <b id="oir-count-pax-ake">0</b></span>
+            </div>
             <span data-id="530" id="oir-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
           </div>
           <textarea data-id="531" id="oir-textarea" style="width:100%;flex:1 1 0;min-height:120px;resize:none;border-radius:0;border-left:none;border-right:none;border-top:none;box-sizing:border-box;padding:12px;font-family:monospace;font-size:13px;line-height:1.5;"></textarea>
@@ -4112,6 +4124,60 @@ function renderPaxLoadTable() {
       });
     }
 
+    function countOirOffloadUnits(text) {
+      var counts = { cargoAke: 0, cargoPallets: 0, mail: 0, paxAke: 0 };
+      var lines = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+      for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+        if (/^\s*SI\.\s*$/i.test(lines[lineIndex])) break;
+        var matches = [], pattern = /\b\d{2}[A-Z]\s+(AKE|PMC|PLA)[A-Z0-9]+\b/gi, match;
+        while ((match = pattern.exec(lines[lineIndex]))) {
+          matches.push({ index: match.index, type: match[1].toUpperCase() });
+        }
+        if (!matches.length) continue;
+
+        var detailLine = lines[lineIndex + 1] || '';
+        var detailCells = detailLine.split(/[|│\t]/);
+        var positionCells = lines[lineIndex].split(/[|│\t]/);
+        matches.forEach(function(unit, unitIndex) {
+          var cellIndex = (lines[lineIndex].slice(0, unit.index).match(/[|│\t]/g) || []).length;
+          var detailCell = detailCells[cellIndex] || '';
+          if (!/[|│\t]/.test(detailLine)) {
+            var nextUnitIndex = matches[unitIndex + 1];
+            var start = unit.index;
+            var end = nextUnitIndex ? nextUnitIndex.index : start + 32;
+            detailCell = detailLine.slice(start, end);
+          } else if (!positionCells[cellIndex]) {
+            detailCell = '';
+          }
+
+          if (/\/C\//i.test(detailCell)) {
+            if (unit.type === 'AKE') counts.cargoAke++;
+            else counts.cargoPallets++;
+          } else if (/\/M\//i.test(detailCell)) {
+            counts.mail++;
+          } else {
+            counts.paxAke++;
+          }
+        });
+      }
+      return counts;
+    }
+
+    function updateOirOffloadSummary(text) {
+      var counts = countOirOffloadUnits(text);
+      var values = {
+        'oir-count-cargo-ake': counts.cargoAke,
+        'oir-count-cargo-pallets': counts.cargoPallets,
+        'oir-count-mail': counts.mail,
+        'oir-count-pax-ake': counts.paxAke
+      };
+      Object.keys(values).forEach(function(id) {
+        var value = document.getElementById(id);
+        if (value) value.textContent = String(values[id]);
+      });
+      return counts;
+    }
+
     function getOirOffloadSourceKey(text) {
       var value = String(text || ''), hash = 2166136261;
       for (var i = 0; i < value.length; i++) {
@@ -4229,6 +4295,7 @@ function renderPaxLoadTable() {
     function renderRichContent(textareaId) {
       var ta = document.getElementById(textareaId);
       if (!ta) return;
+      if (textareaId === 'oir-textarea') updateOirOffloadSummary(ta.value);
       var tablePreview = document.getElementById(textareaId + '-preview');
       var preview = document.getElementById(textareaId + '-rich-preview');
       var richHtml = contentRichHtml[textareaId] || '';
@@ -6498,6 +6565,7 @@ function renderPaxLoadTable() {
     function renderPlainContentPreview(textarea) {
       // Keep every row, column, blank cell, and space so another device reconstructs
       // the same layout that was originally pasted.
+      if (textarea.id === 'oir-textarea') updateOirOffloadSummary(textarea.value);
       var lines = textarea.value.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
       
       var allCells = lines.map(function(line) { return line.split('\t'); });
@@ -8367,6 +8435,11 @@ function renderPaxLoadTable() {
       });
 
       // OIR buttons
+      var oirTextarea = document.getElementById('oir-textarea');
+      if (oirTextarea) {
+        oirTextarea.addEventListener('input', function() { updateOirOffloadSummary(this.value); });
+        updateOirOffloadSummary(oirTextarea.value);
+      }
       safeOn('oir-save-btn', saveOIR);
       safeOn('oir-clear-btn', clearOIR);
 
