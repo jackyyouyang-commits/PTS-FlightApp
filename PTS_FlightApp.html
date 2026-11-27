@@ -1882,12 +1882,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
     <!-- HEADER -->
     <header data-id="8" id="app-header" class="bg-cx-teal text-white shadow-lg" style="padding-top: env(safe-area-inset-top, 0px);">
+      <span data-app-version style="position:absolute;top:2px;right:10px;z-index:25;font-size:11px;font-weight:600;opacity:0.85;letter-spacing:0.02em;white-space:nowrap;"></span>
       <!-- DESKTOP: single row (md+) -->
       <div data-id="9" id="hdr-desktop" style="display:none;align-items:center;justify-content:space-between;padding:8px 16px;min-height:52px;gap:12px;flex-wrap:wrap;">
         <div data-id="10" class="flex items-center gap-2 flex-shrink-0">
           <div data-id="11" class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--cx-teal);"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAiCAYAAABMfblJAAACi0lEQVR42r2Wv2sUQRiGn9mLmkREg4mYGKImGgOKxggBURtB7KIEOxtLRfwLLESwtBGstLCxEVGxUwtBU2gZCCpoIyk0EIORmAjm7h4LZ2FZLnp3ucsHy3zs7sw77zvfj0EdYg0tAYbUbQBqWAvAdqB/LRn+AHrV9WsFOAfsBoZCCDZb1gTYDBSAQ+rWZoMmwC+gBPQCI2p7MwMoAaaBNqAV2AnsCSHYTIazwBLQBXQAg2poFmgSQlgEvgGd8ekHhpslaxLH99EfBnYAp9XuGEBJMwA/ADPARqAb6AFOqR0hhHIjmSZqEkJYAKaADcAIsAU4DoynBaFRoFm5JoBNQB9wJBaDUeBoCMGG5md6TupNddG/9ll9pd5Vz2SYJo0ALMTxsLqkltRyBJ5Sn6hX1HXxv5ZGgj6IQMtxLKvz6qx6S+1LQVfFVk3UoPapC2oxwzJr0+pYZl5L3WebYXk5Lv47w7Kc28A9dVd2bl2MM6DPctKmVoqP6nf1htqTmR8i60L0Q7XSdqqf4sLFCtJm382pt9XRFdYMcd3C/9JknzqzAtNU6vxm3qpX1WNqV55h+Je0IYSSehB4DmwHikCllDD21Py3eeBrbA7G60xV5zmovsswrRS9WalX+ud6LUHUoT60OivmpH6hDtdc+qJ/MZa9fJ6WK7x7o47nN191uqQlTd2vfonpUawQUC/Vs/korQWsJeNfiAyXc7L9VO+rJyodSU3lLvoD6qMK5/VRvab25xjVBBRyrC7F5E5tSX2qjqutOdkLdZW26B9QJzJAkzGp9+Ylr7eOpvK1xmZsbMh31JO5zSRpvVxtXxxTX8dIO69uaQibbGmLC7QB54AB4HEIYbKCzOXVXpD/AKfv6s702tgRAAAAAElFTkSuQmCC" alt="" style="height:30px;width:auto;display:block;"></div>
           <div style="display:flex;flex-direction:column;line-height:1.2;">
-            <div style="font-size:16px;font-weight:600;opacity:0.75;color:#fff;letter-spacing:0.04em;white-space:nowrap;">Flight Info &amp; Precision Timing Schedule <span data-app-version style="font-size:0.72em;font-weight:500;opacity:0.85;letter-spacing:0;"></span></div>
             <div style="display:flex;align-items:baseline;gap:8px;min-width:0;">
               <div id="hdr-flight-num" data-summary="flight" style="font-weight:500;letter-spacing:0.02em;"></div>
               <span id="last-updated" aria-label="Last updated --:--" title="Last updated --:--" style="display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"><svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5"></path><path d="M4 17v-5h5"></path><path d="M5.64 9A7 7 0 0 1 17.5 6.5L20 12"></path><path d="M18.36 15A7 7 0 0 1 6.5 17.5L4 12"></path></svg><span class="last-updated-time">--:--</span></span>
@@ -1895,7 +1895,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             <div id="hdr-aircraft-details" style="display:none;align-items:center;gap:20px;margin-left:0;font-size:16px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"></div>
           </div>
         </div>
-        <div data-id="14" class="flex items-center gap-2 flex-shrink-0">
+        <div data-id="14" class="flex items-center gap-2 flex-shrink-0" style="margin-right:54px;">
           <div data-id="15" class="flex flex-col items-center leading-none">
             <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em;">Current Time:</div>
             <div data-id="16" id="live-clock" class="tabular-nums leading-none" style="font-size:26px;">--:--:--</div>
@@ -1915,7 +1915,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div data-id="38" class="flex items-center gap-2 flex-shrink-0">
             <div data-id="39" class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:var(--cx-teal);"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAiCAYAAABMfblJAAACi0lEQVR42r2Wv2sUQRiGn9mLmkREg4mYGKImGgOKxggBURtB7KIEOxtLRfwLLESwtBGstLCxEVGxUwtBU2gZCCpoIyk0EIORmAjm7h4LZ2FZLnp3ucsHy3zs7sw77zvfj0EdYg0tAYbUbQBqWAvAdqB/LRn+AHrV9WsFOAfsBoZCCDZb1gTYDBSAQ+rWZoMmwC+gBPQCI2p7MwMoAaaBNqAV2AnsCSHYTIazwBLQBXQAg2poFmgSQlgEvgGd8ekHhpslaxLH99EfBnYAp9XuGEBJMwA/ADPARqAb6AFOqR0hhHIjmSZqEkJYAKaADcAIsAU4DoynBaFRoFm5JoBNQB9wJBaDUeBoCMGG5md6TupNddG/9ll9pd5Vz2SYJo0ALMTxsLqkltRyBJ5Sn6hX1HXxv5ZGgj6IQMtxLKvz6qx6S+1LQVfFVk3UoPapC2oxwzJr0+pYZl5L3WebYXk5Lv47w7Kc28A9dVd2bl2MM6DPctKmVoqP6nf1htqTmR8i60L0Q7XSdqqf4sLFCtJm382pt9XRFdYMcd3C/9JknzqzAtNU6vxm3qpX1WNqV55h+Je0IYSSehB4DmwHikCllDD21Py3eeBrbA7G60xV5zmovsswrRS9WalX+ud6LUHUoT60OivmpH6hDtdc+qJ/MZa9fJ6WK7x7o47nN191uqQlTd2vfonpUawQUC/Vs/korQWsJeNfiAyXc7L9VO+rJyodSU3lLvoD6qMK5/VRvab25xjVBBRyrC7F5E5tSX2qjqutOdkLdZW26B9QJzJAkzGp9+Ylr7eOpvK1xmZsbMh31JO5zSRpvVxtXxxTX8dIO69uaQibbGmLC7QB54AB4HEIYbKCzOXVXpD/AKfv6s702tgRAAAAAElFTkSuQmCC" alt="" style="height:24px;width:auto;display:block;"></div>
             <div style="display:flex;flex-direction:column;line-height:1.2;">
-              <div style="font-size:16px;font-weight:600;opacity:0.75;color:#fff;letter-spacing:0.03em;white-space:nowrap;">Flight Info &amp; Precision Timing Schedule <span data-app-version style="font-size:0.72em;font-weight:500;opacity:0.85;letter-spacing:0;"></span></div>
               <div style="display:flex;align-items:baseline;gap:6px;min-width:0;">
                 <div id="hdr-flight-num-m" data-summary="flight" style="font-weight:500;letter-spacing:0.02em;"></div>
                 <span id="last-updated-m" aria-label="Last updated --:--" title="Last updated --:--" style="display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"><svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5"></path><path d="M4 17v-5h5"></path><path d="M5.64 9A7 7 0 0 1 17.5 6.5L20 12"></path><path d="M18.36 15A7 7 0 0 1 6.5 17.5L4 12"></path></svg><span class="last-updated-time">--:--</span></span>
@@ -1923,7 +1922,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
               <div id="hdr-aircraft-details-m" style="display:none;align-items:center;gap:20px;font-size:16px;font-weight:500;color:rgba(255,255,255,0.75);white-space:nowrap;"></div>
             </div>
           </div>
-          <div data-id="42" class="flex items-center gap-1 flex-shrink-0">
+          <div data-id="42" class="flex items-center gap-1 flex-shrink-0" style="margin-right:48px;">
             <div data-id="43" class="flex flex-col items-center leading-none">
               <div style="font-size:9px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em;">Current Time:</div>
               <div data-id="44" id="live-clock-m" class="tabular-nums leading-none" style="font-size:24px;">--:--:--</div>
