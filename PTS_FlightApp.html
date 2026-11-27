@@ -5752,6 +5752,7 @@ function renderPaxLoadTable() {
       // date (0 / +1 / +2). Uses proper timezone conversion (America/Vancouver -> Asia/Hong_Kong).
       var etaHKGStr = state.dep_eta_hkg ? state.dep_eta_hkg : '';
       var adjustedEtaHKGStr = etaHKGStr;
+      var calculatedEtaHKGTimeStr = null;
       var blkMin = parseTime(state.dep_blk);
       if (blkMin === null) blkMin = parseTime(state.dep_ft);
       // ATD (new ETD) source: logged actual once departed, else the effective ETD (manual
@@ -5790,17 +5791,23 @@ function renderPaxLoadTable() {
           var hp = new Intl.DateTimeFormat('en-GB', { timeZone:'Asia/Hong_Kong', hour12:false, hour:'2-digit', minute:'2-digit', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(arrUtcMs));
           function gp2(p,n){ for(var i=0;i<p.length;i++) if(p[i].type===n) return parseInt(p[i].value,10); return 0; }
           var arrHkgH = gp2(hp,'hour') % 24, arrHkgMi = gp2(hp,'minute');
+          calculatedEtaHKGTimeStr = pad(arrHkgH) + ':' + pad(arrHkgMi);
           var arrHkgDateMs = Date.UTC(gp2(hp,'year'), gp2(hp,'month')-1, gp2(hp,'day'));
           // Day change = arrival date minus the ORIGINAL STD calendar date (not the new ETD).
           var stdOrigDateMs = Date.UTC(y0, mo0, d0);
           var dayChange = Math.round((arrHkgDateMs - stdOrigDateMs) / 86400000);
           if (dayChange < 0) dayChange = 0;
-          adjustedEtaHKGStr = pad(arrHkgH) + ':' + pad(arrHkgMi) + (dayChange > 0 ? ' +' + dayChange : '');
+          adjustedEtaHKGStr = calculatedEtaHKGTimeStr + (dayChange > 0 ? ' +' + dayChange : '');
         } catch (e) { /* fall back to prior value */ }
+      }
+      if (calculatedEtaHKGTimeStr !== null) {
+        state.dep_eta_hkg = calculatedEtaHKGTimeStr;
+        var etaHKGField = document.getElementById('f-dep_eta_hkg');
+        if (etaHKGField && etaHKGField.value !== calculatedEtaHKGTimeStr) etaHKGField.value = calculatedEtaHKGTimeStr;
       }
 
       var staHKG = parseHKGTime(state.dep_sta_hkg);
-      var etaHKG = parseHKGTime(adjustedEtaHKGStr);
+      var etaHKG = parseHKGTime(calculatedEtaHKGTimeStr || adjustedEtaHKGStr);
       var etaTimeColor = (etaHKG !== null && staHKG !== null && etaHKG > staHKG) ? '#FCA5A5' : '#ffffff';
       var etaLine = adjustedEtaHKGStr ? '<br><span style="font-size:0.72em;font-weight:500;color:#ffffff;">ETA HKG </span><span style="font-size:0.72em;font-weight:600;color:' + etaTimeColor + ';">' + adjustedEtaHKGStr + '</span>' : '';
 
@@ -8338,7 +8345,7 @@ function renderPaxLoadTable() {
           if (isNaN(ezfw) || isNaN(mzfw) || ezfw < mzfw) window._underloadWarnShown = false;
         }
         if (key === 'dep_std') { renderActivities(); updateETDCountdown(); }
-        if (['dep_etd','dep_board_time','dep_eta_hkg','dep_sta_hkg'].indexOf(key) >= 0) {
+        if (['dep_etd','dep_board_time','dep_blk','dep_ft','dep_eta_hkg','dep_sta_hkg'].indexOf(key) >= 0) {
           updateETDCountdown();
           if (key === 'dep_etd') renderActivities();
         }
