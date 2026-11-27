@@ -8900,7 +8900,7 @@ function renderPaxLoadTable() {
             - main.getBoundingClientRect().top - 8;
           target.setAttribute('tabindex', '-1');
           target.focus({ preventScroll: true });
-          main.scrollTo({ top: Math.max(0, scrollTop), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+          main.scrollTop = Math.max(0, scrollTop);
         });
         panel.addEventListener('keydown', function(event) {
           var links = Array.from(panel.querySelectorAll('a'));
