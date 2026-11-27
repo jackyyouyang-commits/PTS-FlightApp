@@ -1863,7 +1863,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div class="modal-card" style="max-width:460px;padding:20px;text-align:center;">
         <div id="restore-success-text" style="font-size:15px;font-weight:700;color:#1a6e4e;">Flight Information successfully restored</div>
         <div style="margin-top:18px;display:flex;gap:12px;justify-content:center;">
-          <button id="restore-success-ok" style="background:#1a6e4e;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">OK</button>
+          <button id="restore-success-ok" style="background:#1a6e4e;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;min-height:40px;">Acknowledge</button>
         </div>
       </div>
     </div>
@@ -8754,10 +8754,10 @@ function renderPaxLoadTable() {
           var m = document.getElementById('restore-success-modal');
           var t = document.getElementById('restore-success-text');
           if (t) {
-            t.textContent = '';
-            t.appendChild(document.createTextNode('Flight Information successfully restored from'));
-            t.appendChild(document.createElement('br'));
-            t.appendChild(document.createTextNode(new Date(restored.savedAt).toLocaleString()));
+            var restoredAt = new Date(restored.savedAt);
+            var hours = String(restoredAt.getHours()).padStart(2, '0');
+            var minutes = String(restoredAt.getMinutes()).padStart(2, '0');
+            t.textContent = 'Flight Information Updated at ' + hours + ':' + minutes;
           }
           if (m) m.style.display = 'flex';
         })();
