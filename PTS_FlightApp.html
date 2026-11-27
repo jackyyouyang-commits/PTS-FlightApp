@@ -49,11 +49,12 @@
         text-shadow: 0 0 2px #fff; pointer-events: none;
       }
       .oir-offload-summary {
-        display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap;
-        gap: 4px 10px; margin-left: auto; color: #374151;
-        font-size: 11px; font-weight: 700;
+        display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap;
+        gap: 4px 10px; color: #374151;
+        font-size: 14px; font-weight: 700;
       }
       .oir-offload-summary span { white-space: nowrap; }
+      .oir-offload-heading { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
       #etd-countdown, #etd-countdown-m { align-self: baseline; }
       #boarding-countdown, #boarding-countdown-m { align-self: center; }
       .flight-info-trigger {
@@ -2524,12 +2525,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div data-id="526" id="tab-arr-offload" class="tab-content tab-flex-panel">
         <div data-id="527" class="textarea-panel-wrapper">
           <div data-id="528" class="panel-header">
-            <h2 data-id="529" style="font-size:18px;font-weight:700;margin:0;">Arrival Offload</h2>
-            <div id="oir-offload-summary" class="oir-offload-summary" role="status" aria-live="polite">
-              <span>Cargo AKE: <b id="oir-count-cargo-ake">0</b></span>
-              <span>Cargo pallets: <b id="oir-count-cargo-pallets">0</b></span>
-              <span>Mail: <b id="oir-count-mail">0</b></span>
-              <span>Pax AKE: <b id="oir-count-pax-ake">0</b></span>
+            <div class="oir-offload-heading">
+              <h2 data-id="529" style="font-size:18px;font-weight:700;margin:0;">Arrival Offload</h2>
+              <div id="oir-offload-summary" class="oir-offload-summary" role="status" aria-live="polite">
+                <span>Cargo AKE: <b id="oir-count-cargo-ake">0</b></span>
+                <span>Cargo pallets: <b id="oir-count-cargo-pallets">0</b></span>
+                <span>Mail: <b id="oir-count-mail">0</b></span>
+                <span>Pax AKE: <b id="oir-count-pax-ake">0</b></span>
+              </div>
             </div>
             <span data-id="530" id="oir-lock-badge" style="display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#374151;border-radius:99px;padding:4px 10px;color:#fff;white-space:nowrap;"></span>
           </div>
