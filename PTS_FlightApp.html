@@ -3073,6 +3073,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
          ? flightTimeMatch[1] + 'h ' + String(Number(flightTimeMatch[2])) + 'm'
          : '';
        var gateNum = state && state.gate && String(state.gate).trim() !== '' ? String(state.gate).trim() : '--';
+       var lastUpdated = document.getElementById('last-updated');
        ['hdr-aircraft-details','hdr-aircraft-details-m'].forEach(function(id) {
          var el = document.getElementById(id);
          if (!el) return;
@@ -3111,6 +3112,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
            gate.style.whiteSpace = 'nowrap';
            gate.textContent = 'Gate: ' + gateNum;
            el.appendChild(gate);
+           if (lastUpdated) el.appendChild(lastUpdated);
          }
          el.style.display = aircraftDetails || flightTimeText || (id === 'hdr-aircraft-details' && gateNum !== '--') ? 'flex' : 'none';
        });
