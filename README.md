@@ -17,7 +17,7 @@ The header displays the current boarding status/countdown above the smaller **Bo
 
 The Summary tab includes **Connections** and **Baggage** subsections below Special Handling. Connections shows INTL CNX, US CNX, WS CNX / ITD Bags, WS WCH / MAAS, and AC WCH / MAAS; Baggage shows Doorside and Total Bags from Flight Info.
 
-In the **Arrival Offload** preview, tap a position such as `31L` to mark it offloaded. A green check appears at that position on the instruction; marks remain for the same instruction on this device and clear when its content changes or is cleared.
+In the **Arrival Offload** preview, tap a position such as `31L` or its associated ULD code such as `AKE91160CX` to toggle it offloaded. A large green check and its local `HH:mm` mark time appear beneath the matching flight code. Marks and their timestamps remain for the same instruction on this device and clear when its content changes or is cleared.
 
 The Arrival Offload header summarizes recognized ULD positions as **Cargo AKE**, **Cargo pallets**, **Mail**, and **Pax AKE**. It reads the AKE/PMC/PLA identifier and its corresponding second-line code: `/C/` is cargo, `/M/` is mail, and other codes (such as `/BP/`, `/BY/`, `/BF/`, `/ED/`, or `/BT/`) count as Pax AKE. A numbered position without a ULD identifier is included when its corresponding code is `/M/`.
 
